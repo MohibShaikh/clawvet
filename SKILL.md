@@ -1,9 +1,11 @@
 ---
 name: clawvet
-version: 0.2.0
+version: 0.2.1
 description: Vet OpenClaw skills for security threats before installing them. 6-pass scanner detects RCE, credential theft, prompt injection, typosquatting, and social engineering.
 author: MohibShaikh
 license: MIT
+homepage: https://github.com/MohibShaikh/clawvet
+repository: https://github.com/MohibShaikh/clawvet
 metadata:
   openclaw:
     requires:
