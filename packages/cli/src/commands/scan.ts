@@ -69,7 +69,9 @@ export async function scanCommand(
     content = readFileSync(skillFile, "utf-8");
   }
 
-  const result = await scanSkill(content, { semantic: false });
+  const result = await scanSkill(content, {
+    semantic: options.semantic ?? false,
+  });
 
   if (options.format === "json") {
     printJsonResult(result);
