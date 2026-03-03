@@ -1,5 +1,9 @@
 # ClawVet
 
+[![CI](https://github.com/MohibShaikh/clawvet/actions/workflows/ci.yml/badge.svg)](https://github.com/MohibShaikh/clawvet/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/clawvet)](https://www.npmjs.com/package/clawvet)
+[![npm downloads](https://img.shields.io/npm/dw/clawvet)](https://www.npmjs.com/package/clawvet)
+
 Skill vetting & supply chain security for the OpenClaw ecosystem. Scans SKILL.md files for prompt injection, credential theft, remote code execution, typosquatting, and social engineering — catching threats that VirusTotal misses.
 
 ## Why
@@ -28,7 +32,7 @@ clawvet/
 │   └── web/          # Next.js 14 dashboard
 ├── packages/
 │   ├── cli/          # `clawvet` CLI tool
-│   └── shared/       # Types + scanner engine + 21 threat detection patterns
+│   └── shared/       # Types + scanner engine + 54 threat detection patterns
 ├── docker-compose.yml
 └── turbo.json
 ```
@@ -38,7 +42,7 @@ clawvet/
 | Pass | Module | What it catches |
 |------|--------|-----------------|
 | 1 | `skill-parser` | Parses YAML frontmatter, extracts code blocks, URLs, IPs, domains |
-| 2 | `static-analysis` | 21 regex patterns: curl\|sh, eval(), base64, credential access, C2 IPs |
+| 2 | `static-analysis` | 54 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
 | 3 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
 | 4 | `semantic-analysis` | Claude AI analyzes instructions for social engineering & prompt injection |
 | 5 | `dependency-checker` | npx -y auto-install, global npm installs, risky packages |
@@ -104,7 +108,7 @@ GITHUB_CLIENT_SECRET=
 - All 6 fixture skills (benign → malicious)
 - Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
 - Regex catastrophic backtracking safety
-- All 21 threat patterns verified with triggers
+- 54 threat patterns across 12 categories
 - API route validation (auth, webhooks, scans)
 - CLI end-to-end integration (--format json, --fail-on, exit codes)
 

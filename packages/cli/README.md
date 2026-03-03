@@ -57,7 +57,7 @@ ClawVet runs a 6-pass analysis on every skill:
 | Pass | What it checks |
 |------|---------------|
 | **Skill Parser** | Extracts YAML frontmatter, code blocks, URLs, IPs, domains |
-| **Static Analysis** | 21 regex patterns: curl-pipe-bash, credential access, C2 IPs, base64 payloads |
+| **Static Analysis** | 54 regex patterns: RCE, reverse shells, credential theft, obfuscation, DNS exfil, privilege escalation |
 | **Metadata Validator** | Undeclared binaries, env vars, missing descriptions, invalid semver |
 | **Dependency Checker** | `npx -y` auto-install, global `npm install`, risky packages |
 | **Typosquat Detector** | Levenshtein distance against popular skills, suspicious naming patterns |

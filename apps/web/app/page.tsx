@@ -87,7 +87,7 @@ export default function HomePage() {
     {
       icon: <Terminal size={20} />,
       title: "Static Pattern Detection",
-      desc: "21 regex rules detect curl|sh, eval(), base64 payloads, credential access, and known C2 infrastructure IPs.",
+      desc: "54 regex rules detect RCE, reverse shells, credential theft, DNS exfil, obfuscation, and C2 infrastructure.",
       tag: "PASS 01",
     },
     {
