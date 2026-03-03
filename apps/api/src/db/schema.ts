@@ -70,6 +70,15 @@ export const findings = pgTable("findings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const semanticUsage = pgTable("semantic_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  scanCount: integer("scan_count").default(0).notNull(),
+});
+
 export const webhooks = pgTable("webhooks", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")

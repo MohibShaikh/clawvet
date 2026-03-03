@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { scanSkill } from "../services/scanner.js";
-import { eq, desc } from "drizzle-orm";
+import { resolveUser } from "../services/resolve-user.js";
+import { getPlanLimits, getCurrentPeriodStart } from "../services/tiers.js";
+import { eq, and, gte, count as drizzleCount } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 interface ScanBody {
   content: string;
@@ -8,8 +11,26 @@ interface ScanBody {
   skillName?: string;
 }
 
+async function getUserScanCount(userId: string): Promise<number> {
+  try {
+    const { db, schema } = await import("../db/index.js");
+    const periodStart = getCurrentPeriodStart();
+    const [result] = await db
+      .select({ count: drizzleCount(schema.scans.id) })
+      .from(schema.scans)
+      .where(
+        and(
+          eq(schema.scans.userId, userId),
+          gte(schema.scans.createdAt, periodStart)
+        )
+      );
+    return Number(result?.count || 0);
+  } catch {
+    return 0;
+  }
+}
+
 export async function scanRoutes(app: FastifyInstance) {
-  // Submit a skill for scanning
   app.post<{ Body: ScanBody }>("/api/v1/scans", async (request, reply) => {
     const { content, semantic, skillName } = request.body;
 
@@ -17,12 +38,84 @@ export async function scanRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: "content is required" });
     }
 
-    const result = await scanSkill(content, { semantic });
+    const user = await resolveUser(request);
+    const plan = user ? getPlanLimits(user.plan) : getPlanLimits("free");
+
+    if (user && plan.apiScansPerMonth !== Infinity) {
+      const used = await getUserScanCount(user.id);
+      if (used >= plan.apiScansPerMonth) {
+        return reply.status(429).send({
+          error: "Monthly scan limit reached",
+          limit: plan.apiScansPerMonth,
+          used,
+          upgrade: "Upgrade to Pro for unlimited scans: https://clawvet.dev/pricing",
+        });
+      }
+    }
+
+    let semanticEnabled = false;
+    let semanticPreviewed = false;
+
+    if (semantic) {
+      if (plan.semanticScans) {
+        semanticEnabled = true;
+      } else if (plan.semanticPreview) {
+        semanticEnabled = true;
+        semanticPreviewed = true;
+      }
+    }
+
+    const result = await scanSkill(content, { semantic: semanticEnabled });
     if (skillName) {
       result.skillName = skillName;
     }
 
-    // Try to persist to DB if available
+    if (semanticPreviewed && result.findings.length > 0) {
+      const semanticFindings = result.findings.filter(
+        (f) => f.analysisPass === "semantic-analysis"
+      );
+      const otherFindings = result.findings.filter(
+        (f) => f.analysisPass !== "semantic-analysis"
+      );
+
+      const previewCount = plan.semanticPreviewCount as number;
+      const visibleSemantic = semanticFindings.slice(0, previewCount);
+      const hiddenCount = semanticFindings.length - visibleSemantic.length;
+
+      const redactedSemantic = visibleSemantic.map((f) => ({
+        ...f,
+        _preview: true,
+      }));
+
+      result.findings = [...otherFindings, ...redactedSemantic];
+
+      (result as any).semanticPreview = {
+        shown: visibleSemantic.length,
+        hidden: hiddenCount,
+        total: semanticFindings.length,
+        message:
+          hiddenCount > 0
+            ? `${hiddenCount} more AI finding${hiddenCount > 1 ? "s" : ""} hidden. Upgrade to Pro to see all semantic analysis results.`
+            : "Upgrade to Pro for unlimited AI-powered semantic analysis.",
+        upgrade: "https://clawvet.dev/pricing",
+      };
+    }
+
+    if (user) {
+      (result as any).tier = {
+        plan: user.plan,
+        semanticEnabled: plan.semanticScans,
+        apiScansLimit: plan.apiScansPerMonth === Infinity ? "unlimited" : plan.apiScansPerMonth,
+      };
+    } else {
+      (result as any).tier = {
+        plan: "anonymous",
+        semanticEnabled: false,
+        apiScansLimit: "unlimited",
+        note: "Sign in with GitHub to track usage and access premium features",
+      };
+    }
+
     try {
       const { db, schema } = await import("../db/index.js");
       const [scan] = await db
@@ -35,13 +128,13 @@ export async function scanRoutes(app: FastifyInstance) {
           riskScore: result.riskScore,
           riskGrade: result.riskGrade,
           findingsCount: result.findingsCount,
+          userId: user?.id || null,
           completedAt: new Date(),
         })
         .returning();
 
       result.id = scan.id;
 
-      // Insert findings
       if (result.findings.length > 0) {
         await db.insert(schema.findings).values(
           result.findings.map((f) => ({
@@ -63,7 +156,6 @@ export async function scanRoutes(app: FastifyInstance) {
     return reply.status(200).send(result);
   });
 
-  // Get scan result by ID
   app.get<{ Params: { id: string } }>(
     "/api/v1/scans/:id",
     async (request, reply) => {
@@ -101,7 +193,6 @@ export async function scanRoutes(app: FastifyInstance) {
     }
   );
 
-  // List scans (paginated)
   app.get<{ Querystring: { limit?: string; offset?: string } }>(
     "/api/v1/scans",
     async (request, reply) => {
@@ -125,11 +216,10 @@ export async function scanRoutes(app: FastifyInstance) {
     }
   );
 
-  // Public stats
   app.get("/api/v1/stats", async (request, reply) => {
     try {
       const { db, schema } = await import("../db/index.js");
-      const { count, sum, avg } = await import("drizzle-orm");
+      const { count, avg } = await import("drizzle-orm");
 
       const [stats] = await db
         .select({
