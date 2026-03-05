@@ -11,6 +11,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Curl piped to shell",
     description: "Downloads and executes remote code directly — classic supply chain attack vector.",
+    codeOnly: true,
   },
   {
     name: "WGET_EXECUTE",
@@ -19,6 +20,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Wget with shell execution",
     description: "Downloads and executes remote code via wget.",
+    codeOnly: true,
   },
   {
     name: "EVAL_DYNAMIC",
@@ -27,6 +29,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Dynamic eval() usage",
     description: "Uses eval() which can execute arbitrary code.",
+    codeOnly: true,
   },
   {
     name: "BASE64_DECODE",
@@ -35,6 +38,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "obfuscation",
     title: "Base64 decode execution",
     description: "Decodes base64 content, often used to hide malicious payloads.",
+    codeOnly: true,
   },
   {
     name: "PYTHON_EXEC",
@@ -43,6 +47,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Python inline execution",
     description: "Executes inline Python code which may contain hidden payloads.",
+    codeOnly: true,
   },
   {
     name: "REVERSE_SHELL",
@@ -51,6 +56,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Reverse shell",
     description: "Creates a reverse shell connection back to an attacker-controlled server.",
+    codeOnly: true,
   },
   {
     name: "CRON_PERSISTENCE",
@@ -59,6 +65,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "persistence",
     title: "Scheduled task persistence",
     description: "Installs a cron job or systemd service for persistent execution after reboot.",
+    codeOnly: true,
   },
   {
     name: "PERL_EXEC",
@@ -67,6 +74,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Perl inline execution",
     description: "Executes inline Perl code which may contain obfuscated payloads.",
+    codeOnly: true,
   },
   {
     name: "NODE_EVAL",
@@ -75,6 +83,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Node.js inline execution",
     description: "Executes inline Node.js code, often used to hide malicious logic.",
+    codeOnly: true,
   },
   {
     name: "RUBY_EXEC",
@@ -83,6 +92,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "remote_code_execution",
     title: "Ruby inline execution",
     description: "Executes inline Ruby code which may contain hidden payloads.",
+    codeOnly: true,
   },
 
   // ═══════════════════════════════════════════════════════
@@ -235,6 +245,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "data_exfiltration",
     title: "Raw socket connection",
     description: "Creates raw network sockets which can bypass HTTP monitoring.",
+    codeOnly: true,
   },
 
   // ═══════════════════════════════════════════════════════
@@ -343,6 +354,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "obfuscation",
     title: "Hex-encoded payload",
     description: "Contains hex-encoded strings commonly used to hide malicious commands.",
+    codeOnly: true,
   },
   {
     name: "JS_OBFUSCATOR",
@@ -351,6 +363,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "obfuscation",
     title: "JavaScript obfuscator output",
     description: "Contains patterns from JavaScript obfuscation tools used to hide malicious code.",
+    codeOnly: true,
   },
   {
     name: "UNICODE_STEGANOGRAPHY",
@@ -383,6 +396,34 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "obfuscation",
     title: "String concatenation obfuscation",
     description: "Builds commands via single-character string concatenation to evade pattern detection.",
+    codeOnly: true,
+  },
+  {
+    name: "BUFFER_BASE64_DECODE",
+    pattern: /Buffer\.from\s*\(.*['"]base64['"]\)|atob\s*\(/gi,
+    severity: "critical",
+    category: "obfuscation",
+    title: "Buffer/atob base64 decode",
+    description: "Decodes base64 content via Buffer.from() or atob(), often used to hide malicious payloads.",
+    codeOnly: true,
+  },
+  {
+    name: "STRING_FROMCHARCODE",
+    pattern: /String\.fromCharCode\s*\(/gi,
+    severity: "medium",
+    category: "obfuscation",
+    title: "String.fromCharCode usage",
+    description: "Builds strings from character codes to evade static pattern detection.",
+    codeOnly: true,
+  },
+  {
+    name: "DYNAMIC_PROPERTY_ACCESS",
+    pattern: /(?:process|global|window|globalThis)\s*\[\s*['"`]?\w*['"`]?\s*\+/gi,
+    severity: "medium",
+    category: "obfuscation",
+    title: "Dynamic property access on globals",
+    description: "Dynamically accesses global object properties via string concatenation to hide intent.",
+    codeOnly: true,
   },
 
   // ═══════════════════════════════════════════════════════
@@ -395,6 +436,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "privilege_escalation",
     title: "Sudo usage",
     description: "Requests elevated privileges — check if actually required for the task.",
+    codeOnly: true,
   },
   {
     name: "CHMOD_DANGEROUS",
@@ -403,6 +445,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "privilege_escalation",
     title: "Dangerous file permissions",
     description: "Sets overly permissive file permissions (777) or setuid/setgid bits.",
+    codeOnly: true,
   },
   {
     name: "PATH_TRAVERSAL",
@@ -423,6 +466,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "code_execution",
     title: "Shell execution API",
     description: "Uses shell execution APIs — legitimate but worth noting.",
+    codeOnly: true,
   },
   {
     name: "NETWORK_REQUEST",
@@ -431,6 +475,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "network",
     title: "Network request API",
     description: "Makes network requests — legitimate but worth reviewing targets.",
+    codeOnly: true,
   },
   {
     name: "FILE_WRITE",
@@ -439,6 +484,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "file_system",
     title: "File write operation",
     description: "Writes to the filesystem — check what files are being modified.",
+    codeOnly: true,
   },
   {
     name: "ENV_MODIFICATION",
@@ -447,6 +493,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "environment",
     title: "Environment variable modification",
     description: "Modifies environment variables which could affect other tools or processes.",
+    codeOnly: true,
   },
   {
     name: "WILDCARD_FILE_ACCESS",

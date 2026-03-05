@@ -3,12 +3,14 @@ import { resolve, join } from "node:path";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
+import { printSarifResult } from "../output/sarif.js";
 
 export interface ScanOptions {
-  format?: "terminal" | "json";
+  format?: "terminal" | "json" | "sarif";
   failOn?: "critical" | "high" | "medium" | "low";
   semantic?: boolean;
   remote?: boolean;
+  quiet?: boolean;
 }
 
 async function fetchRemoteSkill(slug: string): Promise<string> {
@@ -70,19 +72,38 @@ export async function scanCommand(
     content = readFileSync(skillFile, "utf-8");
   }
 
-  const result = await scanSkill(content, {
-    semantic: options.semantic ?? false,
-  });
-
-  if (options.format === "json") {
-    printJsonResult(result);
-  } else {
-    printScanResult(result);
+  // Load .clawvetignore
+  const ignoreFile = join(process.cwd(), ".clawvetignore");
+  const ignorePatterns: string[] = [];
+  if (existsSync(ignoreFile)) {
+    const lines = readFileSync(ignoreFile, "utf-8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#")) {
+        ignorePatterns.push(trimmed);
+      }
+    }
   }
 
-  if (options.failOn) {
+  const result = await scanSkill(content, {
+    semantic: options.semantic ?? false,
+    ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
+  });
+
+  if (!options.quiet) {
+    if (options.format === "sarif") {
+      printSarifResult(result);
+    } else if (options.format === "json") {
+      printJsonResult(result);
+    } else {
+      printScanResult(result);
+    }
+  }
+
+  const failOn = options.failOn || (options.quiet ? "high" : undefined);
+  if (failOn) {
     const severityOrder = ["low", "medium", "high", "critical"];
-    const threshold = severityOrder.indexOf(options.failOn);
+    const threshold = severityOrder.indexOf(failOn);
     const hasFailure = result.findings.some(
       (f) => severityOrder.indexOf(f.severity) >= threshold
     );

@@ -78,4 +78,5 @@ export interface ThreatPattern {
   category: string;
   title: string;
   description: string;
+  codeOnly?: boolean;
 }

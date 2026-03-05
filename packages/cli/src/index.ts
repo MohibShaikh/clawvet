@@ -8,22 +8,24 @@ const program = new Command();
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.2.3");
+  .version("0.3.0");
 
 program
   .command("scan")
   .description("Scan a skill for security threats")
   .argument("<target>", "Path to skill folder or SKILL.md file")
-  .option("--format <format>", "Output format: terminal or json", "terminal")
+  .option("--format <format>", "Output format: terminal, json, or sarif", "terminal")
   .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
   .option("--semantic", "Enable AI semantic analysis (requires ANTHROPIC_API_KEY)")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
+  .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
   .action(async (target, opts) => {
     await scanCommand(target, {
       format: opts.format,
       failOn: opts.failOn,
       semantic: opts.semantic,
       remote: opts.remote,
+      quiet: opts.quiet,
     });
   });
 

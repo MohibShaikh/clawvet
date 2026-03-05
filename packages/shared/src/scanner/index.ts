@@ -9,6 +9,7 @@ import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.j
 export interface ScanOptions {
   semantic?: boolean;
   semanticAnalyzer?: (content: string) => Promise<Finding[]>;
+  ignorePatterns?: string[];
 }
 
 export async function scanSkill(
@@ -32,9 +33,16 @@ export async function scanSkill(
     allFindings.push(...detectTyposquats(skill.frontmatter.name));
   }
 
-  const riskScore = calculateRiskScore(allFindings);
+  // Filter out ignored patterns
+  const filteredFindings = options.ignorePatterns?.length
+    ? allFindings.filter(
+        (f) => !options.ignorePatterns!.some((ig) => f.title === ig || f.category === ig)
+      )
+    : allFindings;
+
+  const riskScore = calculateRiskScore(filteredFindings);
   const riskGrade = getRiskGrade(riskScore);
-  const findingsCount = countFindings(allFindings);
+  const findingsCount = countFindings(filteredFindings);
 
   const recommendation =
     riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
@@ -47,7 +55,7 @@ export async function scanSkill(
     riskScore,
     riskGrade,
     findingsCount,
-    findings: allFindings,
+    findings: filteredFindings,
     recommendation,
   };
 }
