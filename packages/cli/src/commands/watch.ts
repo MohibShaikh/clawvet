@@ -5,15 +5,17 @@ import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 
-const SKILL_DIRS = [
+const DEFAULT_SKILL_DIRS = [
   join(homedir(), ".openclaw", "skills"),
   join(homedir(), ".openclaw", "workspace", "skills"),
 ];
 
 export async function watchCommand(options: {
   threshold?: number;
+  dir?: string;
 }): Promise<void> {
   const threshold = options.threshold || 50;
+  const SKILL_DIRS = options.dir ? [options.dir] : DEFAULT_SKILL_DIRS;
   console.log(
     chalk.bold(
       `\nClawVet Watch — monitoring skill directories (threshold: ${threshold})\n`
@@ -38,7 +40,7 @@ export async function watchCommand(options: {
       console.log(chalk.dim(`  ${dir}`));
     }
     console.log();
-    return;
+    process.exit(1);
   }
 
   console.log(chalk.dim("Watching:"));

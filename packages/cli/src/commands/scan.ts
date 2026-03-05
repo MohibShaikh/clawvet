@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
@@ -14,7 +14,7 @@ export interface ScanOptions {
 async function fetchRemoteSkill(slug: string): Promise<string> {
   const urls = [
     `https://raw.githubusercontent.com/openclaw/skills/main/${slug}/SKILL.md`,
-    `https://clawhub.com/api/v1/skills/${slug}/raw`,
+    `https://clawhub.ai/api/v1/skills/${slug}/raw`,
   ];
 
   for (const url of urls) {
@@ -61,8 +61,9 @@ export async function scanCommand(
       skillFile = join(skillPath, "SKILL.md");
     }
 
-    if (!existsSync(skillFile)) {
+    if (!existsSync(skillFile) || statSync(skillFile).isDirectory()) {
       console.error(`Error: Cannot find SKILL.md at ${skillFile}`);
+      console.error(`Hint: If this is a directory of skills, use 'clawvet audit --dir ${target}' instead.`);
       process.exit(1);
     }
 

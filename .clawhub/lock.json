@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "version": "1.0.0",
+      "installedAt": 1772693209921
+    },
+    "commit": {
+      "version": "1.0.0",
+      "installedAt": 1772693410349
+    }
+  }
+}

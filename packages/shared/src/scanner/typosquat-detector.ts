@@ -27,7 +27,7 @@ export function detectTyposquats(skillName: string): Finding[] {
   }
 
   const patterns = [
-    { re: /-+/, desc: "extra hyphens" },
+    { re: /-{2,}/, desc: "extra hyphens" },
     { re: /(.)\1{2,}/, desc: "repeated characters" },
   ];
 

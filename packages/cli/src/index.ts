@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.2.0");
+  .version("0.2.3");
 
 program
   .command("scan")
@@ -30,16 +30,18 @@ program
 program
   .command("audit")
   .description("Scan all installed OpenClaw skills")
-  .action(async () => {
-    await auditCommand();
+  .option("--dir <path>", "Custom skills directory to scan")
+  .action(async (opts) => {
+    await auditCommand({ dir: opts.dir });
   });
 
 program
   .command("watch")
   .description("Pre-install hook — blocks risky skill installs")
   .option("--threshold <score>", "Risk score threshold (default 50)", "50")
+  .option("--dir <path>", "Custom skills directory to watch")
   .action(async (opts) => {
-    await watchCommand({ threshold: parseInt(opts.threshold) });
+    await watchCommand({ threshold: parseInt(opts.threshold), dir: opts.dir });
   });
 
 program.parse();
