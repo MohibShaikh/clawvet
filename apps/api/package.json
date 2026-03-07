@@ -22,7 +22,7 @@
     "ioredis": "^5.4.0",
     "@anthropic-ai/sdk": "^0.39.0",
     "openai": "^4.77.0",
-    "zhipuai-sdk-nodejs-v4": "^2.2.0",
+    "zhipuai-sdk-nodejs-v4": "^0.1.12",
     "zod": "^3.24.0"
   },
   "devDependencies": {
