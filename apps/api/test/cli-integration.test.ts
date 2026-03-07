@@ -24,7 +24,7 @@ describe("CLI integration", () => {
   it("clawvet --version prints version", () => {
     const { stdout, exitCode } = run("--version");
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe("0.2.0");
+    expect(stdout.trim()).toBe("0.3.0");
   });
 
   it("clawvet --help shows usage", () => {

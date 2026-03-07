@@ -54,10 +54,11 @@ describe("line number accuracy", () => {
 name: line-test
 ---
 line 4 is safe
-line 5 is safe
-line 6: eval(x)
+\`\`\`js
+eval(x)
 line 7 is safe
-line 8: eval(y)`;
+eval(y)
+\`\`\``;
     const result = await scanSkill(content);
     const evalFindings = result.findings.filter(f => f.title === "Dynamic eval() usage");
     expect(evalFindings.length).toBe(2);
@@ -125,6 +126,9 @@ describe("pattern coverage", () => {
       ENV_MODIFICATION: "process.env[",
       WILDCARD_FILE_ACCESS: "*.pem",
       LARGE_BASE64_LITERAL: "A".repeat(120),
+      BUFFER_BASE64_DECODE: "Buffer.from(payload, 'base64')",
+      STRING_FROMCHARCODE: "String.fromCharCode(72)",
+      DYNAMIC_PROPERTY_ACCESS: "process['ev' +",
     };
 
     for (const pattern of THREAT_PATTERNS) {
