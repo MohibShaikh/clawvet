@@ -1,7 +1,77 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
+import { ZhipuAI } from "zhipuai-sdk-nodejs-v4";
 import type { Finding } from "@clawvet/shared";
 
-const client = new Anthropic();
+interface LLMProvider {
+  analyze(prompt: string): Promise<string>;
+}
+
+class AnthropicProvider implements LLMProvider {
+  private client = new Anthropic();
+  private model = process.env.CLAWVET_LLM_MODEL || "claude-sonnet-4-6";
+
+  async analyze(prompt: string): Promise<string> {
+    try {
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
+      });
+      return response.content[0].type === "text" ? response.content[0].text : "";
+    } catch (err) {
+      if (err instanceof Anthropic.AuthenticationError) {
+        throw new Error("Semantic analysis failed: invalid or missing ANTHROPIC_API_KEY");
+      }
+      throw err;
+    }
+  }
+}
+
+class OpenAIProvider implements LLMProvider {
+  private client = new OpenAI();
+  private model = process.env.CLAWVET_LLM_MODEL || "gpt-4o";
+
+  async analyze(prompt: string): Promise<string> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      max_tokens: 2048,
+      messages: [{ role: "user", content: prompt }],
+    });
+    return response.choices[0]?.message?.content ?? "";
+  }
+}
+
+class ZhipuProvider implements LLMProvider {
+  private client = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY });
+  private model = process.env.CLAWVET_LLM_MODEL || "glm-4.7";
+
+  async analyze(prompt: string): Promise<string> {
+    const response = await this.client.createCompletions({
+      model: this.model,
+      messages: [{ role: "user", content: prompt }],
+      stream: false,
+    });
+    return (response as any).choices?.[0]?.message?.content ?? "";
+  }
+}
+
+let cachedProvider: LLMProvider | null = null;
+
+function getProvider(): LLMProvider {
+  if (cachedProvider) return cachedProvider;
+
+  const forced = process.env.CLAWVET_LLM_PROVIDER;
+  if (forced === "openai") cachedProvider = new OpenAIProvider();
+  else if (forced === "anthropic") cachedProvider = new AnthropicProvider();
+  else if (forced === "zhipu") cachedProvider = new ZhipuProvider();
+  else if (process.env.ANTHROPIC_API_KEY) cachedProvider = new AnthropicProvider();
+  else if (process.env.OPENAI_API_KEY) cachedProvider = new OpenAIProvider();
+  else if (process.env.ZHIPU_API_KEY) cachedProvider = new ZhipuProvider();
+  else throw new Error("No LLM API key found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or ZHIPU_API_KEY.");
+
+  return cachedProvider;
+}
 
 export async function runSemanticAnalysis(
   skillContent: string
@@ -40,15 +110,10 @@ Respond with JSON only (no markdown fences):
   "summary": string
 }`;
 
-  try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
-    });
+  const provider = getProvider();
 
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
+  try {
+    const text = await provider.analyze(prompt);
     const parsed = JSON.parse(text);
 
     return (parsed.findings || []).map(
@@ -70,7 +135,6 @@ Respond with JSON only (no markdown fences):
       })
     );
   } catch (err) {
-    console.error("Semantic analysis failed:", err);
-    return [];
+    throw new Error(`Semantic analysis failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

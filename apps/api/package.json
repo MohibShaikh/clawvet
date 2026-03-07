@@ -21,6 +21,8 @@
     "bullmq": "^5.0.0",
     "ioredis": "^5.4.0",
     "@anthropic-ai/sdk": "^0.39.0",
+    "openai": "^4.77.0",
+    "zhipuai-sdk-nodejs-v4": "^2.2.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
