@@ -59,13 +59,17 @@ export function printScanResult(result: ScanResult): void {
     console.log();
     for (const f of result.findings) {
       const color = SEVERITY_COLORS[f.severity];
-      console.log(`  ${color(`[${f.severity.toUpperCase()}]`)} ${f.title}`);
+      const confStr = f.confidence != null ? ` ${Math.round(f.confidence * 100)}%` : "";
+      console.log(`  ${color(`[${f.severity.toUpperCase()}${confStr}]`)} ${f.title}`);
       console.log(`    ${chalk.dim(f.description)}`);
       if (f.evidence) {
         console.log(`    Evidence: ${chalk.italic(f.evidence)}`);
       }
       if (f.lineNumber) {
         console.log(`    Line: ${f.lineNumber}`);
+      }
+      if (f.fix) {
+        console.log(`    Fix: ${chalk.green(f.fix)}`);
       }
       console.log();
     }

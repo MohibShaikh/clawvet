@@ -62,6 +62,9 @@ export async function watchCommand(options: {
         const content = readFileSync(skillFile, "utf-8");
         const result = await scanSkill(content);
 
+        if (result.cached) {
+          console.log(chalk.dim("(cached)"));
+        }
         printScanResult(result);
 
         if (result.riskScore > threshold) {

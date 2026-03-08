@@ -51,7 +51,10 @@ export function printSarifResult(result: ScanResult): void {
           return {
             ruleId,
             level: SEVERITY_TO_SARIF[f.severity],
-            message: { text: f.description + (f.evidence ? ` Evidence: ${f.evidence}` : "") },
+            message: {
+              text: f.description + (f.evidence ? ` Evidence: ${f.evidence}` : ""),
+              ...(f.fix ? { markdown: `${f.description}\n\n**Fix:** ${f.fix}` } : {}),
+            },
             locations: [
               {
                 physicalLocation: {

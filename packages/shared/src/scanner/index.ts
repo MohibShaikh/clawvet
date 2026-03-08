@@ -5,17 +5,26 @@ import { validateMetadata } from "./metadata-validator.js";
 import { checkDependencies } from "./dependency-checker.js";
 import { detectTyposquats } from "./typosquat-detector.js";
 import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.js";
+import { getCached, setCached } from "./cache.js";
 
 export interface ScanOptions {
   semantic?: boolean;
   semanticAnalyzer?: (content: string) => Promise<Finding[]>;
   ignorePatterns?: string[];
+  skipCache?: boolean;
 }
 
 export async function scanSkill(
   content: string,
   options: ScanOptions = {}
 ): Promise<ScanResult> {
+  if (!options.skipCache) {
+    const cached = getCached(content);
+    if (cached) {
+      return { ...cached, cached: true };
+    }
+  }
+
   const skill = parseSkill(content);
   const allFindings: Finding[] = [];
 
@@ -47,7 +56,7 @@ export async function scanSkill(
   const recommendation =
     riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
 
-  return {
+  const result: ScanResult = {
     skillName: skill.frontmatter.name || "unknown",
     skillVersion: skill.frontmatter.version,
     skillSource: "local",
@@ -58,6 +67,12 @@ export async function scanSkill(
     findings: filteredFindings,
     recommendation,
   };
+
+  if (!options.skipCache) {
+    setCached(content, result);
+  }
+
+  return result;
 }
 
 export { parseSkill } from "./skill-parser.js";

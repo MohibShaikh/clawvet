@@ -1,8 +1,8 @@
 import { parse as parseYaml } from "yaml";
 import type { ParsedSkill, SkillFrontmatter, CodeBlock } from "../types.js";
 
-const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/;
-const CODE_BLOCK_RE = /```(\w*)\n([\s\S]*?)```/g;
+const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
+const CODE_BLOCK_RE = /```(\w*)\r?\n([\s\S]*?)```/g;
 const URL_RE = /https?:\/\/[^\s"'<>\])+]+/gi;
 const IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
 const DOMAIN_RE = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi;

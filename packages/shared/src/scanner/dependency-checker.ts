@@ -22,6 +22,7 @@ export function checkDependencies(skill: ParsedSkill): Finding[] {
       evidence: match[0],
       lineNumber,
       analysisPass: pass,
+      fix: "Remove the `-y` flag from npx to require user confirmation before installing.",
     });
   }
 
@@ -35,6 +36,7 @@ export function checkDependencies(skill: ParsedSkill): Finding[] {
         description: `Installs npm package globally: ${match[2]}`,
         evidence: match[0],
         analysisPass: pass,
+        fix: "Use a local install (`npm install` without `-g`) or declare the dependency in requires.bins.",
       });
     }
   }

@@ -20,6 +20,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       title: "Missing skill name",
       description: "SKILL.md frontmatter does not declare a name.",
       analysisPass: pass,
+      fix: "Add `name:` to the YAML frontmatter.",
     });
   }
 
@@ -30,6 +31,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       title: "Missing description",
       description: "SKILL.md frontmatter does not declare a description.",
       analysisPass: pass,
+      fix: "Add `description:` to the YAML frontmatter.",
     });
   } else if (fm.description.length < 10) {
     findings.push({
@@ -39,6 +41,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       description: "Skill description is suspiciously short.",
       evidence: fm.description,
       analysisPass: pass,
+      fix: "Write a more detailed description (at least 10 characters).",
     });
   }
 
@@ -50,6 +53,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       description: "Version does not follow semver format.",
       evidence: fm.version,
       analysisPass: pass,
+      fix: "Use semver format: `version: X.Y.Z` (e.g., `1.0.0`).",
     });
   }
 
@@ -66,6 +70,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
           title: `Undeclared binary: ${bin}`,
           description: `Skill uses '${bin}' in code but does not declare it in requires.bins.`,
           analysisPass: pass,
+          fix: `Add '${bin}' to \`metadata.openclaw.requires.bins\` in frontmatter.`,
         });
       }
     }
@@ -85,6 +90,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
         description: `References environment variable $${envVar} but does not declare it in requires.env.`,
         evidence: match[0],
         analysisPass: pass,
+        fix: `Add '${envVar}' to \`metadata.openclaw.requires.env\` in frontmatter.`,
       });
     }
   }

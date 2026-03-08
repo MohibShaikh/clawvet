@@ -14,6 +14,8 @@ export interface Finding {
   evidence?: string;
   lineNumber?: number | null;
   analysisPass: string;
+  confidence?: number;
+  fix?: string;
 }
 
 export interface FindingsCount {
@@ -37,6 +39,7 @@ export interface ScanResult {
   recommendation?: Recommendation;
   createdAt?: Date;
   completedAt?: Date;
+  cached?: boolean;
 }
 
 export interface SkillFrontmatter {
@@ -79,4 +82,5 @@ export interface ThreatPattern {
   title: string;
   description: string;
   codeOnly?: boolean;
+  fix?: string;
 }

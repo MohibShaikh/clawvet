@@ -10,7 +10,7 @@ const SEVERITY_WEIGHTS = {
 export function calculateRiskScore(findings: Finding[]): number {
   let score = 0;
   for (const f of findings) {
-    score += SEVERITY_WEIGHTS[f.severity];
+    score += SEVERITY_WEIGHTS[f.severity] * (f.confidence ?? 1.0);
   }
   return Math.min(score, 100);
 }
