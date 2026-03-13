@@ -1,9 +1,11 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
+import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
+import { sendTelemetry, hasBeenAsked, setTelemetry } from "../telemetry.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
@@ -98,6 +100,33 @@ export async function scanCommand(
     } else {
       printScanResult(result);
     }
+  }
+
+  // Telemetry: first-run opt-in prompt
+  if (!options.quiet && options.format !== "json" && options.format !== "sarif") {
+    if (!hasBeenAsked()) {
+      const readline = await import("node:readline");
+      const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+      const answer = await new Promise<string>((resolve) => {
+        rl.question(
+          chalk.dim("Help improve ClawVet — send anonymous usage stats? (y/n) "),
+          (a) => { rl.close(); resolve(a.trim().toLowerCase()); }
+        );
+      });
+      setTelemetry(answer === "y" || answer === "yes");
+    }
+
+    sendTelemetry(result);
+
+    // Post-scan CTA
+    console.log(
+      chalk.dim("  ") +
+      chalk.cyan("Got feedback? Want threat alerts? → ") +
+      chalk.underline.cyan("https://tally.so/r/jaMdaa")
+    );
+    console.log();
+  } else {
+    sendTelemetry(result);
   }
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);

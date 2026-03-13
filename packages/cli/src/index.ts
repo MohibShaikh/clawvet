@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.3.0");
+  .version("0.4.0");
 
 program
   .command("scan")
@@ -19,7 +19,15 @@ program
   .option("--semantic", "Enable AI semantic analysis (requires ANTHROPIC_API_KEY)")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
   .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
+  .option("--subscribe", "Open the ClawVet feedback & alerts form")
   .action(async (target, opts) => {
+    if (opts.subscribe) {
+      const url = "https://tally.so/r/jaMdaa";
+      console.log(`Opening ${url} ...`);
+      const { exec } = await import("node:child_process");
+      const cmd = process.platform === "win32" ? `start ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
+      exec(cmd);
+    }
     await scanCommand(target, {
       format: opts.format,
       failOn: opts.failOn,
@@ -44,6 +52,17 @@ program
   .option("--dir <path>", "Custom skills directory to watch")
   .action(async (opts) => {
     await watchCommand({ threshold: parseInt(opts.threshold), dir: opts.dir });
+  });
+
+program
+  .command("feedback")
+  .description("Open the ClawVet feedback & threat alerts form")
+  .action(async () => {
+    const url = "https://tally.so/r/jaMdaa";
+    console.log(`Opening ${url} ...`);
+    const { exec } = await import("node:child_process");
+    const cmd = process.platform === "win32" ? `start ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
+    exec(cmd);
   });
 
 program.parse();
