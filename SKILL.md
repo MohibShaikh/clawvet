@@ -1,7 +1,7 @@
 ---
 name: clawvet
-version: 0.5.1
-description: Security scanner for OpenClaw skills. Detects threats across 6 analysis passes before you install.
+version: 0.6.1
+description: Stateless CLI security scanner for OpenClaw skills. The npm package runs fully offline with zero database or auth dependencies. Detects threats across 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet
@@ -66,12 +66,18 @@ npx clawvet feedback
 5. **Typosquat Detector** — Levenshtein distance against popular skill names
 6. **Semantic Analysis** — AI-powered detection of social engineering and injection (Pro)
 
-## What's New in v0.5
+## What's New in v0.6
 
 - **Confidence scores** — Each finding shows a confidence percentage based on context. Risk scores are weighted accordingly.
 - **Fix suggestions** — Every finding includes an actionable remediation shown in terminal and SARIF output.
 - **Content-hash caching** — Repeat scans of unchanged files are near-instant.
+- **Trust badges** — Run `npx clawvet badge ./skill/` to generate a shields.io trust badge for your README.
+- **Ban list** — Create a `.clawvetban` file to block skills by name, author, or slug.
 - **Feedback form** — Run `npx clawvet feedback` to share what you think.
+
+## Note on Monorepo
+
+The `clawvet` npm package contains only the CLI scanner (`packages/cli` + `packages/shared`). It is a stateless tool with no databases, no authentication, and no network access by default. The repository also contains an optional web dashboard (`apps/api` + `apps/web`) for self-hosted deployments — these are NOT included in the npm package.
 
 ## Risk Grades
 

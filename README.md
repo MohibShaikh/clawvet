@@ -102,9 +102,53 @@ GITHUB_CLIENT_ID=               # For OAuth
 GITHUB_CLIENT_SECRET=
 ```
 
+## Monorepo Structure
+
+This repo is a **monorepo** with two separate concerns:
+
+| Package | Published | Description |
+|---------|-----------|-------------|
+| `packages/cli` | Yes (`npx clawvet`) | Stateless CLI scanner — no databases, no auth, fully offline by default |
+| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, and 54 threat patterns |
+| `apps/api` | No (self-hosted) | Optional Fastify backend with Postgres, Redis, GitHub OAuth |
+| `apps/web` | No (self-hosted) | Optional Next.js dashboard |
+
+The **npm package `clawvet`** contains only `packages/cli` + `packages/shared`. It has **zero** database, Redis, or OAuth dependencies. The `apps/` directory is for the optional self-hosted web dashboard and is **not** included in the published package.
+
+## Telemetry
+
+ClawVet includes **opt-in** anonymous telemetry. On first run, you are asked whether to enable it. You can also control it via environment variable:
+
+```bash
+# Disable telemetry
+export CLAWVET_TELEMETRY=off
+
+# Enable telemetry
+export CLAWVET_TELEMETRY=on
+```
+
+When enabled, the following data is sent (and **nothing else**):
+
+| Field | Example | Purpose |
+|-------|---------|---------|
+| `deviceId` | `a1b2c3d4-...` | Random UUID, not tied to identity |
+| `scanCount` | `42` | How many scans this device has run |
+| `ts` | `2026-03-14T...` | Timestamp |
+| `os` | `win32` | Platform |
+| `osVersion` | `10.0.26200` | OS version |
+| `skillName` | `weather-forecast` | Scanned skill name (from YAML frontmatter) |
+| `riskScore` | `15` | Numeric risk score |
+| `riskGrade` | `B` | Letter grade |
+| `findingsCount` | `3` | Number of findings |
+| `cached` | `false` | Whether result came from cache |
+
+**Never sent:** file contents, source code, file paths, environment variables, API keys, or any personally identifiable information.
+
+Config is stored in `~/.clawvet/config.json`.
+
 ## Tests
 
-61 tests covering:
+72 tests covering:
 - All 6 fixture skills (benign → malicious)
 - Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
 - Regex catastrophic backtracking safety

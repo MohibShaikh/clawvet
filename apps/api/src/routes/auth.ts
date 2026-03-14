@@ -7,7 +7,11 @@ const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
 const GITHUB_REDIRECT_URI =
   process.env.GITHUB_REDIRECT_URI ||
   "http://localhost:3001/api/v1/auth/github/callback";
-const JWT_SECRET = process.env.JWT_SECRET || "clawvet-dev-secret-change-me";
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET environment variable is required");
+  return secret;
+}
 const WEB_URL = process.env.WEB_URL || "http://localhost:3000";
 
 function signJwt(payload: Record<string, unknown>, expiresInHours = 168): string {
@@ -19,7 +23,7 @@ function signJwt(payload: Record<string, unknown>, expiresInHours = 168): string
     Buffer.from(JSON.stringify(obj)).toString("base64url");
 
   const unsigned = `${b64(header)}.${b64(claims)}`;
-  const sig = createHmac("sha256", JWT_SECRET)
+  const sig = createHmac("sha256", getJwtSecret())
     .update(unsigned)
     .digest("base64url");
   return `${unsigned}.${sig}`;
@@ -30,7 +34,7 @@ function verifyJwt(token: string): Record<string, unknown> | null {
     const [headerB64, claimsB64, sig] = token.split(".");
     if (!headerB64 || !claimsB64 || !sig) return null;
 
-    const expected = createHmac("sha256", JWT_SECRET)
+    const expected = createHmac("sha256", getJwtSecret())
       .update(`${headerB64}.${claimsB64}`)
       .digest("base64url");
 

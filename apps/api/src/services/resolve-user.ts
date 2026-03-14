@@ -2,14 +2,18 @@ import type { FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { createHmac } from "node:crypto";
 
-const JWT_SECRET = process.env.JWT_SECRET || "clawvet-dev-secret-change-me";
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET environment variable is required");
+  return secret;
+}
 
 function verifyJwt(token: string): Record<string, unknown> | null {
   try {
     const [headerB64, claimsB64, sig] = token.split(".");
     if (!headerB64 || !claimsB64 || !sig) return null;
 
-    const expected = createHmac("sha256", JWT_SECRET)
+    const expected = createHmac("sha256", getJwtSecret())
       .update(`${headerB64}.${claimsB64}`)
       .digest("base64url");
 
