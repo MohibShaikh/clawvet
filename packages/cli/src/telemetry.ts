@@ -6,7 +6,7 @@ import type { ScanResult } from "@clawvet/shared";
 
 const CONFIG_DIR = join(homedir(), ".clawvet");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
-const TELEMETRY_ENDPOINT = "https://api.clawvet.dev/v1/telemetry";
+const TELEMETRY_ENDPOINT = "https://bazzzz--0ab7a9301f3911f1ab9942dde27851f2.web.val.run";
 
 interface Config {
   telemetry?: "on" | "off" | undefined; // undefined = not yet asked
