@@ -120,7 +120,7 @@ curl   -sL   --proto '=https'   https://example.com/install.sh   |   bash
       const content = `---\nname: eval-test\n---\n\`\`\`js\n${v}\n\`\`\``;
       const result = await scanSkill(content);
       const evalFindings = result.findings.filter(
-        (f) => f.title === "Dynamic eval() usage"
+        (f) => f.title === "Dynamic code evaluation"
       );
       expect(evalFindings.length).toBeGreaterThan(0);
     }

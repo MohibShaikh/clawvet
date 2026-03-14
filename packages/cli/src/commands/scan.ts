@@ -74,6 +74,37 @@ export async function scanCommand(
     content = readFileSync(skillFile, "utf-8");
   }
 
+  // Load .clawvetban — block skills by name, author, or slug
+  const banFile = join(process.cwd(), ".clawvetban");
+  if (existsSync(banFile)) {
+    const banEntries = readFileSync(banFile, "utf-8")
+      .split("\n")
+      .map((l) => l.trim().toLowerCase())
+      .filter((l) => l && !l.startsWith("#"));
+
+    // Quick parse frontmatter to check name/author before full scan
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (fmMatch) {
+      const fmText = fmMatch[1].toLowerCase();
+      for (const ban of banEntries) {
+        const targetLower = target.toLowerCase();
+        if (
+          targetLower.includes(ban) ||
+          fmText.includes(`name: ${ban}`) ||
+          fmText.includes(`author: ${ban}`) ||
+          fmText.includes(`slug: ${ban}`)
+        ) {
+          console.error(
+            chalk.bgRed.white.bold(` BANNED `) +
+            chalk.red(` Skill matches ban list entry: ${ban}`)
+          );
+          console.error(chalk.dim(`  Source: ${banFile}`));
+          process.exit(1);
+        }
+      }
+    }
+  }
+
   // Load .clawvetignore
   const ignoreFile = join(process.cwd(), ".clawvetignore");
   const ignorePatterns: string[] = [];

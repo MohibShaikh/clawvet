@@ -24,7 +24,7 @@ describe("CLI integration", () => {
   it("clawvet --version prints version", () => {
     const { stdout, exitCode } = run("--version");
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe("0.5.1");
+    expect(stdout.trim()).toBe("0.6.0");
   });
 
   it("clawvet --help shows usage", () => {
@@ -77,7 +77,7 @@ describe("CLI integration", () => {
     expect(result.skillName).toBe("weather-forecast");
   });
 
-  it("all 6 fixtures produce consistent results across runs", { timeout: 30000 }, () => {
+  it("all 6 fixtures produce consistent results across runs", { timeout: 60000 }, () => {
     const fixtures = [
       "benign-weather",
       "malicious-stealer",

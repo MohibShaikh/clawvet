@@ -39,7 +39,7 @@ eval(b)
 eval(c)
 \`\`\``;
     const result = await scanSkill(content);
-    const evalFindings = result.findings.filter(f => f.title === "Dynamic eval() usage");
+    const evalFindings = result.findings.filter(f => f.title === "Dynamic code evaluation");
     // Each eval() should be its own finding with correct line number
     expect(evalFindings.length).toBe(3);
     // Each should have a different line number
@@ -60,7 +60,7 @@ line 7 is safe
 eval(y)
 \`\`\``;
     const result = await scanSkill(content);
-    const evalFindings = result.findings.filter(f => f.title === "Dynamic eval() usage");
+    const evalFindings = result.findings.filter(f => f.title === "Dynamic code evaluation");
     expect(evalFindings.length).toBe(2);
     expect(evalFindings[0].lineNumber).toBe(6);
     expect(evalFindings[1].lineNumber).toBe(8);

@@ -2,13 +2,14 @@ import { Command } from "commander";
 import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
+import { badgeCommand } from "./commands/badge.js";
 
 const program = new Command();
 
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.5.1");
+  .version("0.6.0");
 
 program
   .command("scan")
@@ -52,6 +53,15 @@ program
   .option("--dir <path>", "Custom skills directory to watch")
   .action(async (opts) => {
     await watchCommand({ threshold: parseInt(opts.threshold), dir: opts.dir });
+  });
+
+program
+  .command("badge")
+  .description("Generate a trust badge for a skill's README")
+  .argument("<target>", "Path to skill folder or SKILL.md file")
+  .option("--md", "Output only the markdown snippet")
+  .action(async (target, opts) => {
+    await badgeCommand(target, { markdown: opts.md });
   });
 
 program
