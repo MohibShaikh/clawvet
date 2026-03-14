@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.5.0");
+  .version("0.5.1");
 
 program
   .command("scan")
