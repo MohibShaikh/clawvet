@@ -1,7 +1,7 @@
 ---
 name: clawvet
-version: 0.5.0
-description: Vet OpenClaw skills for security threats before installing them. 6-pass scanner with confidence scores, fix suggestions, and content-hash caching.
+version: 0.5.1
+description: Security scanner for OpenClaw skills. Detects threats across 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet
@@ -23,7 +23,7 @@ metadata:
 
 # clawvet
 
-Scan any OpenClaw skill for security threats before you install it.
+Security scanner for OpenClaw skills. Analyzes skills for threats before installation.
 
 ## Usage
 
@@ -33,7 +33,7 @@ Scan a local skill:
 npx clawvet scan ./skill-folder/
 ```
 
-Scan with JSON output (for CI/CD):
+JSON output for CI/CD:
 
 ```bash
 npx clawvet scan ./skill-folder/ --format json --fail-on high
@@ -45,7 +45,7 @@ Audit all installed skills:
 npx clawvet audit
 ```
 
-Watch for new skill installs and auto-block risky ones:
+Watch mode — auto-block risky installs:
 
 ```bash
 npx clawvet watch --threshold 50
@@ -57,23 +57,21 @@ Submit feedback or get threat alerts:
 npx clawvet feedback
 ```
 
-## What it detects
-
-clawvet runs 6 analysis passes on every skill:
+## Analysis Passes
 
 1. **Skill Parser** — Extracts YAML frontmatter, code blocks, URLs, IPs, domains
-2. **Static Analysis** — 54 regex patterns: RCE, reverse shells, credential theft, DNS exfil, obfuscation
-3. **Metadata Validator** — Undeclared binaries, env vars, missing descriptions
-4. **Dependency Checker** — `npx -y` auto-install, global npm installs
-5. **Typosquat Detector** — Levenshtein distance against popular skills
-6. **Semantic Analysis** — AI-powered social engineering and prompt injection detection (Pro)
+2. **Static Analysis** — 54 pattern rules across multiple threat categories
+3. **Metadata Validator** — Checks for undeclared binaries, env vars, missing descriptions
+4. **Dependency Checker** — Flags auto-install and global package installs
+5. **Typosquat Detector** — Levenshtein distance against popular skill names
+6. **Semantic Analysis** — AI-powered detection of social engineering and injection (Pro)
 
-## v0.5.0 — What's New
+## What's New in v0.5
 
-- **Confidence scores** — Each finding shows a confidence percentage based on context (code block vs prose vs heading). Risk scores are weighted by confidence to reduce false positive noise.
-- **Fix suggestions** — Every finding includes an actionable remediation suggestion shown in terminal and SARIF output.
-- **Content-hash caching** — Repeat scans of unchanged files are near-instant (SHA-256 LRU cache).
-- **Telemetry & feedback** — Opt-in anonymous usage stats. `clawvet feedback` opens the feedback form.
+- **Confidence scores** — Each finding shows a confidence percentage based on context. Risk scores are weighted accordingly.
+- **Fix suggestions** — Every finding includes an actionable remediation shown in terminal and SARIF output.
+- **Content-hash caching** — Repeat scans of unchanged files are near-instant.
+- **Feedback form** — Run `npx clawvet feedback` to share what you think.
 
 ## Risk Grades
 
