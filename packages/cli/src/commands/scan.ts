@@ -5,7 +5,7 @@ import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
-import { sendTelemetry, hasBeenAsked, setTelemetry } from "../telemetry.js";
+import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
@@ -133,9 +133,10 @@ export async function scanCommand(
     }
   }
 
-  // Telemetry: first-run opt-in prompt
-  if (!options.quiet && options.format !== "json" && options.format !== "sarif") {
-    if (!hasBeenAsked()) {
+  // Telemetry: first-run opt-in prompt (only in interactive TTY)
+  const isInteractive = !options.quiet && options.format !== "json" && options.format !== "sarif";
+  if (isInteractive) {
+    if (!hasBeenAsked() && !isTelemetryEnabled() && process.stdin.isTTY) {
       const readline = await import("node:readline");
       const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
       const answer = await new Promise<string>((resolve) => {
@@ -147,17 +148,19 @@ export async function scanCommand(
       setTelemetry(answer === "y" || answer === "yes");
     }
 
-    sendTelemetry(result);
+  }
 
-    // Post-scan CTA
+  // Await telemetry so it completes before any process.exit()
+  await sendTelemetry(result);
+
+  // Show Tally CTA every 5th scan (after increment)
+  if (isInteractive && getScanCount() % 5 === 0) {
     console.log(
       chalk.dim("  ") +
       chalk.cyan("Got feedback? Want threat alerts? → ") +
       chalk.underline.cyan("https://tally.so/r/jaMdaa")
     );
     console.log();
-  } else {
-    sendTelemetry(result);
   }
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);
