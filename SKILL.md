@@ -1,7 +1,7 @@
 ---
 name: clawvet
-version: 0.5.1
-description: Security scanner for OpenClaw skills. Detects threats across 6 analysis passes before you install.
+version: 0.6.3
+description: Code quality and safety linter for OpenClaw skills. Runs 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet
@@ -16,14 +16,14 @@ metadata:
     category: security
     tags:
       - security
-      - scanner
+      - linter
       - supply-chain
-      - malware-detection
+      - code-quality
 ---
 
 # clawvet
 
-Security scanner for OpenClaw skills. Analyzes skills for threats before installation.
+Safety linter for OpenClaw skills. Analyzes skills for issues before installation.
 
 ## Usage
 
@@ -36,7 +36,7 @@ npx clawvet scan ./skill-folder/
 JSON output for CI/CD:
 
 ```bash
-npx clawvet scan ./skill-folder/ --format json --fail-on high
+npx clawvet scan ./skill-folder/ --format json
 ```
 
 Audit all installed skills:
@@ -51,7 +51,7 @@ Watch mode — auto-block risky installs:
 npx clawvet watch --threshold 50
 ```
 
-Submit feedback or get threat alerts:
+Submit feedback or get alerts:
 
 ```bash
 npx clawvet feedback
@@ -59,17 +59,22 @@ npx clawvet feedback
 
 ## Analysis Passes
 
-1. **Skill Parser** — Extracts YAML frontmatter, code blocks, URLs, IPs, domains
-2. **Static Analysis** — 54 pattern rules across multiple threat categories
+1. **Skill Parser** — Extracts YAML frontmatter, code blocks, URLs, and domains
+2. **Static Analysis** — 54 pattern rules across multiple categories
 3. **Metadata Validator** — Checks for undeclared binaries, env vars, missing descriptions
 4. **Dependency Checker** — Flags auto-install and global package installs
 5. **Typosquat Detector** — Levenshtein distance against popular skill names
-6. **Semantic Analysis** — AI-powered detection of social engineering and injection (Pro)
+6. **Semantic Analysis** — AI-powered contextual analysis (Pro)
 
-## What's New in v0.5
+## What's New in v0.6
 
-- **Confidence scores** — Each finding shows a confidence percentage based on context. Risk scores are weighted accordingly.
-- **Fix suggestions** — Every finding includes an actionable remediation shown in terminal and SARIF output.
+- **Reliable telemetry** — Telemetry now awaits before exit, so no data is lost.
+- **CI-safe** — Opt-in prompt is skipped in non-TTY environments (piped stdin, CI).
+- **Less noise** — Feedback CTA shows every 5th scan instead of every scan.
+- **Trust badges** — Generate trust badges for skill READMEs with `npx clawvet badge`.
+- **Ban lists** — Block skills by name/author/slug via `.clawvetban` files.
+- **Confidence scores** — Each finding shows a confidence percentage. Risk scores are weighted accordingly.
+- **Fix suggestions** — Every finding includes an actionable remediation in terminal and SARIF output.
 - **Content-hash caching** — Repeat scans of unchanged files are near-instant.
 - **Feedback form** — Run `npx clawvet feedback` to share what you think.
 
