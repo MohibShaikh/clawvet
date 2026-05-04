@@ -1,15 +1,28 @@
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+
+function readPackageVersion(): string {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf-8"));
+    return pkg.version;
+  } catch {
+    return "0.0.0";
+  }
+}
 
 const program = new Command();
 
 program
   .name("clawvet")
   .description("Skill vetting & supply chain security for OpenClaw")
-  .version("0.6.0");
+  .version(readPackageVersion());
 
 program
   .command("scan")

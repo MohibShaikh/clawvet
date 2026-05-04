@@ -16,6 +16,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
 
   let totalScanned = 0;
   let totalThreats = 0;
+  const grades: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
 
   for (const dir of SKILL_DIRS) {
     if (!existsSync(dir)) {
@@ -33,6 +34,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
       const result = await scanSkill(content);
       totalScanned++;
       totalThreats += result.findings.length;
+      grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
       printScanResult(result);
       continue;
     }
@@ -47,10 +49,37 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
       const result = await scanSkill(content);
       totalScanned++;
       totalThreats += result.findings.length;
+      grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
 
       printScanResult(result);
     }
   }
 
-  console.log(chalk.bold(`\nAudit complete: ${totalScanned} skills scanned, ${totalThreats} findings\n`));
+  const gradeColors: Record<string, (s: string) => string> = {
+    A: chalk.green.bold,
+    B: chalk.greenBright,
+    C: chalk.yellow.bold,
+    D: chalk.redBright.bold,
+    F: chalk.bgRed.white.bold,
+  };
+  const gradeSummary = (["A", "B", "C", "D", "F"] as const)
+    .filter((g) => grades[g] > 0)
+    .map((g) => `${gradeColors[g](g)} ${grades[g]}`)
+    .join("  ");
+
+  console.log(
+    chalk.bold(
+      `\nAudit complete: ${totalScanned} skills scanned, ${totalThreats} findings`
+    )
+  );
+  if (totalScanned > 0) {
+    console.log(`  Grades: ${gradeSummary}`);
+  }
+  const blocked = grades.D + grades.F;
+  if (blocked > 0) {
+    console.log(
+      chalk.red(`  ${blocked} skill${blocked > 1 ? "s" : ""} graded D or F — review before use`)
+    );
+  }
+  console.log();
 }

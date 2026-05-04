@@ -4,10 +4,11 @@ const API_URL = process.env.API_URL || "http://localhost:3001";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const res = await fetch(`${API_URL}/api/v1/scans/${params.id}`, {
+    const { id } = await params;
+    const res = await fetch(`${API_URL}/api/v1/scans/${id}`, {
       cache: "no-store",
     });
 

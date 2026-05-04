@@ -12,24 +12,25 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@clawvet/shared": "*",
-    "fastify": "^5.2.0",
     "@fastify/cors": "^10.0.0",
     "@fastify/rate-limit": "^10.2.0",
-    "drizzle-orm": "^0.38.0",
-    "postgres": "^3.4.0",
-    "bullmq": "^5.0.0",
+    "bullmq": "^5.76.5",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.8.5",
     "ioredis": "^5.4.0",
-    "@anthropic-ai/sdk": "^0.39.0",
+    "next": "16.2.4",
     "openai": "^4.77.0",
+    "postgres": "^3.4.0",
     "zhipuai-sdk-nodejs-v4": "^0.1.12",
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "tsx": "^4.19.0",
-    "vitest": "^3.0.0",
     "@types/node": "^22.0.0",
-    "drizzle-kit": "^0.30.0"
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   }
 }

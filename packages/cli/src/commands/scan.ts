@@ -15,10 +15,19 @@ export interface ScanOptions {
   quiet?: boolean;
 }
 
+const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
 async function fetchRemoteSkill(slug: string): Promise<string> {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new Error(
+      `Invalid skill name "${slug}". Must be 1-64 chars, alphanumeric + dash/underscore.`
+    );
+  }
+
+  const encoded = encodeURIComponent(slug);
   const urls = [
-    `https://raw.githubusercontent.com/openclaw/skills/main/${slug}/SKILL.md`,
-    `https://clawhub.ai/api/v1/skills/${slug}/raw`,
+    `https://raw.githubusercontent.com/openclaw/skills/main/${encoded}/SKILL.md`,
+    `https://clawhub.ai/api/v1/skills/${encoded}/raw`,
   ];
 
   for (const url of urls) {

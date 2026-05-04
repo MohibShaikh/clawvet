@@ -1,10 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
+import { readFileSync } from "node:fs";
 
 const ROOT = join(__dirname, "..", "..", "..");
 const CLI = `npx tsx ${join(ROOT, "packages/cli/src/index.ts")}`;
 const FIXTURES = join(__dirname, "fixtures");
+const CLI_VERSION = JSON.parse(
+  readFileSync(join(ROOT, "packages/cli/package.json"), "utf-8")
+).version;
 
 function run(args: string): { stdout: string; exitCode: number } {
   try {
@@ -24,7 +28,7 @@ describe("CLI integration", () => {
   it("clawvet --version prints version", () => {
     const { stdout, exitCode } = run("--version");
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe("0.6.0");
+    expect(stdout.trim()).toBe(CLI_VERSION);
   });
 
   it("clawvet --help shows usage", () => {
