@@ -27,4 +27,4 @@ runs:
 
     - name: Run ClawVet scan
       shell: bash
-      run: npx clawvet@latest scan ${{ inputs.path }} --fail-on ${{ inputs.fail-on }} --format ${{ inputs.format }}
+      run: npx clawvet@0.7.0 scan ${{ inputs.path }} --fail-on ${{ inputs.fail-on }} --format ${{ inputs.format }}
