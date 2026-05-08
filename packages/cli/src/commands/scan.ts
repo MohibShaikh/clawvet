@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, basename, dirname } from "node:path";
 import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
@@ -51,11 +51,13 @@ export async function scanCommand(
   options: ScanOptions
 ): Promise<void> {
   let content: string;
+  let fallbackName: string | undefined;
 
   if (options.remote) {
     try {
       process.stderr.write(`Fetching "${target}" from ClawHub...\n`);
       content = await fetchRemoteSkill(target);
+      fallbackName = target;
     } catch (err) {
       console.error(
         err instanceof Error ? err.message : "Failed to fetch remote skill"
@@ -81,6 +83,7 @@ export async function scanCommand(
     }
 
     content = readFileSync(skillFile, "utf-8");
+    fallbackName = basename(dirname(skillFile));
   }
 
   // Load .clawvetban — block skills by name, author, or slug
@@ -130,6 +133,7 @@ export async function scanCommand(
   const result = await scanSkill(content, {
     semantic: options.semantic ?? false,
     ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
+    skillName: fallbackName,
   });
 
   if (!options.quiet) {

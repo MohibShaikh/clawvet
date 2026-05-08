@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- Fix: skills with no `name` in frontmatter now report the containing folder name instead of `unknown`. Telemetry showed real-world scans landing as `unknown`, hiding which skills were being audited. `scanSkill` accepts an optional `skillName` fallback; CLI commands (`scan`, `audit`, `watch`, `badge`) pass the directory basename automatically.
+
 ## 0.7.0
 
 - Security: validate `--remote` slug against `/^[a-z0-9][a-z0-9_-]{0,63}$/i` and URL-encode before fetching from ClawHub. Blocks path traversal in skill names.

@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, watch } from "node:fs";
-import { join } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
@@ -60,7 +60,9 @@ export async function watchCommand(options: {
 
       try {
         const content = readFileSync(skillFile, "utf-8");
-        const result = await scanSkill(content);
+        const result = await scanSkill(content, {
+          skillName: basename(dirname(skillFile)),
+        });
 
         if (result.cached) {
           console.log(chalk.dim("(cached)"));

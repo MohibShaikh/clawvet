@@ -12,6 +12,8 @@ export interface ScanOptions {
   semanticAnalyzer?: (content: string) => Promise<Finding[]>;
   ignorePatterns?: string[];
   skipCache?: boolean;
+  /** Fallback name when SKILL.md frontmatter is missing `name`. Typically the folder basename. */
+  skillName?: string;
 }
 
 export async function scanSkill(
@@ -57,7 +59,7 @@ export async function scanSkill(
     riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
 
   const result: ScanResult = {
-    skillName: skill.frontmatter.name || "unknown",
+    skillName: skill.frontmatter.name || options.skillName || "unknown",
     skillVersion: skill.frontmatter.version,
     skillSource: "local",
     status: "complete",

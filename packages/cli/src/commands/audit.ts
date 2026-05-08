@@ -1,5 +1,5 @@
 import { readdirSync, existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { homedir } from "node:os";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
@@ -31,7 +31,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     const directSkillFile = join(dir, "SKILL.md");
     if (existsSync(directSkillFile)) {
       const content = readFileSync(directSkillFile, "utf-8");
-      const result = await scanSkill(content);
+      const result = await scanSkill(content, { skillName: basename(dir) });
       totalScanned++;
       totalThreats += result.findings.length;
       grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
@@ -46,7 +46,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
       if (!existsSync(skillFile)) continue;
 
       const content = readFileSync(skillFile, "utf-8");
-      const result = await scanSkill(content);
+      const result = await scanSkill(content, { skillName: entry.name });
       totalScanned++;
       totalThreats += result.findings.length;
       grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;

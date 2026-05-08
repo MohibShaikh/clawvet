@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, dirname, basename } from "node:path";
 import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
 import type { RiskGrade } from "@clawvet/shared";
@@ -41,7 +41,9 @@ export async function badgeCommand(
   }
 
   const content = readFileSync(skillFile, "utf-8");
-  const result = await scanSkill(content);
+  const result = await scanSkill(content, {
+    skillName: basename(dirname(skillFile)),
+  });
 
   const label = GRADE_LABELS[result.riskGrade];
   const color = GRADE_COLORS[result.riskGrade];
