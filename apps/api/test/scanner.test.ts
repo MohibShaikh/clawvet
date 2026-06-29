@@ -13,6 +13,14 @@ describe("scanner", () => {
     expect(result.riskGrade).toMatch(/^[AB]$/);
   });
 
+  it("keeps approval-gated social evidence skills low risk", async () => {
+    const result = await scanSkill(fixture("benign-social-approval"));
+    expect(result.riskScore).toBeLessThanOrEqual(25);
+    expect(result.findingsCount.critical).toBe(0);
+    expect(result.findingsCount.high).toBe(0);
+    expect(result.recommendation).toBe("approve");
+  });
+
   it("detects malicious stealer as critical", async () => {
     const result = await scanSkill(fixture("malicious-stealer"));
     expect(result.riskScore).toBeGreaterThanOrEqual(50);
