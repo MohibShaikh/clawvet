@@ -4,6 +4,7 @@ import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { mcpCommand } from "./commands/mcp.js";
 
 const program = new Command();
 
@@ -75,6 +76,18 @@ program
     await doctorCommand({
       format: opts.format,
       failOn: opts.failOn,
+      quiet: opts.quiet,
+    });
+  });
+
+program
+  .command("mcp")
+  .description("Scan MCP server configurations for security threats")
+  .option("--format <format>", "Output format: terminal or json", "terminal")
+  .option("-q, --quiet", "Suppress detail output")
+  .action(async (opts) => {
+    await mcpCommand({
+      format: opts.format,
       quiet: opts.quiet,
     });
   });
