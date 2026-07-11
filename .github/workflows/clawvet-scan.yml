@@ -1,0 +1,50 @@
+name: ClawVet Security Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "0 6 * * 1" # weekly: Monday 6am
+
+jobs:
+  scan-skills:
+    name: Scan agent skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan a specific skill
+        uses: ./
+        with:
+          mode: scan
+          path: ./skills/my-skill/SKILL.md
+          format: sarif
+          fail-on: high
+
+  scan-all-agents:
+    name: Doctor scan (all agents)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan all installed agent skills
+        uses: ./
+        with:
+          mode: doctor
+          format: json
+          fail-on: high
+
+  scan-mcp:
+    name: MCP server scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan MCP servers
+        uses: ./
+        with:
+          mode: mcp
+          format: sarif
+          fail-on: high

@@ -1,13 +1,18 @@
-name: "ClawVet Skill Scanner"
-description: "Scan OpenClaw skills for security threats"
+name: "ClawVet Security Scanner"
+description: "Scan AI agent skills and MCP servers for prompt injection, credential theft, RCE, and supply chain threats"
 branding:
   icon: "shield"
   color: "red"
 
 inputs:
+  mode:
+    description: "Scan mode: scan (one skill), doctor (all agents), mcp (MCP servers)"
+    required: false
+    default: "scan"
   path:
-    description: "Path to skill folder or SKILL.md file"
-    required: true
+    description: "Path to skill folder or SKILL.md file (used with mode: scan)"
+    required: false
+    default: ""
   fail-on:
     description: "Minimum severity to fail on (critical, high, medium, low)"
     required: false
@@ -15,7 +20,11 @@ inputs:
   format:
     description: "Output format (terminal, json, sarif)"
     required: false
-    default: "terminal"
+    default: "sarif"
+  agent-dirs:
+    description: "Additional agent skill dirs to scan (comma-separated, used with mode: doctor)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -25,6 +34,24 @@ runs:
       with:
         node-version: "22"
 
-    - name: Run ClawVet scan
+    - name: Run ClawVet scan (single skill)
+      if: inputs.mode == 'scan'
       shell: bash
-      run: npx clawvet@latest scan ${{ inputs.path }} --fail-on ${{ inputs.fail-on }} --format ${{ inputs.format }}
+      run: |
+        npx clawvet@latest scan "${{ inputs.path }}" \
+          --fail-on ${{ inputs.fail-on }} \
+          --format ${{ inputs.format }}
+
+    - name: Run ClawVet doctor (all agents)
+      if: inputs.mode == 'doctor'
+      shell: bash
+      run: |
+        npx clawvet@latest doctor \
+          --format ${{ inputs.format }} \
+          --fail-on ${{ inputs.fail-on }}
+
+    - name: Run ClawVet MCP scan
+      if: inputs.mode == 'mcp'
+      shell: bash
+      run: |
+        npx clawvet@latest mcp --format ${{ inputs.format }}
