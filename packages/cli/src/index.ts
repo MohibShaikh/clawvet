@@ -5,6 +5,7 @@ import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { hookInstallCommand, hookRemoveCommand } from "./commands/hook.js";
 
 const program = new Command();
 
@@ -92,6 +93,19 @@ program
       format: opts.format,
       quiet: opts.quiet,
     });
+  });
+
+program
+  .command("hook")
+  .description("Manage pre-commit git hooks for ClawVet")
+  .option("--install", "Install pre-commit hook")
+  .option("--remove", "Remove pre-commit hook")
+  .action(async (opts) => {
+    if (opts.remove) {
+      await hookRemoveCommand();
+    } else {
+      await hookInstallCommand();
+    }
   });
 
 program

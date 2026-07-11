@@ -1,10 +1,11 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, dirname, basename } from "node:path";
 import chalk from "chalk";
 import { scanSkill, analyzeWithOllama } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
+import { printHtmlReport } from "../output/html.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry } from "../telemetry.js";
 
 export interface ScanOptions {
@@ -44,10 +45,13 @@ export async function scanCommand(
 ): Promise<void> {
   let content: string;
 
+  let fallbackName: string | undefined;
+
   if (options.remote) {
     try {
       process.stderr.write(`Fetching "${target}" from ClawHub...\n`);
       content = await fetchRemoteSkill(target);
+      fallbackName = target;
     } catch (err) {
       console.error(
         err instanceof Error ? err.message : "Failed to fetch remote skill"
@@ -73,6 +77,7 @@ export async function scanCommand(
     }
 
     content = readFileSync(skillFile, "utf-8");
+    fallbackName = basename(dirname(skillFile));
   }
 
   // Load .clawvetban — block skills by name, author, or slug
@@ -135,6 +140,8 @@ export async function scanCommand(
       printSarifResult(result);
     } else if (options.format === "json") {
       printJsonResult(result);
+    } else if (options.format === "html") {
+      printHtmlReport(result);
     } else {
       printScanResult(result);
     }
