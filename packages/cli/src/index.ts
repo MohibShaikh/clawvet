@@ -20,6 +20,7 @@ program
   .option("--format <format>", "Output format: terminal, json, or sarif", "terminal")
   .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
   .option("--semantic", "Enable AI semantic analysis (requires ANTHROPIC_API_KEY)")
+  .option("--ollama", "Use local Ollama model for semantic analysis (llama3.2)")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
   .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
   .option("--subscribe", "Open the ClawVet feedback & alerts form")
@@ -35,6 +36,7 @@ program
       format: opts.format,
       failOn: opts.failOn,
       semantic: opts.semantic,
+      ollama: opts.ollama,
       remote: opts.remote,
       quiet: opts.quiet,
     });

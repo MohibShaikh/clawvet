@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import chalk from "chalk";
-import { scanSkill } from "@clawvet/shared";
+import { scanSkill, analyzeWithOllama } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
@@ -11,6 +11,7 @@ export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
   failOn?: "critical" | "high" | "medium" | "low";
   semantic?: boolean;
+  ollama?: boolean;
   remote?: boolean;
   quiet?: boolean;
 }
@@ -118,9 +119,15 @@ export async function scanCommand(
     }
   }
 
+  const semanticAnalyzer = options.ollama
+    ? (c: string) => analyzeWithOllama(c)
+    : undefined;
+
   const result = await scanSkill(content, {
-    semantic: options.semantic ?? false,
+    semantic: !!(options.semantic || options.ollama),
+    semanticAnalyzer,
     ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
+    skillName: fallbackName,
   });
 
   if (!options.quiet) {
