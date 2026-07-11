@@ -3,6 +3,7 @@ import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+import { doctorCommand } from "./commands/doctor.js";
 
 const program = new Command();
 
@@ -62,6 +63,20 @@ program
   .option("--md", "Output only the markdown snippet")
   .action(async (target, opts) => {
     await badgeCommand(target, { markdown: opts.md });
+  });
+
+program
+  .command("doctor")
+  .description("Discover installed AI agents and scan all their skills")
+  .option("--format <format>", "Output format: terminal or json", "terminal")
+  .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
+  .option("-q, --quiet", "Suppress per-skill output")
+  .action(async (opts) => {
+    await doctorCommand({
+      format: opts.format,
+      failOn: opts.failOn,
+      quiet: opts.quiet,
+    });
   });
 
 program
