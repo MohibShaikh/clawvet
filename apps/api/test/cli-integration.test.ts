@@ -1,47 +1,56 @@
 import { describe, it, expect } from "vitest";
-import { execSync } from "node:child_process";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import { join } from "node:path";
+
+const execAsync = promisify(exec);
 
 const ROOT = join(__dirname, "..", "..", "..");
 const CLI = `npx tsx ${join(ROOT, "packages/cli/src/index.ts")}`;
 const FIXTURES = join(__dirname, "fixtures");
 
-function run(args: string): { stdout: string; exitCode: number } {
+// Async so the spawned CLI process doesn't block the Vitest worker's event
+// loop. `execSync` blocks for ~5s per call (and ~60s in the multi-run test),
+// which starves the worker's heartbeat RPC and fails the run with a
+// "Timeout calling onTaskUpdate" error even when every assertion passes.
+async function run(args: string): Promise<{ stdout: string; exitCode: number }> {
   try {
-    const stdout = execSync(`${CLI} ${args}`, {
+    const { stdout } = await execAsync(`${CLI} ${args}`, {
       cwd: ROOT,
       encoding: "utf-8",
       env: { ...process.env, NODE_NO_WARNINGS: "1" },
-      stdio: ["pipe", "pipe", "pipe"],
     });
     return { stdout, exitCode: 0 };
   } catch (err: any) {
-    return { stdout: err.stdout || "", exitCode: err.status || 1 };
+    return { stdout: err.stdout || "", exitCode: err.code ?? 1 };
   }
 }
 
-describe("CLI integration", () => {
-  it("clawvet --version prints version", () => {
-    const { stdout, exitCode } = run("--version");
+// Each test spawns a cold `npx tsx` CLI process, which on Windows/CI takes
+// ~5s for a scan — right at Vitest's 5000ms default. Give the suite headroom
+// so these integration tests don't flake on timing alone.
+describe("CLI integration", { timeout: 30000 }, () => {
+  it("clawvet --version prints version", async () => {
+    const { stdout, exitCode } = await run("--version");
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toBe("0.6.1");
   });
 
-  it("clawvet --help shows usage", () => {
-    const { stdout, exitCode } = run("--help");
+  it("clawvet --help shows usage", async () => {
+    const { stdout, exitCode } = await run("--help");
     expect(exitCode).toBe(0);
     expect(stdout).toContain("scan");
     expect(stdout).toContain("audit");
     expect(stdout).toContain("watch");
   });
 
-  it("clawvet scan with nonexistent path exits 1", () => {
-    const { exitCode } = run("scan /nonexistent/path/to/skill");
+  it("clawvet scan with nonexistent path exits 1", async () => {
+    const { exitCode } = await run("scan /nonexistent/path/to/skill");
     expect(exitCode).toBe(1);
   });
 
-  it("clawvet scan benign-weather --format json produces valid JSON", () => {
-    const { stdout, exitCode } = run(
+  it("clawvet scan benign-weather --format json produces valid JSON", async () => {
+    const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "benign-weather")} --format json`
     );
     expect(exitCode).toBe(0);
@@ -52,8 +61,8 @@ describe("CLI integration", () => {
     expect(Array.isArray(result.findings)).toBe(true);
   });
 
-  it("clawvet scan malicious-stealer --format json --fail-on high exits 1", () => {
-    const { stdout, exitCode } = run(
+  it("clawvet scan malicious-stealer --format json --fail-on high exits 1", async () => {
+    const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "malicious-stealer")} --format json --fail-on high`
     );
     expect(exitCode).toBe(1);
@@ -61,15 +70,15 @@ describe("CLI integration", () => {
     expect(result.riskScore).toBe(100);
   });
 
-  it("clawvet scan benign-weather --fail-on critical exits 0", () => {
-    const { stdout, exitCode } = run(
+  it("clawvet scan benign-weather --fail-on critical exits 0", async () => {
+    const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "benign-weather")} --format json --fail-on critical`
     );
     expect(exitCode).toBe(0);
   });
 
-  it("clawvet scan on a direct SKILL.md file path works", () => {
-    const { stdout, exitCode } = run(
+  it("clawvet scan on a direct SKILL.md file path works", async () => {
+    const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "benign-weather", "SKILL.md")} --format json`
     );
     expect(exitCode).toBe(0);
@@ -77,7 +86,7 @@ describe("CLI integration", () => {
     expect(result.skillName).toBe("weather-forecast");
   });
 
-  it("all 6 fixtures produce consistent results across runs", { timeout: 60000 }, () => {
+  it("all 6 fixtures produce consistent results across runs", { timeout: 60000 }, async () => {
     const fixtures = [
       "benign-weather",
       "malicious-stealer",
@@ -88,8 +97,8 @@ describe("CLI integration", () => {
     ];
 
     for (const fixture of fixtures) {
-      const r1 = run(`scan ${join(FIXTURES, fixture)} --format json`);
-      const r2 = run(`scan ${join(FIXTURES, fixture)} --format json`);
+      const r1 = await run(`scan ${join(FIXTURES, fixture)} --format json`);
+      const r2 = await run(`scan ${join(FIXTURES, fixture)} --format json`);
 
       const result1 = JSON.parse(r1.stdout);
       const result2 = JSON.parse(r2.stdout);
@@ -100,8 +109,8 @@ describe("CLI integration", () => {
     }
   });
 
-  it("terminal output contains expected sections", () => {
-    const { stdout, exitCode } = run(
+  it("terminal output contains expected sections", async () => {
+    const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "malicious-stealer")}`
     );
     expect(exitCode).toBe(0);
