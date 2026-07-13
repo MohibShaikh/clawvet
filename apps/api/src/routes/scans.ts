@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { scanSkill } from "../services/scanner.js";
 import { resolveUser } from "../services/resolve-user.js";
+import { requireAuth } from "../services/require-auth.js";
 import { getPlanLimits, getCurrentPeriodStart } from "../services/tiers.js";
 import { eq, and, gte, count as drizzleCount } from "drizzle-orm";
 import { desc } from "drizzle-orm";
@@ -31,7 +32,13 @@ async function getUserScanCount(userId: string): Promise<number> {
 }
 
 export async function scanRoutes(app: FastifyInstance) {
-  app.post<{ Body: ScanBody }>("/api/v1/scans", async (request, reply) => {
+  // Scanning is expensive (runs the full engine + DB writes) and open to
+  // anonymous callers, so cap per-IP burst here in addition to the monthly
+  // per-user quota enforced below. Bounds anonymous resource abuse.
+  app.post<{ Body: ScanBody }>(
+    "/api/v1/scans",
+    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    async (request, reply) => {
     const { content, semantic, skillName } = request.body;
 
     if (!content) {
@@ -158,14 +165,20 @@ export async function scanRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { id: string } }>(
     "/api/v1/scans/:id",
+    { preHandler: requireAuth },
     async (request, reply) => {
+      const user = request.authUser!;
       try {
         const { db, schema } = await import("../db/index.js");
         const scan = await db.query.scans.findFirst({
           where: eq(schema.scans.id, request.params.id),
         });
 
-        if (!scan) {
+        // Ownership check: a scan is only visible to its owner. Ownerless
+        // (anonymous) scans have no owner to protect and remain viewable.
+        // Do NOT 403 vs 404 differently — a uniform 404 avoids leaking which
+        // ids exist. Never spread the raw row (it carries userId).
+        if (!scan || (scan.userId && scan.userId !== user.id)) {
           return reply.status(404).send({ error: "Scan not found" });
         }
 
@@ -174,7 +187,16 @@ export async function scanRoutes(app: FastifyInstance) {
         });
 
         return reply.send({
-          ...scan,
+          id: scan.id,
+          skillName: scan.skillName,
+          skillVersion: scan.skillVersion,
+          skillSource: scan.skillSource,
+          status: scan.status,
+          riskScore: scan.riskScore,
+          riskGrade: scan.riskGrade,
+          findingsCount: scan.findingsCount,
+          createdAt: scan.createdAt,
+          completedAt: scan.completedAt,
           findings: scanFindings.map((f) => ({
             category: f.category,
             severity: f.severity,
@@ -195,15 +217,12 @@ export async function scanRoutes(app: FastifyInstance) {
 
   app.get<{ Querystring: { limit?: string; offset?: string } }>(
     "/api/v1/scans",
+    { preHandler: requireAuth },
     async (request, reply) => {
-      // Require authentication and only ever return the caller's own scans.
-      // Previously this listed every user's scans (including their userId) to
-      // anonymous callers, enabling user enumeration.
-      const user = await resolveUser(request);
-      if (!user) {
-        return reply.status(401).send({ error: "Authentication required" });
-      }
-
+      // Only ever return the caller's own scans. Previously this listed every
+      // user's scans (including their userId) to anonymous callers, enabling
+      // user enumeration.
+      const user = request.authUser!;
       try {
         const { db, schema } = await import("../db/index.js");
         const limit = Math.min(parseInt(request.query.limit || "20"), 100);

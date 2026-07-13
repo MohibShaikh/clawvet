@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, and } from "drizzle-orm";
 import { assertUrlIsPublic, SsrfError } from "../services/ssrf-guard.js";
+import { requireAuth } from "../services/require-auth.js";
 
 const VALID_EVENTS = ["scan.complete", "scan.critical"];
 
@@ -8,11 +9,8 @@ export async function webhookRoutes(app: FastifyInstance) {
   // Register a webhook
   app.post<{
     Body: { url: string; events: string[] };
-  }>("/api/v1/webhooks", async (request, reply) => {
-    const apiKey = request.headers.authorization?.slice(7);
-    if (!apiKey) {
-      return reply.status(401).send({ error: "Missing API key" });
-    }
+  }>("/api/v1/webhooks", { preHandler: requireAuth }, async (request, reply) => {
+    const user = request.authUser!;
 
     const { url, events } = request.body;
     if (!url || !events?.length) {
@@ -43,14 +41,6 @@ export async function webhookRoutes(app: FastifyInstance) {
     try {
       const { db, schema } = await import("../db/index.js");
 
-      const user = await db.query.users.findFirst({
-        where: eq(schema.users.apiKey, apiKey),
-      });
-
-      if (!user) {
-        return reply.status(401).send({ error: "Invalid API key" });
-      }
-
       const [webhook] = await db
         .insert(schema.webhooks)
         .values({
@@ -67,22 +57,11 @@ export async function webhookRoutes(app: FastifyInstance) {
   });
 
   // List webhooks
-  app.get("/api/v1/webhooks", async (request, reply) => {
-    const apiKey = request.headers.authorization?.slice(7);
-    if (!apiKey) {
-      return reply.status(401).send({ error: "Missing API key" });
-    }
+  app.get("/api/v1/webhooks", { preHandler: requireAuth }, async (request, reply) => {
+    const user = request.authUser!;
 
     try {
       const { db, schema } = await import("../db/index.js");
-
-      const user = await db.query.users.findFirst({
-        where: eq(schema.users.apiKey, apiKey),
-      });
-
-      if (!user) {
-        return reply.status(401).send({ error: "Invalid API key" });
-      }
 
       const hooks = await db.query.webhooks.findMany({
         where: eq(schema.webhooks.userId, user.id),
@@ -97,22 +76,12 @@ export async function webhookRoutes(app: FastifyInstance) {
   // Delete a webhook
   app.delete<{ Params: { id: string } }>(
     "/api/v1/webhooks/:id",
+    { preHandler: requireAuth },
     async (request, reply) => {
-      const apiKey = request.headers.authorization?.slice(7);
-      if (!apiKey) {
-        return reply.status(401).send({ error: "Missing API key" });
-      }
+      const user = request.authUser!;
 
       try {
         const { db, schema } = await import("../db/index.js");
-
-        const user = await db.query.users.findFirst({
-          where: eq(schema.users.apiKey, apiKey),
-        });
-
-        if (!user) {
-          return reply.status(401).send({ error: "Invalid API key" });
-        }
 
         const deleted = await db
           .delete(schema.webhooks)

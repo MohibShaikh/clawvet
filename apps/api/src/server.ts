@@ -12,8 +12,15 @@ const app = Fastify({
   bodyLimit: 1_048_576, // 1MB
 });
 
+// Credentialed CORS must never reflect arbitrary origins. Default to the web
+// app's origin; CORS_ORIGIN can supply a comma-separated allowlist.
+const corsOrigin = (process.env.CORS_ORIGIN || process.env.WEB_URL || "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 await app.register(cors, {
-  origin: process.env.CORS_ORIGIN || true,
+  origin: corsOrigin,
   credentials: true,
 });
 

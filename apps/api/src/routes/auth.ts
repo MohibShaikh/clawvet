@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
-import { randomBytes, createHmac } from "node:crypto";
+import { randomBytes, createHmac, timingSafeEqual } from "node:crypto";
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
@@ -38,7 +38,10 @@ function verifyJwt(token: string): Record<string, unknown> | null {
       .update(`${headerB64}.${claimsB64}`)
       .digest("base64url");
 
-    if (sig !== expected) return null;
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf))
+      return null;
 
     const claims = JSON.parse(Buffer.from(claimsB64, "base64url").toString());
     if (claims.exp && claims.exp < Math.floor(Date.now() / 1000)) return null;
@@ -57,10 +60,21 @@ export async function authRoutes(app: FastifyInstance) {
         .send({ error: "GitHub OAuth not configured. Set GITHUB_CLIENT_ID." });
     }
 
+    // CSRF protection: bind the OAuth round-trip to this browser via a random
+    // `state` echoed back by GitHub and verified against a short-lived cookie.
+    const state = randomBytes(16).toString("hex");
+    reply.header(
+      "Set-Cookie",
+      `cg_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${
+        process.env.NODE_ENV === "production" ? "; Secure" : ""
+      }`
+    );
+
     const params = new URLSearchParams({
       client_id: GITHUB_CLIENT_ID,
       redirect_uri: GITHUB_REDIRECT_URI,
       scope: "read:user user:email",
+      state,
     });
 
     return reply.redirect(
@@ -68,13 +82,28 @@ export async function authRoutes(app: FastifyInstance) {
     );
   });
 
-  app.get<{ Querystring: { code?: string } }>(
+  app.get<{ Querystring: { code?: string; state?: string } }>(
     "/api/v1/auth/github/callback",
     async (request, reply) => {
-      const { code } = request.query;
+      const { code, state } = request.query;
       if (!code) {
         return reply.status(400).send({ error: "Missing code parameter" });
       }
+
+      // Verify the state matches the cookie set at /auth/github (CSRF guard).
+      const stateCookie = (request.headers.cookie || "")
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith("cg_oauth_state="))
+        ?.split("=")[1];
+      if (!state || !stateCookie || state !== stateCookie) {
+        return reply.status(400).send({ error: "Invalid OAuth state" });
+      }
+      // Clear the one-time state cookie.
+      reply.header(
+        "Set-Cookie",
+        "cg_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+      );
 
       if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
         return reply
