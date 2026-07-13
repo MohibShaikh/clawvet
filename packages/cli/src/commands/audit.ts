@@ -3,6 +3,7 @@ import { join, basename } from "node:path";
 import { homedir } from "node:os";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
+import { sendAuditTelemetry } from "../telemetry.js";
 import chalk from "chalk";
 
 const DEFAULT_SKILL_DIRS = [
@@ -14,6 +15,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
   const SKILL_DIRS = options.dir ? [options.dir] : DEFAULT_SKILL_DIRS;
   console.log(chalk.bold("\nClawVet Audit — Scanning all installed skills\n"));
 
+  const startedAt = Date.now();
   let totalScanned = 0;
   let totalThreats = 0;
   const grades: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
@@ -82,4 +84,12 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     );
   }
   console.log();
+
+  // One session-level telemetry event for the whole audit (best-effort).
+  await sendAuditTelemetry({
+    skillsScanned: totalScanned,
+    findingsTotal: totalThreats,
+    grades,
+    durationMs: Date.now() - startedAt,
+  });
 }

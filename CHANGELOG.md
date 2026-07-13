@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+
+- Telemetry: `clawvet audit` now emits a single session-level `audit_completed` event (skills scanned, total findings, grade breakdown, duration) instead of nothing — previously audits were invisible in telemetry. Scan events are tagged `event: "scan_completed"` so the two can be told apart. Still opt-in; no raw skill names are sent. (Requires the telemetry receiver to handle the new `event` field.)
+
 ## Unreleased — hosted API server (`apps/api`, not the npm CLI)
 
 - Security: `GET /api/v1/scans` now requires authentication and returns only the caller's own scans. It previously listed every user's scan records (including `userId`) to anonymous callers, enabling user enumeration (CWE-306). The npm `clawvet` CLI does not include or use this code.

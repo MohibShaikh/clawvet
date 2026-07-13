@@ -109,6 +109,7 @@ export function sendTelemetry(result: ScanResult): Promise<void> {
   const scanCount = incrementScanCount();
 
   const payload = {
+    event: "scan_completed",
     deviceId: getDeviceId(),
     scanCount,
     ts: new Date().toISOString(),
@@ -123,12 +124,50 @@ export function sendTelemetry(result: ScanResult): Promise<void> {
     cached: result.cached ?? false,
   };
 
+  return post(payload);
+}
+
+export interface AuditSummary {
+  skillsScanned: number;
+  findingsTotal: number;
+  grades: Record<string, number>;
+  durationMs: number;
+}
+
+/**
+ * One session-level event summarising a whole `clawvet audit` run, instead of
+ * one event per scanned skill. Lets an audit of N skills register as a single
+ * data point (the strongest usage signal) without inflating scan counts.
+ */
+export function sendAuditTelemetry(summary: AuditSummary): Promise<void> {
+  if (!isTelemetryEnabled()) return Promise.resolve();
+
+  const payload = {
+    event: "audit_completed",
+    deviceId: getDeviceId(),
+    ts: new Date().toISOString(),
+    os: platform(),
+    osVersion: release(),
+    cliVersion: readCliVersion(),
+    environment: detectEnvironment(),
+    skillsScanned: summary.skillsScanned,
+    findingsTotal: summary.findingsTotal,
+    grades: summary.grades,
+    durationMs: summary.durationMs,
+  };
+
+  return post(payload);
+}
+
+function post(payload: unknown): Promise<void> {
   return fetch(TELEMETRY_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(3000),
-  }).then(() => {}).catch(() => {
-    // silently ignore — telemetry is best-effort
-  });
+  })
+    .then(() => {})
+    .catch(() => {
+      // silently ignore — telemetry is best-effort
+    });
 }
