@@ -6,6 +6,19 @@
 
 Skill vetting & supply chain security for the OpenClaw ecosystem. Scans SKILL.md files for prompt injection, credential theft, remote code execution, typosquatting, and social engineering — catching threats that VirusTotal misses.
 
+## Demo
+
+![ClawVet demo](docs/demo.gif)
+
+A safe skill scores a clean **A**; a skill that pipes `curl` to `bash` and reads your `~/.aws/credentials` gets flagged **CRITICAL** and fails CI.
+
+Reproduce it yourself (Windows PowerShell):
+
+```powershell
+./demo.ps1            # uses the installed `clawvet` (npm i -g clawvet)
+./demo.ps1 -Local     # uses this repo's build, no global install needed
+```
+
 ## Why
 
 In Feb 2026 researchers found 824+ malicious skills (~20% of ClawHub). The "ClawHavoc" campaign distributed infostealers via fake skills. ClawVet runs 6 independent analysis passes on every skill to catch what single-pass scanners miss.
