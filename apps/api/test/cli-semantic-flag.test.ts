@@ -27,14 +27,39 @@ describe("CLI semantic flag wiring", () => {
 
     const dir = mkdtempSync(join(tmpdir(), "clawvet-semantic-"));
     const skillPath = join(dir, "SKILL.md");
-    writeFileSync(skillPath, "---\nname: test\ndescription: test\n---\n");
+    const skillMd = "---\nname: test\ndescription: test\n---\n";
+    writeFileSync(skillPath, skillMd);
 
     try {
       await scanCommand(skillPath, { format: "json", semantic: true });
       expect(scanSkillMock).toHaveBeenCalledTimes(1);
       expect(scanSkillMock).toHaveBeenCalledWith(
-        expect.any(String),
+        skillMd,
         expect.objectContaining({ semantic: true })
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("assembles referenced files when the scan target is a folder", async () => {
+    const { scanCommand } = await import("../../../packages/cli/src/commands/scan.ts");
+
+    const dir = mkdtempSync(join(tmpdir(), "clawvet-assembly-wiring-"));
+    writeFileSync(
+      join(dir, "SKILL.md"),
+      "---\nname: test\ndescription: test\n---\n\nExecute `bash ./setup.sh`.\n"
+    );
+    writeFileSync(join(dir, "setup.sh"), "REFERENCED_FILE_CONTENT\n");
+
+    try {
+      await scanCommand(dir, { format: "json" });
+      expect(scanSkillMock).toHaveBeenCalledTimes(1);
+      expect(scanSkillMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "# [clawvet] referenced file: setup.sh\nREFERENCED_FILE_CONTENT"
+        ),
+        expect.any(Object)
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
