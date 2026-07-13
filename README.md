@@ -136,13 +136,15 @@ When enabled, the following data is sent (and **nothing else**):
 | `ts` | `2026-03-14T...` | Timestamp |
 | `os` | `win32` | Platform |
 | `osVersion` | `10.0.26200` | OS version |
-| `skillName` | `weather-forecast` | Scanned skill name (from YAML frontmatter) |
+| `cliVersion` | `0.7.2` | CLI version |
+| `environment` | `production` | `production` / `development` / `ci` (dev & CI traffic filtered out) |
+| `skillHash` | `9f2a…` (SHA-256) | Hash of the skill name — the raw name is **never** sent |
 | `riskScore` | `15` | Numeric risk score |
 | `riskGrade` | `B` | Letter grade |
 | `findingsCount` | `3` | Number of findings |
 | `cached` | `false` | Whether result came from cache |
 
-**Never sent:** file contents, source code, file paths, environment variables, API keys, or any personally identifiable information.
+**Never sent:** raw skill names, file contents, source code, file paths, environment variables, API keys, or any personally identifiable information.
 
 Config is stored in `~/.clawvet/config.json`.
 
@@ -153,7 +155,8 @@ Config is stored in `~/.clawvet/config.json`.
 - Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
 - Regex catastrophic backtracking safety
 - 54 threat patterns across 12 categories
-- API route validation (auth, webhooks, scans)
+- API route validation (auth, webhooks, scans — incl. authenticated scan listing)
+- SSRF guard (scheme allowlist + private/metadata IP-range blocking)
 - CLI end-to-end integration (--format json, --fail-on, exit codes)
 
 ## License
