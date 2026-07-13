@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.4
+
+- Docs: add an embedded, recorded walkthrough of the ClawVet CLI demo.
+
 ## 0.7.3
 
 - Telemetry: `clawvet audit` now emits a single session-level `audit_completed` event (skills scanned, total findings, grade breakdown, duration) instead of nothing — previously audits were invisible in telemetry. Scan events are tagged `event: "scan_completed"` so the two can be told apart. Still opt-in; no raw skill names are sent. (Requires the telemetry receiver to handle the new `event` field.)

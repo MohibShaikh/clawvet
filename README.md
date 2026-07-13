@@ -8,15 +8,15 @@ Skill vetting & supply chain security for the OpenClaw ecosystem. Scans SKILL.md
 
 ## Demo
 
-![ClawVet demo](docs/demo.gif)
+![ClawVet demo](clawvet-demo.gif)
 
 A safe skill scores a clean **A**; a skill that pipes `curl` to `bash` and reads your `~/.aws/credentials` gets flagged **CRITICAL** and fails CI.
 
 Reproduce it yourself (Windows PowerShell):
 
 ```powershell
-./demo.ps1            # uses the installed `clawvet` (npm i -g clawvet)
-./demo.ps1 -Local     # uses this repo's build, no global install needed
+.\demo.ps1            # uses the installed `clawvet` (npm i -g clawvet)
+.\demo.ps1 -Local     # uses this repo's build, no global install needed
 ```
 
 ## Why
