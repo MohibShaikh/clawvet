@@ -4,6 +4,10 @@
 
 ClawVet scans OpenClaw `SKILL.md` files for prompt injection, credential theft, remote code execution, typosquatting, and social engineering — before they reach your agent.
 
+## Demo
+
+![ClawVet CLI demo](https://raw.githubusercontent.com/MohibShaikh/clawvet/master/clawvet-demo.gif)
+
 ## Install
 
 ```bash

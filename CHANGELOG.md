@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.5
+
+- Docs: embed the recorded CLI walkthrough in the npm-facing package README.
+
 ## 0.7.4
 
 - Docs: add an embedded, recorded walkthrough of the ClawVet CLI demo.
