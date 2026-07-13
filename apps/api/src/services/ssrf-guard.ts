@@ -1,5 +1,8 @@
 import { lookup } from "node:dns/promises";
+import { lookup as dnsLookup } from "node:dns";
 import { isIP } from "node:net";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 
 /**
  * Thrown when a URL is rejected for pointing at a non-public / internal target.
@@ -102,4 +105,57 @@ export async function assertUrlIsPublic(rawUrl: string): Promise<void> {
       throw new SsrfError("URL resolves to a private or internal address");
     }
   }
+}
+
+/**
+ * SSRF-safe POST. Closes the DNS-rebinding TOCTOU by validating the address at
+ * the moment of connection: the custom `lookup` is the same resolution the
+ * socket connects to, so a name can't resolve public during a pre-check and
+ * internal at connect time. Does not follow redirects (node http never does),
+ * so redirect-to-internal is also blocked.
+ */
+export function fetchPublicUrl(
+  rawUrl: string,
+  init: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }
+): Promise<{ status: number }> {
+  const url = new URL(rawUrl);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return Promise.reject(new SsrfError("Only http and https URLs are allowed"));
+  }
+  // Node skips `lookup` for literal-IP hosts, so guard those directly here.
+  const bareHost = url.hostname.replace(/^\[/, "").replace(/\]$/, "");
+  if (isIP(bareHost) && isPrivateOrReservedIp(bareHost)) {
+    return Promise.reject(
+      new SsrfError("URL resolves to a private or internal address")
+    );
+  }
+  const request = url.protocol === "https:" ? httpsRequest : httpRequest;
+
+  // Validate at connect time. `dns.lookup` here is what the socket uses, so
+  // there is no gap between check and connect (no rebinding window).
+  const pinnedLookup: typeof dnsLookup = ((hostname: string, opts: any, cb: any) => {
+    const callback = typeof opts === "function" ? opts : cb;
+    dnsLookup(hostname, { all: false }, (err, address, family) => {
+      if (err) return callback(err);
+      if (isPrivateOrReservedIp(address)) {
+        return callback(new SsrfError("URL resolves to a private or internal address"));
+      }
+      callback(null, address, family);
+    });
+  }) as typeof dnsLookup;
+
+  return new Promise((resolve, reject) => {
+    const req = request(
+      url,
+      { method: init.method || "GET", headers: init.headers, lookup: pinnedLookup },
+      (res) => {
+        res.resume(); // drain; we only care that it was delivered
+        resolve({ status: res.statusCode || 0 });
+      }
+    );
+    req.setTimeout(init.timeoutMs ?? 10000, () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    if (init.body) req.write(init.body);
+    req.end();
+  });
 }
