@@ -6,6 +6,7 @@ import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
+import { assembleSkill } from "../assemble.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
@@ -67,12 +68,14 @@ export async function scanCommand(
   } else {
     const skillPath = resolve(target);
     let skillFile = skillPath;
+    let skillDir: string | undefined;
 
     if (
       existsSync(skillPath) &&
-      !skillPath.endsWith(".md") &&
+      statSync(skillPath).isDirectory() &&
       existsSync(join(skillPath, "SKILL.md"))
     ) {
+      skillDir = skillPath;
       skillFile = join(skillPath, "SKILL.md");
     }
 
@@ -82,7 +85,8 @@ export async function scanCommand(
       process.exit(1);
     }
 
-    content = readFileSync(skillFile, "utf-8");
+    const skillMd = readFileSync(skillFile, "utf-8");
+    content = skillDir ? assembleSkill(skillDir, skillMd) : skillMd;
     fallbackName = basename(dirname(skillFile));
   }
 
