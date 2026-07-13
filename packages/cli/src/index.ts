@@ -1,11 +1,28 @@
 import { Command } from "commander";
 import { readFileSync } from "node:fs";
+import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+
+// Open a URL in the user's browser without going through a shell. Using
+// execFile (not exec) means the URL is passed as an argument, never
+// interpolated into a command string a shell would parse — no shell-exec
+// surface even though the URL here is a constant.
+function openUrl(url: string): void {
+  const child =
+    process.platform === "win32"
+      ? execFile("cmd", ["/c", "start", "", url])
+      : process.platform === "darwin"
+        ? execFile("open", [url])
+        : execFile("xdg-open", [url]);
+  // Opening a browser is best-effort — never crash the CLI if the opener is
+  // missing (e.g. a headless Linux box without xdg-open).
+  child.on("error", () => {});
+}
 
 function readPackageVersion(): string {
   try {
@@ -38,9 +55,7 @@ program
     if (opts.subscribe) {
       const url = "https://tally.so/r/jaMdaa";
       console.log(`Opening ${url} ...`);
-      const { exec } = await import("node:child_process");
-      const cmd = process.platform === "win32" ? `start ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
-      exec(cmd);
+      openUrl(url);
     }
     await scanCommand(target, {
       format: opts.format,
@@ -83,9 +98,7 @@ program
   .action(async () => {
     const url = "https://tally.so/r/jaMdaa";
     console.log(`Opening ${url} ...`);
-    const { exec } = await import("node:child_process");
-    const cmd = process.platform === "win32" ? `start ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
-    exec(cmd);
+    openUrl(url);
   });
 
 program.parse();

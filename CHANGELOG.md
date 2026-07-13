@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+
+- Security: replace the shell-based `exec()` calls behind `clawvet feedback` and `scan --subscribe` with a shell-free `execFile` browser opener. The URL was always a hardcoded constant so there was no injection path, but scanners flagged the raw `exec()` — and a security tool should not ship `shell_exec` sinks in its own CLI. No user-facing behavior change.
+
 ## 0.7.1
 
 - Fix: skills with no `name` in frontmatter now report the containing folder name instead of `unknown`. Telemetry showed real-world scans landing as `unknown`, hiding which skills were being audited. `scanSkill` accepts an optional `skillName` fallback; CLI commands (`scan`, `audit`, `watch`, `badge`) pass the directory basename automatically.
