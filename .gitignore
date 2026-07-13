@@ -11,3 +11,6 @@ drizzle/
 
 # WIP — VS Code extension (not yet ready for repo)
 apps/vscode/
+
+# Local AI assistant context (never commit to the public repo)
+CLAUDE.md
