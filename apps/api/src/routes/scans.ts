@@ -196,12 +196,21 @@ export async function scanRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { limit?: string; offset?: string } }>(
     "/api/v1/scans",
     async (request, reply) => {
+      // Require authentication and only ever return the caller's own scans.
+      // Previously this listed every user's scans (including their userId) to
+      // anonymous callers, enabling user enumeration.
+      const user = await resolveUser(request);
+      if (!user) {
+        return reply.status(401).send({ error: "Authentication required" });
+      }
+
       try {
         const { db, schema } = await import("../db/index.js");
         const limit = Math.min(parseInt(request.query.limit || "20"), 100);
         const offset = parseInt(request.query.offset || "0");
 
         const results = await db.query.scans.findMany({
+          where: eq(schema.scans.userId, user.id),
           orderBy: desc(schema.scans.createdAt),
           limit,
           offset,

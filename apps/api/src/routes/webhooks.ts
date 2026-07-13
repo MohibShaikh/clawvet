@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { eq, and } from "drizzle-orm";
+import { assertUrlIsPublic, SsrfError } from "../services/ssrf-guard.js";
 
 const VALID_EVENTS = ["scan.complete", "scan.critical"];
 
@@ -20,10 +21,13 @@ export async function webhookRoutes(app: FastifyInstance) {
         .send({ error: "url and events are required" });
     }
 
-    // Validate URL
+    // Validate URL and block SSRF targets (internal/loopback/metadata hosts).
     try {
-      new URL(url);
-    } catch {
+      await assertUrlIsPublic(url);
+    } catch (err) {
+      if (err instanceof SsrfError) {
+        return reply.status(400).send({ error: err.message });
+      }
       return reply.status(400).send({ error: "Invalid URL" });
     }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — hosted API server (`apps/api`, not the npm CLI)
+
+- Security: `GET /api/v1/scans` now requires authentication and returns only the caller's own scans. It previously listed every user's scan records (including `userId`) to anonymous callers, enabling user enumeration (CWE-306). The npm `clawvet` CLI does not include or use this code.
+- Security: webhook target URLs are now validated against SSRF — only `http`/`https` schemes are allowed, and hosts that resolve to loopback/private/link-local/cloud-metadata addresses (e.g. `169.254.169.254`) are rejected. Enforced both at registration and re-checked before every delivery. Previously any authenticated user could point a webhook at internal infrastructure.
+- Note: the hardcoded JWT secret fallback (`clawvet-dev-secret-change-me`) was removed earlier — `JWT_SECRET` is now required and the server refuses to start without it. Rotate `JWT_SECRET` on any deployment that previously ran with the default.
+
 ## 0.7.2
 
 - Security: replace the shell-based `exec()` calls behind `clawvet feedback` and `scan --subscribe` with a shell-free `execFile` browser opener. The URL was always a hardcoded constant so there was no injection path, but scanners flagged the raw `exec()` — and a security tool should not ship `shell_exec` sinks in its own CLI. No user-facing behavior change.

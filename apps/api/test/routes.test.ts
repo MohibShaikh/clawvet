@@ -136,9 +136,21 @@ describe("scan routes — input validation", () => {
     expect(body.skillName).toBe("override-name");
   });
 
-  it("GET /api/v1/scans returns 503 without DB", async () => {
+  it("GET /api/v1/scans requires authentication (no anonymous listing)", async () => {
+    // Regression: this endpoint used to return every user's scans (incl. userId)
+    // to anonymous callers. It must now reject unauthenticated requests.
     const res = await app.inject({ method: "GET", url: "/api/v1/scans" });
-    expect(res.statusCode).toBe(503);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("GET /api/v1/scans rejects a bogus API key", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/scans",
+      headers: { authorization: "Bearer cg_not_a_real_key" },
+    });
+    // 401 (rejected) or 503 (no DB to verify the key) — never 200 with data.
+    expect([401, 503]).toContain(res.statusCode);
   });
 
   it("GET /api/v1/stats returns zeros without DB", async () => {

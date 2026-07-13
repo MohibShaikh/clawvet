@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import { scanSkill } from "../services/scanner.js";
 import { db, schema } from "../db/index.js";
+import { assertUrlIsPublic } from "../services/ssrf-guard.js";
 
 const redisUrl = new URL(process.env.REDIS_URL || "redis://localhost:6379");
 
@@ -103,6 +104,15 @@ async function fireWebhooks(
         result.findingsCount.critical > 0);
 
     if (!shouldFire) continue;
+
+    // Re-validate at delivery time: a webhook stored before this guard existed
+    // (or whose DNS since changed) must not be used to reach internal hosts.
+    try {
+      await assertUrlIsPublic(hook.url);
+    } catch (err) {
+      console.error(`Webhook delivery to ${hook.url} blocked (unsafe target):`, err);
+      continue;
+    }
 
     try {
       await fetch(hook.url, {
