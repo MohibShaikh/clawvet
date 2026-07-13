@@ -32,7 +32,7 @@ export function printScanResult(result: ScanResult): void {
   // Risk score
   const gradeColor = GRADE_COLORS[result.riskGrade] || chalk.white;
   console.log(
-    `  Risk Score: ${gradeColor(`${result.riskScore}/100`)}  Grade: ${gradeColor(result.riskGrade)}`
+    `  Risk Score: ${gradeColor(`${Math.round(result.riskScore)}/100`)}  Grade: ${gradeColor(result.riskGrade)}`
   );
   console.log();
 

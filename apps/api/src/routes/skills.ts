@@ -3,15 +3,24 @@ import type { FastifyInstance } from "fastify";
 const CLAWHUB_RAW_BASE =
   "https://raw.githubusercontent.com/openclaw/skills/main";
 
+const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
 export async function skillRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string } }>(
     "/api/v1/skills/:slug",
     async (request, reply) => {
       const { slug } = request.params;
 
+      if (!SLUG_PATTERN.test(slug)) {
+        return reply.status(400).send({
+          error: "Invalid slug. Must be 1-64 chars, alphanumeric + dash/underscore.",
+        });
+      }
+
+      const encoded = encodeURIComponent(slug);
       const urls = [
-        `${CLAWHUB_RAW_BASE}/${slug}/SKILL.md`,
-        `https://clawhub.com/api/v1/skills/${slug}/raw`,
+        `${CLAWHUB_RAW_BASE}/${encoded}/SKILL.md`,
+        `https://clawhub.com/api/v1/skills/${encoded}/raw`,
       ];
 
       for (const url of urls) {

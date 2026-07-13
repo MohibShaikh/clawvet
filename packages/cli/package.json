@@ -1,6 +1,6 @@
 {
   "name": "clawvet",
-  "version": "0.6.1",
+  "version": "0.7.1",
   "description": "Skill vetting & supply chain security for OpenClaw. Scans SKILL.md files for prompt injection, credential theft, RCE, typosquatting, and social engineering.",
   "type": "module",
   "bin": {
@@ -43,7 +43,7 @@
     "chalk": "^5.4.0",
     "commander": "^13.0.0",
     "fastest-levenshtein": "^1.0.16",
-    "yaml": "^2.6.0"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -2,12 +2,16 @@ import { describe, it, expect } from "vitest";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { join } from "node:path";
+import { readFileSync } from "node:fs";
 
 const execAsync = promisify(exec);
 
 const ROOT = join(__dirname, "..", "..", "..");
 const CLI = `npx tsx ${join(ROOT, "packages/cli/src/index.ts")}`;
 const FIXTURES = join(__dirname, "fixtures");
+const CLI_VERSION = JSON.parse(
+  readFileSync(join(ROOT, "packages/cli/package.json"), "utf-8")
+).version;
 
 // Async so the spawned CLI process doesn't block the Vitest worker's event
 // loop. `execSync` blocks for ~5s per call (and ~60s in the multi-run test),
@@ -33,7 +37,7 @@ describe("CLI integration", { timeout: 30000 }, () => {
   it("clawvet --version prints version", async () => {
     const { stdout, exitCode } = await run("--version");
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe("0.6.1");
+    expect(stdout.trim()).toBe(CLI_VERSION);
   });
 
   it("clawvet --help shows usage", async () => {

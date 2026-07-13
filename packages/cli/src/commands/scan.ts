@@ -1,11 +1,11 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, basename, dirname } from "node:path";
 import chalk from "chalk";
 import { scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
-import { sendTelemetry, hasBeenAsked, setTelemetry } from "../telemetry.js";
+import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
@@ -15,10 +15,19 @@ export interface ScanOptions {
   quiet?: boolean;
 }
 
+const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
 async function fetchRemoteSkill(slug: string): Promise<string> {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new Error(
+      `Invalid skill name "${slug}". Must be 1-64 chars, alphanumeric + dash/underscore.`
+    );
+  }
+
+  const encoded = encodeURIComponent(slug);
   const urls = [
-    `https://raw.githubusercontent.com/openclaw/skills/main/${slug}/SKILL.md`,
-    `https://clawhub.ai/api/v1/skills/${slug}/raw`,
+    `https://raw.githubusercontent.com/openclaw/skills/main/${encoded}/SKILL.md`,
+    `https://clawhub.ai/api/v1/skills/${encoded}/raw`,
   ];
 
   for (const url of urls) {
@@ -42,11 +51,13 @@ export async function scanCommand(
   options: ScanOptions
 ): Promise<void> {
   let content: string;
+  let fallbackName: string | undefined;
 
   if (options.remote) {
     try {
       process.stderr.write(`Fetching "${target}" from ClawHub...\n`);
       content = await fetchRemoteSkill(target);
+      fallbackName = target;
     } catch (err) {
       console.error(
         err instanceof Error ? err.message : "Failed to fetch remote skill"
@@ -72,6 +83,7 @@ export async function scanCommand(
     }
 
     content = readFileSync(skillFile, "utf-8");
+    fallbackName = basename(dirname(skillFile));
   }
 
   // Load .clawvetban — block skills by name, author, or slug
@@ -121,6 +133,7 @@ export async function scanCommand(
   const result = await scanSkill(content, {
     semantic: options.semantic ?? false,
     ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
+    skillName: fallbackName,
   });
 
   if (!options.quiet) {
@@ -133,9 +146,10 @@ export async function scanCommand(
     }
   }
 
-  // Telemetry: first-run opt-in prompt
-  if (!options.quiet && options.format !== "json" && options.format !== "sarif") {
-    if (!hasBeenAsked()) {
+  // Telemetry: first-run opt-in prompt (only in interactive TTY)
+  const isInteractive = !options.quiet && options.format !== "json" && options.format !== "sarif";
+  if (isInteractive) {
+    if (!hasBeenAsked() && !isTelemetryEnabled() && process.stdin.isTTY) {
       const readline = await import("node:readline");
       const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
       const answer = await new Promise<string>((resolve) => {
@@ -147,17 +161,19 @@ export async function scanCommand(
       setTelemetry(answer === "y" || answer === "yes");
     }
 
-    sendTelemetry(result);
+  }
 
-    // Post-scan CTA
+  // Await telemetry so it completes before any process.exit()
+  await sendTelemetry(result);
+
+  // Show Tally CTA every 5th scan (after increment)
+  if (isInteractive && getScanCount() % 5 === 0) {
     console.log(
       chalk.dim("  ") +
       chalk.cyan("Got feedback? Want threat alerts? → ") +
       chalk.underline.cyan("https://tally.so/r/jaMdaa")
     );
     console.log();
-  } else {
-    sendTelemetry(result);
   }
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);

@@ -69,8 +69,12 @@ function incrementScanCount(): number {
   return config.scanCount;
 }
 
-export function sendTelemetry(result: ScanResult): void {
-  if (!isTelemetryEnabled()) return;
+export function getScanCount(): number {
+  return loadConfig().scanCount || 0;
+}
+
+export function sendTelemetry(result: ScanResult): Promise<void> {
+  if (!isTelemetryEnabled()) return Promise.resolve();
 
   const scanCount = incrementScanCount();
 
@@ -87,13 +91,12 @@ export function sendTelemetry(result: ScanResult): void {
     cached: result.cached ?? false,
   };
 
-  // Fire-and-forget — never block the CLI
-  fetch(TELEMETRY_ENDPOINT, {
+  return fetch(TELEMETRY_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(3000),
-  }).catch(() => {
+  }).then(() => {}).catch(() => {
     // silently ignore — telemetry is best-effort
   });
 }

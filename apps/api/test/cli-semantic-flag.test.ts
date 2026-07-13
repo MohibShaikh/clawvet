@@ -32,7 +32,10 @@ describe("CLI semantic flag wiring", () => {
     try {
       await scanCommand(skillPath, { format: "json", semantic: true });
       expect(scanSkillMock).toHaveBeenCalledTimes(1);
-      expect(scanSkillMock).toHaveBeenCalledWith(expect.any(String), { semantic: true });
+      expect(scanSkillMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ semantic: true })
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -6,7 +6,15 @@ import { scanSkill } from "../src/index.js";
 const BENCHMARKS_DIR = resolve(__dirname, "../../../benchmarks");
 
 function loadSkill(category: string, name: string): string {
-  return readFileSync(resolve(BENCHMARKS_DIR, category, name, "SKILL.md"), "utf-8");
+  const plainPath = resolve(BENCHMARKS_DIR, category, name, "SKILL.md");
+  const b64Path = plainPath + ".b64";
+  try {
+    return readFileSync(plainPath, "utf-8");
+  } catch {
+    // Malicious fixtures are base64-encoded to avoid AV false positives
+    const encoded = readFileSync(b64Path, "utf-8");
+    return Buffer.from(encoded, "base64").toString("utf-8");
+  }
 }
 
 describe("Benchmark suite", () => {
