@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -17,7 +17,10 @@ function verifyJwt(token: string): Record<string, unknown> | null {
       .update(`${headerB64}.${claimsB64}`)
       .digest("base64url");
 
-    if (sig !== expected) return null;
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf))
+      return null;
 
     const claims = JSON.parse(Buffer.from(claimsB64, "base64url").toString());
     if (claims.exp && claims.exp < Math.floor(Date.now() / 1000)) return null;

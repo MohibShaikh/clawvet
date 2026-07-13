@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isPrivateOrReservedIp,
   assertUrlIsPublic,
+  fetchPublicUrl,
   SsrfError,
 } from "../src/services/ssrf-guard.js";
 
@@ -60,5 +61,23 @@ describe("assertUrlIsPublic", () => {
 
   it("accepts a normal public https URL", async () => {
     await expect(assertUrlIsPublic("https://example.com/webhook")).resolves.toBeUndefined();
+  });
+});
+
+describe("fetchPublicUrl (connect-time SSRF guard)", () => {
+  it("rejects non-http schemes", async () => {
+    await expect(fetchPublicUrl("file:///etc/passwd", {})).rejects.toBeInstanceOf(SsrfError);
+  });
+
+  it("rejects internal IP literals (Node skips lookup for these)", async () => {
+    await expect(fetchPublicUrl("http://127.0.0.1:9/", {})).rejects.toBeInstanceOf(SsrfError);
+    await expect(fetchPublicUrl("http://169.254.169.254/", {})).rejects.toBeInstanceOf(SsrfError);
+    await expect(fetchPublicUrl("http://[::1]/", {})).rejects.toBeInstanceOf(SsrfError);
+  });
+
+  it("rejects hostnames that resolve to a private address (rebind defense)", async () => {
+    // localhost resolves to 127.0.0.1 via the pinned connect-time lookup, so
+    // the request is refused before any socket connects to an internal host.
+    await expect(fetchPublicUrl("http://localhost:9/", {})).rejects.toBeInstanceOf(SsrfError);
   });
 });

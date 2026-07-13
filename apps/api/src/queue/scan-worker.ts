@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import { scanSkill } from "../services/scanner.js";
 import { db, schema } from "../db/index.js";
-import { assertUrlIsPublic } from "../services/ssrf-guard.js";
+import { assertUrlIsPublic, fetchPublicUrl } from "../services/ssrf-guard.js";
 
 const redisUrl = new URL(process.env.REDIS_URL || "redis://localhost:6379");
 
@@ -115,7 +115,9 @@ async function fireWebhooks(
     }
 
     try {
-      await fetch(hook.url, {
+      // fetchPublicUrl pins the validated IP at connect time (no DNS-rebinding
+      // window) and never follows redirects (no redirect-to-internal SSRF).
+      await fetchPublicUrl(hook.url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,7 +131,7 @@ async function fireWebhooks(
           findingsCount: result.findingsCount,
           recommendation: result.recommendation,
         }),
-        signal: AbortSignal.timeout(10000),
+        timeoutMs: 10000,
       });
     } catch (err) {
       console.error(`Webhook delivery to ${hook.url} failed:`, err);

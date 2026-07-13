@@ -27,6 +27,17 @@ describe("auth routes", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("GET /api/v1/auth/github/callback rejects a code with no/invalid state (CSRF)", async () => {
+    // A code present but no matching cg_oauth_state cookie must be refused —
+    // this is the OAuth login-CSRF guard.
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/github/callback?code=abc123&state=attacker",
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toContain("state");
+  });
+
   it("GET /api/v1/auth/me returns 401 without auth header", async () => {
     const res = await app.inject({ method: "GET", url: "/api/v1/auth/me" });
     expect(res.statusCode).toBe(401);
