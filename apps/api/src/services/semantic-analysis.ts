@@ -114,27 +114,41 @@ Respond with JSON only (no markdown fences):
 
   try {
     const text = await provider.analyze(prompt);
-    const parsed = JSON.parse(text);
-
-    return (parsed.findings || []).map(
-      (f: {
-        category: string;
-        severity: "critical" | "high" | "medium" | "low";
-        title: string;
-        description: string;
-        evidence?: string;
-        line_number?: number | null;
-      }) => ({
-        category: f.category,
-        severity: f.severity,
-        title: f.title,
-        description: f.description,
-        evidence: f.evidence,
-        lineNumber: f.line_number,
-        analysisPass: "semantic-analysis",
-      })
-    );
+    return parseSemanticFindings(text);
   } catch (err) {
     throw new Error(`Semantic analysis failed: ${err instanceof Error ? err.message : String(err)}`);
   }
+}
+
+/**
+ * Parse an LLM response into findings. Models frequently wrap JSON in ```json
+ * fences or add prose despite instructions, so strip fences and fall back to the
+ * outermost {...} block before parsing. Without this the whole semantic pass
+ * silently produced zero findings whenever the model fenced its output.
+ */
+export function parseSemanticFindings(text: string): Finding[] {
+  let jsonText = text.replace(/```(?:json)?/gi, "").trim();
+  const first = jsonText.indexOf("{");
+  const last = jsonText.lastIndexOf("}");
+  if (first !== -1 && last > first) jsonText = jsonText.slice(first, last + 1);
+  const parsed = JSON.parse(jsonText);
+
+  return (parsed.findings || []).map(
+    (f: {
+      category: string;
+      severity: "critical" | "high" | "medium" | "low";
+      title: string;
+      description: string;
+      evidence?: string;
+      line_number?: number | null;
+    }) => ({
+      category: f.category,
+      severity: f.severity,
+      title: f.title,
+      description: f.description,
+      evidence: f.evidence,
+      lineNumber: f.line_number,
+      analysisPass: "semantic-analysis",
+    })
+  );
 }
