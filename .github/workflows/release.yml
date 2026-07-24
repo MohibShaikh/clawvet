@@ -14,7 +14,8 @@ jobs:
   npm:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write is needed to create the GitHub Release below.
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -54,3 +55,10 @@ jobs:
         working-directory: packages/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Keep the Releases page in step with the tags. Without this, a tag ships
+      # to npm while the public Releases page still advertises an older version.
+      - name: Create GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
