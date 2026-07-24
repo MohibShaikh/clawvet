@@ -7,10 +7,18 @@ const SEVERITY_WEIGHTS = {
   low: 3,
 } as const;
 
+// A disqualifying indicator of compromise pins the score to the bottom of the
+// F band regardless of aggregate — enough benign signal must never dilute a
+// known-bad match down into a passing grade.
+const DISQUALIFYING_FLOOR = 90;
+
 export function calculateRiskScore(findings: Finding[]): number {
   let score = 0;
   for (const f of findings) {
     score += SEVERITY_WEIGHTS[f.severity] * (f.confidence ?? 1.0);
+  }
+  if (findings.some((f) => f.disqualifying)) {
+    score = Math.max(score, DISQUALIFYING_FLOOR);
   }
   return Math.round(Math.min(score, 100));
 }

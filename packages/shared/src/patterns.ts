@@ -228,11 +228,14 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   {
     name: "SUSPICIOUS_IP",
     pattern: /\b(?:91\.92\.242\.\d+|45\.61\.\d+\.\d+)\b/g,
-    severity: "high",
+    severity: "critical",
     category: "data_exfiltration",
     title: "Known malicious IP",
     description: "Contains IP addresses associated with known ClawHavoc C2 infrastructure.",
     fix: "Remove references to known malicious IP addresses.",
+    // Curated indicator of compromise: an exact match against known C2
+    // infrastructure is disqualifying on its own, not a signal to be averaged.
+    disqualifying: true,
   },
   {
     name: "DNS_EXFIL",

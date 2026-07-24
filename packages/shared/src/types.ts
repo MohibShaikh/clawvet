@@ -16,6 +16,13 @@ export interface Finding {
   analysisPass: string;
   confidence?: number;
   fix?: string;
+  /**
+   * A disqualifying indicator of compromise (e.g. a known-malicious C2 IP).
+   * Its presence forces the worst grade and a block recommendation on its own,
+   * independent of the aggregate risk score — a known-bad match is a verdict,
+   * not a heuristic to be averaged against benign signal.
+   */
+  disqualifying?: boolean;
 }
 
 export interface FindingsCount {
@@ -83,4 +90,6 @@ export interface ThreatPattern {
   description: string;
   codeOnly?: boolean;
   fix?: string;
+  /** See Finding.disqualifying — reserved for curated indicators of compromise. */
+  disqualifying?: boolean;
 }

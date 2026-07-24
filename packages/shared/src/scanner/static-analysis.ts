@@ -54,7 +54,11 @@ export function runStaticAnalysis(skill: ParsedSkill): Finding[] {
       }
 
       const baseConfidence = BASE_CONFIDENCE[threat.severity];
-      const confidence = Math.min(1.0, baseConfidence * contextMultiplier);
+      // A curated indicator of compromise is an exact match, not a fuzzy
+      // heuristic — where it appears does not make it less certain.
+      const confidence = threat.disqualifying
+        ? 1.0
+        : Math.min(1.0, baseConfidence * contextMultiplier);
 
       findings.push({
         category: threat.category,
@@ -66,6 +70,7 @@ export function runStaticAnalysis(skill: ParsedSkill): Finding[] {
         analysisPass: "static-analysis",
         confidence: Math.round(confidence * 100) / 100,
         fix: threat.fix,
+        disqualifying: threat.disqualifying,
       });
     }
   }

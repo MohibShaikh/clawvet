@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+- Security: a known-malicious C2 IP is now treated as a disqualifying indicator of compromise. It is reclassified from `high` to `critical`, its confidence is no longer discounted by where it appears, and its presence pins the risk score to the F band regardless of aggregate. Previously a payload split across `SKILL.md` and a referenced `setup.sh` — credential access plus a known ClawHavoc C2 IP — assembled to only 25/100 (grade B, "approve"); it now grades F and blocks. Cross-file assembly surfaced the evidence in 0.8.0, but scoring still averaged it away; this closes that gap.
+
 ## 0.8.1
 
 - Fix: `scan --remote` could not fetch any skill. Both endpoints it tried returned 404 — the GitHub mirror path no longer exists, and the ClawHub `/raw` route was never live. It now reads the ClawHub catalog API (`/api/v1/skills/<slug>`), which returns the SKILL.md content as JSON, and falls back to the raw endpoints. Verified against a live listing.
