@@ -1,0 +1,19 @@
+{
+  "name": "clawvet-guard",
+  "description": "Scan a skill with ClawVet and act on its risk grade before trusting it.",
+  "version": "1.0.0",
+  "author": {
+    "name": "MohibShaikh",
+    "url": "https://github.com/MohibShaikh"
+  },
+  "homepage": "https://github.com/MohibShaikh/clawvet",
+  "repository": "https://github.com/MohibShaikh/clawvet",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "supply-chain",
+    "prompt-injection",
+    "skill-vetting",
+    "malware-detection"
+  ]
+}
