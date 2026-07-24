@@ -26,16 +26,31 @@ async function fetchRemoteSkill(slug: string): Promise<string> {
   }
 
   const encoded = encodeURIComponent(slug);
-  const urls = [
-    `https://raw.githubusercontent.com/openclaw/skills/main/${encoded}/SKILL.md`,
-    `https://clawhub.ai/api/v1/skills/${encoded}/raw`,
+  // The ClawHub catalog API returns the skill record as JSON, with the full
+  // SKILL.md content in `skill.description`. The other sources serve raw
+  // markdown. Try the catalog first, then fall back to raw endpoints.
+  const sources: Array<{ url: string; json: boolean }> = [
+    { url: `https://clawhub.ai/api/v1/skills/${encoded}`, json: true },
+    { url: `https://clawhub.ai/api/v1/skills/${encoded}/raw`, json: false },
+    {
+      url: `https://raw.githubusercontent.com/openclaw/skills/main/${encoded}/SKILL.md`,
+      json: false,
+    },
   ];
 
-  for (const url of urls) {
+  for (const { url, json } of sources) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (res.ok) {
-        return await res.text();
+      if (!res.ok) continue;
+
+      if (!json) return await res.text();
+
+      const body = (await res.json()) as {
+        skill?: { description?: string };
+      };
+      const content = body?.skill?.description;
+      if (typeof content === "string" && content.includes("---")) {
+        return content;
       }
     } catch {
       // try next

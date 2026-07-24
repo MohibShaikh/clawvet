@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+- Fix: `scan --remote` could not fetch any skill. Both endpoints it tried returned 404 — the GitHub mirror path no longer exists, and the ClawHub `/raw` route was never live. It now reads the ClawHub catalog API (`/api/v1/skills/<slug>`), which returns the SKILL.md content as JSON, and falls back to the raw endpoints. Verified against a live listing.
+- New skill: `clawvet-guard` — a thin skill that teaches an OpenClaw agent to scan a skill with ClawVet and act on the grade before trusting it. Scans clean (grade A).
+
 ## 0.8.0
 
 - Feature: cross-file payload assembly for folder scans. When scanning a skill folder, ClawVet now assembles files referenced from `SKILL.md` (e.g. a `setup.sh`) before analysis, so a payload split across multiple files can no longer evade detection.
