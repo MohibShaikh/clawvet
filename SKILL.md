@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.6.3
+version: 0.8.0
 description: Code quality and safety linter for OpenClaw skills. Runs 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
@@ -65,6 +65,16 @@ npx clawvet feedback
 4. **Dependency Checker** — Flags auto-install and global package installs
 5. **Typosquat Detector** — Levenshtein distance against popular skill names
 6. **Semantic Analysis** — AI-powered contextual analysis (Pro)
+
+## What's New in v0.7–v0.8
+
+- **Cross-file payload assembly (0.8.0)** — folder scans now assemble files referenced from `SKILL.md` (e.g. a `setup.sh`) before analysis, so a payload split across multiple files can no longer evade detection.
+- **Robust semantic parsing (0.8.0)** — semantic analysis correctly parses LLM responses wrapped in markdown code fences.
+- **Path-traversal hardening (0.7.0)** — `--remote` slugs are validated and URL-encoded before fetching from ClawHub.
+- **Grade summaries (0.7.0)** — `audit` prints a final grade summary and flags D/F skills for review; risk scores are rounded to integers.
+- **Shell-free CLI (0.7.2)** — replaced `exec()` in `feedback`/`scan --subscribe` with a shell-free `execFile` opener.
+- **Privacy-preserving telemetry (0.7.2–0.7.3)** — skill names are SHA-256 hashed before sending; `audit` emits a session-level completion event. Still opt-in.
+- **Accurate skill naming (0.7.1)** — skills with no `name` in frontmatter report the containing folder name instead of `unknown`.
 
 ## What's New in v0.6
 

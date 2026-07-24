@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- Feature: cross-file payload assembly for folder scans. When scanning a skill folder, ClawVet now assembles files referenced from `SKILL.md` (e.g. a `setup.sh`) before analysis, so a payload split across multiple files can no longer evade detection.
+- Fix: semantic analysis now correctly parses LLM responses wrapped in markdown code fences.
+
 ## 0.7.5
 
 - Docs: embed the recorded CLI walkthrough in the npm-facing package README.
