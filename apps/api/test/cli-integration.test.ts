@@ -90,7 +90,10 @@ describe("CLI integration", { timeout: 30000 }, () => {
     expect(result.skillName).toBe("weather-forecast");
   });
 
-  it("all 6 fixtures produce consistent results across runs", { timeout: 60000 }, async () => {
+  // This spawns two CLI processes per fixture. Process startup dominates the
+  // runtime, so the pairs run concurrently — sequentially it sat right on the
+  // old 60s limit and tipped over under load.
+  it("all 6 fixtures produce consistent results across runs", { timeout: 120000 }, async () => {
     const fixtures = [
       "benign-weather",
       "malicious-stealer",
@@ -101,8 +104,10 @@ describe("CLI integration", { timeout: 30000 }, () => {
     ];
 
     for (const fixture of fixtures) {
-      const r1 = await run(`scan ${join(FIXTURES, fixture)} --format json`);
-      const r2 = await run(`scan ${join(FIXTURES, fixture)} --format json`);
+      const [r1, r2] = await Promise.all([
+        run(`scan ${join(FIXTURES, fixture)} --format json`),
+        run(`scan ${join(FIXTURES, fixture)} --format json`),
+      ]);
 
       const result1 = JSON.parse(r1.stdout);
       const result2 = JSON.parse(r2.stdout);

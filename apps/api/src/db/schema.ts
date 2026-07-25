@@ -37,7 +37,13 @@ export const users = pgTable("users", {
   githubUsername: text("github_username").notNull(),
   email: text("email"),
   plan: planEnum("plan").default("free"),
-  apiKey: text("api_key").unique(),
+  // SHA-256 of the API key, never the key itself. These are 192-bit random
+  // tokens, so a fast hash is appropriate — there is nothing to brute-force.
+  // Storing the key in cleartext meant any read of this table (backup,
+  // replica, insider, future SQLi) leaked every user's live credential.
+  apiKeyHash: text("api_key_hash").unique(),
+  // Last 4 characters, for display only ("cg_…a1b2"). Not a secret.
+  apiKeyLast4: text("api_key_last4"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

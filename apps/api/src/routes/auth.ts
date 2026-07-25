@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { randomBytes, createHmac, timingSafeEqual } from "node:crypto";
+import { generateApiKey, hashApiKey } from "../services/api-key.js";
+import { requireAuth } from "../services/require-auth.js";
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
@@ -155,14 +157,17 @@ export async function authRoutes(app: FastifyInstance) {
         });
 
         if (!user) {
-          const apiKey = `cg_${randomBytes(24).toString("hex")}`;
+          // Only the hash and a display hint are persisted; the cleartext key
+          // exists solely in this scope and is never written anywhere.
+          const { hash, last4 } = generateApiKey();
           const [newUser] = await db
             .insert(schema.users)
             .values({
               githubId: String(ghUser.id),
               githubUsername: ghUser.login,
               email: ghUser.email || null,
-              apiKey,
+              apiKeyHash: hash,
+              apiKeyLast4: last4,
             })
             .returning();
           user = newUser;
@@ -218,18 +223,19 @@ export async function authRoutes(app: FastifyInstance) {
         if (!user) {
           return reply.status(401).send({ error: "User not found" });
         }
+        // The key is unrecoverable by design — only a display hint is returned.
         return reply.send({
           id: user.id,
           githubUsername: user.githubUsername,
           email: user.email,
           plan: user.plan,
-          apiKey: user.apiKey,
+          apiKeyLast4: user.apiKeyLast4,
           createdAt: user.createdAt,
         });
       }
 
       const user = await db.query.users.findFirst({
-        where: eq(schema.users.apiKey, apiKey!),
+        where: eq(schema.users.apiKeyHash, hashApiKey(apiKey!)),
       });
 
       if (!user) {
@@ -241,13 +247,41 @@ export async function authRoutes(app: FastifyInstance) {
         githubUsername: user.githubUsername,
         email: user.email,
         plan: user.plan,
-        apiKey: user.apiKey,
+        apiKeyLast4: user.apiKeyLast4,
         createdAt: user.createdAt,
       });
     } catch {
       return reply.status(503).send({ error: "Database not available" });
     }
   });
+
+  // Keys are unrecoverable once minted, so rotation is the only way to obtain a
+  // usable key after signup. The cleartext is returned exactly once, here.
+  app.post(
+    "/api/v1/auth/api-key/rotate",
+    { preHandler: requireAuth },
+    async (request, reply) => {
+      const authUser = request.authUser!;
+      try {
+        const { db, schema } = await import("../db/index.js");
+        const { key, hash, last4 } = generateApiKey();
+
+        await db
+          .update(schema.users)
+          .set({ apiKeyHash: hash, apiKeyLast4: last4 })
+          .where(eq(schema.users.id, authUser.id));
+
+        return reply.send({
+          apiKey: key,
+          apiKeyLast4: last4,
+          warning:
+            "Store this key now — it is hashed on save and cannot be shown again.",
+        });
+      } catch {
+        return reply.status(503).send({ error: "Database not available" });
+      }
+    }
+  );
 
   app.post("/api/v1/auth/logout", async (request, reply) => {
     reply.header(

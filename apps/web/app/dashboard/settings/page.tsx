@@ -11,8 +11,6 @@ import {
   Trash2,
   Globe,
   Lock,
-  Eye,
-  EyeOff,
   Loader2,
   Check,
 } from "lucide-react";
@@ -22,7 +20,8 @@ interface User {
   githubUsername: string;
   email: string | null;
   plan: string;
-  apiKey: string | null;
+  /** Display hint only — the key is hashed at rest and never returned. */
+  apiKeyLast4: string | null;
 }
 
 interface Webhook {
@@ -34,12 +33,15 @@ interface Webhook {
 }
 
 export default function SettingsPage() {
-  const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [newWebhookUrl, setNewWebhookUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  // Set only by a rotation, and held in memory for that one render — the
+  // server hashes the key on save and can never return it again.
+  const [freshKey, setFreshKey] = useState<string | null>(null);
+  const [rotating, setRotating] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -49,14 +51,12 @@ export default function SettingsPage() {
           const data = await res.json();
           if (data.user) {
             setUser(data.user);
-            if (data.user.apiKey) {
-              const whRes = await fetch("/api/webhooks", {
-                headers: { "x-api-key": data.user.apiKey },
-              });
-              if (whRes.ok) {
-                const whData = await whRes.json();
-                setWebhooks(whData.webhooks || []);
-              }
+            // The session cookie authenticates these calls; the API key is
+            // never held client-side just to talk to our own API.
+            const whRes = await fetch("/api/webhooks");
+            if (whRes.ok) {
+              const whData = await whRes.json();
+              setWebhooks(whData.webhooks || []);
             }
           }
         }
@@ -70,21 +70,44 @@ export default function SettingsPage() {
   }, []);
 
   function handleCopy() {
-    if (!user?.apiKey) return;
-    navigator.clipboard.writeText(user.apiKey);
+    if (!freshKey) return;
+    navigator.clipboard.writeText(freshKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function handleRotate() {
+    if (rotating) return;
+    if (
+      !confirm(
+        "Generate a new API key? The current key stops working immediately, and the new one is shown only once."
+      )
+    ) {
+      return;
+    }
+    setRotating(true);
+    try {
+      const res = await fetch("/api/auth/api-key/rotate", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setFreshKey(data.apiKey);
+        setUser((prev) =>
+          prev ? { ...prev, apiKeyLast4: data.apiKeyLast4 } : prev
+        );
+      }
+    } catch {
+      // failed
+    } finally {
+      setRotating(false);
+    }
+  }
+
   async function handleAddWebhook() {
-    if (!newWebhookUrl || !user?.apiKey) return;
+    if (!newWebhookUrl || !user) return;
     try {
       const res = await fetch("/api/webhooks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": user.apiKey,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newWebhookUrl,
           events: ["scan.complete", "scan.critical"],
@@ -100,9 +123,8 @@ export default function SettingsPage() {
     }
   }
 
-  const displayKey = user?.apiKey || "cg_••••••••••••••••••••••••••••••";
-  const maskedKey = user?.apiKey
-    ? `cg_${"•".repeat(user.apiKey.length - 3)}`
+  const keyHint = user?.apiKeyLast4
+    ? `cg_${"•".repeat(24)}${user.apiKeyLast4}`
     : "cg_••••••••••••••••••••••••••••••";
 
   return (
@@ -122,29 +144,52 @@ export default function SettingsPage() {
         </div>
         <div className="p-5">
           <p className="text-sm text-ink-muted">
-            Use this key to authenticate CLI and CI/CD integrations.
+            Use this key to authenticate CLI and CI/CD integrations. Keys are
+            hashed at rest, so we can show a new one only at the moment it is
+            created.
           </p>
-          <div className="mt-4 flex gap-2">
-            <div className="flex flex-1 items-center gap-2 rounded-lg border border-[var(--border)] bg-surface-0 px-4 py-2.5">
-              <Lock size={12} className="text-ink-faint shrink-0" />
-              <code className="flex-1 font-body text-sm text-ink truncate">
-                {showKey ? displayKey : maskedKey}
-              </code>
+
+          {freshKey ? (
+            <div className="mt-4 rounded-lg border border-accent/40 bg-accent/5 p-4">
+              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                Copy this now — it will not be shown again
+              </p>
+              <div className="mt-3 flex gap-2">
+                <code className="flex-1 truncate rounded-lg border border-[var(--border)] bg-surface-0 px-4 py-2.5 font-body text-sm text-ink">
+                  {freshKey}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2.5 text-xs text-ink-muted transition hover:border-accent/30 hover:text-ink"
+                >
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex gap-2">
+              <div className="flex flex-1 items-center gap-2 rounded-lg border border-[var(--border)] bg-surface-0 px-4 py-2.5">
+                <Lock size={12} className="shrink-0 text-ink-faint" />
+                <code className="flex-1 truncate font-body text-sm text-ink">
+                  {keyHint}
+                </code>
+              </div>
               <button
-                onClick={() => setShowKey(!showKey)}
-                className="text-ink-faint hover:text-ink transition"
+                onClick={handleRotate}
+                disabled={!user || rotating}
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2.5 text-xs text-ink-muted transition hover:border-accent/30 hover:text-ink disabled:opacity-50"
               >
-                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                {rotating ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={12} />
+                )}
+                {user?.apiKeyLast4 ? "Rotate" : "Generate"}
               </button>
             </div>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2.5 text-xs text-ink-muted hover:text-ink hover:border-accent/30 transition"
-            >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? "Copied!" : "Copy"}
-            </button>
-          </div>
+          )}
+
           {!user && !loading && (
             <p className="mt-3 text-xs text-ink-faint">
               <a href="/api/auth/github" className="text-accent hover:underline">
@@ -186,7 +231,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleAddWebhook}
-              disabled={!newWebhookUrl || !user?.apiKey}
+              disabled={!newWebhookUrl || !user}
               className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-surface-0 hover:bg-accent-dim transition glow-accent disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus size={14} />

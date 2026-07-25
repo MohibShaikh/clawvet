@@ -1,6 +1,7 @@
 import type { FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { hashApiKey } from "./api-key.js";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -35,7 +36,8 @@ export interface ResolvedUser {
   id: string;
   githubUsername: string;
   plan: string;
-  apiKey: string | null;
+  /** Display hint only ("a1b2"). The key itself is never stored or returned. */
+  apiKeyLast4: string | null;
 }
 
 export async function resolveUser(
@@ -68,19 +70,21 @@ export async function resolveUser(
         id: user.id,
         githubUsername: user.githubUsername,
         plan: user.plan || "free",
-        apiKey: user.apiKey,
+        apiKeyLast4: user.apiKeyLast4,
       };
     }
 
+    // Look up by hash — the cleartext key is never stored, so it is hashed on
+    // presentation and compared against the stored digest.
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.apiKey, apiKey!),
+      where: eq(schema.users.apiKeyHash, hashApiKey(apiKey!)),
     });
     if (!user) return null;
     return {
       id: user.id,
       githubUsername: user.githubUsername,
       plan: user.plan || "free",
-      apiKey: user.apiKey,
+      apiKeyLast4: user.apiKeyLast4,
     };
   } catch {
     return null;

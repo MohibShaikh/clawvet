@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — hosted API (`apps/api`, not the npm CLI)
+
+- Security hardening for self-hosted deployments: API key storage and proxy/rate-limit configuration. Operators upgrading should apply `apps/api/migrations/0001_hash_api_keys.sql` and re-issue API keys via `POST /api/v1/auth/api-key/rotate`; see `.env.example` for the new `TRUST_PROXY` setting.
+
 ## 0.8.2
 
 - Security: a known-malicious C2 IP is now treated as a disqualifying indicator of compromise. It is reclassified from `high` to `critical`, its confidence is no longer discounted by where it appears, and its presence pins the risk score to the F band regardless of aggregate. Previously a payload split across `SKILL.md` and a referenced `setup.sh` — credential access plus a known ClawHavoc C2 IP — assembled to only 25/100 (grade B, "approve"); it now grades F and blocks. Cross-file assembly surfaced the evidence in 0.8.0, but scoring still averaged it away; this closes that gap.

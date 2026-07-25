@@ -6,9 +6,21 @@ import { skillRoutes } from "./routes/skills.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhooks.js";
 
+// `trustProxy: true` would trust X-Forwarded-For from anyone, letting a direct
+// client spoof its IP to mint a fresh rate-limit bucket per request (defeating
+// the per-IP caps) and poison request logs. Trust only what is configured:
+// TRUST_PROXY may be a hop count ("1") or a proxy IP/CIDR allowlist. Defaults
+// to trusting nothing, which is correct when the API is exposed directly.
+function trustProxyConfig(): boolean | number | string[] {
+  const raw = process.env.TRUST_PROXY?.trim();
+  if (!raw) return false;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  return raw.split(",").map((v) => v.trim()).filter(Boolean);
+}
+
 const app = Fastify({
   logger: true,
-  trustProxy: true,
+  trustProxy: trustProxyConfig(),
   bodyLimit: 1_048_576, // 1MB
 });
 
