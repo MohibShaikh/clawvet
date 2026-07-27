@@ -10,16 +10,22 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   npm:
     runs-on: ubuntu-latest
     permissions:
       # write is needed to create the GitHub Release below.
       contents: write
+      # required for npm provenance, which signs the tarball via OIDC so users
+      # can verify it was built from this repo (`npm audit signatures`).
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -51,7 +57,7 @@ jobs:
           fi
 
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --provenance
         working-directory: packages/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
