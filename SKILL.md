@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.8.2
+version: 0.9.0
 description: Code quality and safety linter for OpenClaw skills. Runs 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
@@ -60,7 +60,7 @@ npx clawvet feedback
 ## Analysis Passes
 
 1. **Skill Parser** — Extracts YAML frontmatter, code blocks, URLs, and domains
-2. **Static Analysis** — 54 pattern rules across multiple categories
+2. **Static Analysis** — 57 pattern rules across multiple categories
 3. **Metadata Validator** — Checks for undeclared binaries, env vars, missing descriptions
 4. **Dependency Checker** — Flags auto-install and global package installs
 5. **Typosquat Detector** — Levenshtein distance against popular skill names

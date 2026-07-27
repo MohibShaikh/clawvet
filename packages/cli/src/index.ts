@@ -7,6 +7,7 @@ import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+import { FEEDBACK_URL, FEEDBACK_DISPLAY_URL } from "./feedback.js";
 
 // Open a URL in the user's browser without going through a shell. Using
 // execFile (not exec) means the URL is passed as an argument, never
@@ -50,12 +51,11 @@ program
   .option("--semantic", "Enable AI semantic analysis (requires ANTHROPIC_API_KEY)")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
   .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
-  .option("--subscribe", "Open the ClawVet feedback & alerts form")
+  .option("--subscribe", "Open a prefilled GitHub issue to send feedback")
   .action(async (target, opts) => {
     if (opts.subscribe) {
-      const url = "https://tally.so/r/jaMdaa";
-      console.log(`Opening ${url} ...`);
-      openUrl(url);
+      console.log(`Opening ${FEEDBACK_DISPLAY_URL} ...`);
+      openUrl(FEEDBACK_URL);
     }
     await scanCommand(target, {
       format: opts.format,
@@ -94,11 +94,10 @@ program
 
 program
   .command("feedback")
-  .description("Open the ClawVet feedback & threat alerts form")
+  .description("Open a prefilled GitHub issue to send feedback")
   .action(async () => {
-    const url = "https://tally.so/r/jaMdaa";
-    console.log(`Opening ${url} ...`);
-    openUrl(url);
+    console.log(`Opening ${FEEDBACK_DISPLAY_URL} ...`);
+    openUrl(FEEDBACK_URL);
   });
 
 program.parse();
