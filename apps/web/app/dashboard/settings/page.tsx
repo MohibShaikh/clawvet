@@ -22,7 +22,7 @@ interface User {
   githubUsername: string;
   email: string | null;
   plan: string;
-  apiKey: string | null;
+  hasApiKey: boolean;
 }
 
 interface Webhook {
@@ -40,6 +40,9 @@ export default function SettingsPage() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [newWebhookUrl, setNewWebhookUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  // Only ever populated right after generating — the key cannot be fetched back.
+  const [freshKey, setFreshKey] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -49,14 +52,11 @@ export default function SettingsPage() {
           const data = await res.json();
           if (data.user) {
             setUser(data.user);
-            if (data.user.apiKey) {
-              const whRes = await fetch("/api/webhooks", {
-                headers: { "x-api-key": data.user.apiKey },
-              });
-              if (whRes.ok) {
-                const whData = await whRes.json();
-                setWebhooks(whData.webhooks || []);
-              }
+            // Authenticated by the session cookie, sent automatically.
+            const whRes = await fetch("/api/webhooks");
+            if (whRes.ok) {
+              const whData = await whRes.json();
+              setWebhooks(whData.webhooks || []);
             }
           }
         }
@@ -70,21 +70,35 @@ export default function SettingsPage() {
   }, []);
 
   function handleCopy() {
-    if (!user?.apiKey) return;
-    navigator.clipboard.writeText(user.apiKey);
+    if (!freshKey) return;
+    navigator.clipboard.writeText(freshKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function handleGenerateKey() {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/auth/api-key", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setFreshKey(data.apiKey);
+        setShowKey(true);
+        setUser((prev) => (prev ? { ...prev, hasApiKey: true } : prev));
+      }
+    } catch {
+      // failed
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function handleAddWebhook() {
-    if (!newWebhookUrl || !user?.apiKey) return;
+    if (!newWebhookUrl || !user) return;
     try {
       const res = await fetch("/api/webhooks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": user.apiKey,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newWebhookUrl,
           events: ["scan.complete", "scan.critical"],
@@ -100,10 +114,9 @@ export default function SettingsPage() {
     }
   }
 
-  const displayKey = user?.apiKey || "cg_••••••••••••••••••••••••••••••";
-  const maskedKey = user?.apiKey
-    ? `cg_${"•".repeat(user.apiKey.length - 3)}`
-    : "cg_••••••••••••••••••••••••••••••";
+  const placeholder = "cg_••••••••••••••••••••••••••••••";
+  const displayKey = freshKey || placeholder;
+  const maskedKey = freshKey ? `cg_${"•".repeat(freshKey.length - 3)}` : placeholder;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
@@ -122,7 +135,9 @@ export default function SettingsPage() {
         </div>
         <div className="p-5">
           <p className="text-sm text-ink-muted">
-            Use this key to authenticate CLI and CI/CD integrations.
+            Use this key to authenticate CLI and CI/CD integrations. Keys are
+            stored hashed — the value is shown once, when you generate it, and
+            cannot be recovered afterwards.
           </p>
           <div className="mt-4 flex gap-2">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-[var(--border)] bg-surface-0 px-4 py-2.5">
@@ -139,12 +154,40 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2.5 text-xs text-ink-muted hover:text-ink hover:border-accent/30 transition"
+              disabled={!freshKey}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2.5 text-xs text-ink-muted hover:text-ink hover:border-accent/30 transition disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? "Copied!" : "Copy"}
             </button>
           </div>
+
+          {user && (
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                onClick={handleGenerateKey}
+                disabled={generating}
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-surface-2 px-3 py-2 text-xs text-ink-muted hover:text-ink hover:border-accent/30 transition disabled:opacity-30"
+              >
+                {generating ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={12} />
+                )}
+                {user.hasApiKey ? "Regenerate key" : "Generate key"}
+              </button>
+              {user.hasApiKey && !freshKey && (
+                <span className="text-xs text-ink-faint">
+                  Regenerating invalidates your current key.
+                </span>
+              )}
+              {freshKey && (
+                <span className="text-xs text-accent">
+                  Copy it now — it won&apos;t be shown again.
+                </span>
+              )}
+            </div>
+          )}
           {!user && !loading && (
             <p className="mt-3 text-xs text-ink-faint">
               <a href="/api/auth/github" className="text-accent hover:underline">
@@ -186,7 +229,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleAddWebhook}
-              disabled={!newWebhookUrl || !user?.apiKey}
+              disabled={!newWebhookUrl || !user}
               className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-surface-0 hover:bg-accent-dim transition glow-accent disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus size={14} />

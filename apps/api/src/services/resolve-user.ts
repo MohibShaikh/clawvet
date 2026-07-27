@@ -1,6 +1,7 @@
 import type { FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { hashApiKey } from "./api-key.js";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -35,7 +36,7 @@ export interface ResolvedUser {
   id: string;
   githubUsername: string;
   plan: string;
-  apiKey: string | null;
+  hasApiKey: boolean;
 }
 
 export async function resolveUser(
@@ -68,19 +69,19 @@ export async function resolveUser(
         id: user.id,
         githubUsername: user.githubUsername,
         plan: user.plan || "free",
-        apiKey: user.apiKey,
+        hasApiKey: Boolean(user.apiKeyHash),
       };
     }
 
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.apiKey, apiKey!),
+      where: eq(schema.users.apiKeyHash, hashApiKey(apiKey!)),
     });
     if (!user) return null;
     return {
       id: user.id,
       githubUsername: user.githubUsername,
       plan: user.plan || "free",
-      apiKey: user.apiKey,
+      hasApiKey: Boolean(user.apiKeyHash),
     };
   } catch {
     return null;

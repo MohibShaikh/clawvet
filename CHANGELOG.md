@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.9.0
+
+- **Security: API keys are stored hashed.** The server keeps only a SHA-256 of each
+  key, so a leaked backup or over-sharing endpoint no longer yields usable
+  credentials. `POST /api/v1/auth/api-key` returns the plaintext exactly once;
+  `GET /api/v1/auth/me` now reports `hasApiKey` instead of the key. The dashboard
+  authenticates with its session cookie and offers a regenerate button. See
+  SECURITY.md for the migration SQL (existing keys are preserved).
+- **Security: the semantic pass is hardened against prompt injection.** Skill
+  content is fenced with a per-call unguessable boundary and explicitly marked as
+  untrusted data, and an attempt to override the analyzer is now reported as a
+  `prompt_injection` finding rather than obeyed. Previously the content was fenced
+  with a bare `---` that a malicious skill could simply close.
+- **Supply chain: releases are published from CI with npm provenance**, so the
+  tarball can be verified against this repo (`npm audit signatures`). GitHub
+  Actions are pinned to commit SHAs and workflow tokens are read-only.
+- CLI: `clawvet feedback` and the periodic CTA now open a prefilled GitHub issue
+  instead of a form.
+
+## 0.8.0
+
+- **Cross-file payload assembly**: folder scans now fold in the content of sibling
+  files the `SKILL.md` references (e.g. `bash ./setup.sh`), so payloads split
+  across files are scanned instead of missed. Referenced-only, one level deep
+  under `lib/`/`scripts/`; single-file and `--remote` scans are unchanged.
+- Add MIT `LICENSE` file to the published package.
+
 ## 0.7.5
 
 - Docs: embed the recorded CLI walkthrough in the npm-facing package README.

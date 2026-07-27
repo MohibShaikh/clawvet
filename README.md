@@ -45,7 +45,7 @@ clawvet/
 │   └── web/          # Next.js 14 dashboard
 ├── packages/
 │   ├── cli/          # `clawvet` CLI tool
-│   └── shared/       # Types + scanner engine + 54 threat detection patterns
+│   └── shared/       # Types + scanner engine + 57 threat detection patterns
 ├── docker-compose.yml
 └── turbo.json
 ```
@@ -55,11 +55,11 @@ clawvet/
 | Pass | Module | What it catches |
 |------|--------|-----------------|
 | 1 | `skill-parser` | Parses YAML frontmatter, extracts code blocks, URLs, IPs, domains |
-| 2 | `static-analysis` | 54 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
+| 2 | `static-analysis` | 57 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
 | 3 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
-| 4 | `semantic-analysis` | Claude AI analyzes instructions for social engineering & prompt injection |
-| 5 | `dependency-checker` | npx -y auto-install, global npm installs, risky packages |
-| 6 | `typosquat-detector` | Levenshtein distance against top ClawHub skills |
+| 4 | `dependency-checker` | npx -y auto-install, global npm installs, risky packages |
+| 5 | `typosquat-detector` | Levenshtein distance against top ClawHub skills |
+| 6 | `semantic-analysis` | LLM analyzes instructions for social engineering & prompt injection (optional) |
 
 ## Risk Scoring
 
@@ -74,12 +74,22 @@ clawvet/
 ```
 POST   /api/v1/scans          # Submit skill content for scanning
 GET    /api/v1/scans/:id      # Get scan result
-GET    /api/v1/scans           # List scans (paginated)
-GET    /api/v1/stats           # Public stats
-POST   /api/v1/webhooks        # Register webhook
-DELETE /api/v1/webhooks/:id    # Remove webhook
+GET    /api/v1/scans           # List your scans (auth required, paginated)
+GET    /api/v1/stats           # Public aggregate stats
+POST   /api/v1/webhooks        # Register webhook (auth required)
+GET    /api/v1/webhooks        # List your webhooks (auth required)
+DELETE /api/v1/webhooks/:id    # Remove webhook (auth required)
 GET    /api/v1/auth/github     # GitHub OAuth flow
+GET    /api/v1/auth/me         # Current user
+POST   /api/v1/auth/api-key    # Issue a new API key (returned once)
 ```
+
+Authenticate with either the `cg_session` cookie (dashboard) or an API key
+(`Authorization: Bearer cg_...`) for CLI/CI use.
+
+**API keys are stored as SHA-256 hashes.** The plaintext key is returned exactly
+once, by `POST /api/v1/auth/api-key`, and cannot be retrieved afterwards — only
+regenerated, which invalidates the previous key.
 
 ## Development
 
@@ -87,7 +97,7 @@ GET    /api/v1/auth/github     # GitHub OAuth flow
 # Install deps
 npm install
 
-# Run tests (61 tests across 6 suites)
+# Run tests (93 tests across 12 suites)
 cd apps/api && npx vitest run
 
 # Start API server
@@ -122,7 +132,7 @@ This repo is a **monorepo** with two separate concerns:
 | Package | Published | Description |
 |---------|-----------|-------------|
 | `packages/cli` | Yes (`npx clawvet`) | Stateless CLI scanner — no databases, no auth, fully offline by default |
-| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, and 54 threat patterns |
+| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, and 57 threat patterns |
 | `apps/api` | No (self-hosted) | Optional Fastify backend with Postgres, Redis, GitHub OAuth |
 | `apps/web` | No (self-hosted) | Optional Next.js dashboard |
 
@@ -149,7 +159,7 @@ When enabled, the following data is sent (and **nothing else**):
 | `ts` | `2026-03-14T...` | Timestamp |
 | `os` | `win32` | Platform |
 | `osVersion` | `10.0.26200` | OS version |
-| `cliVersion` | `0.7.2` | CLI version |
+| `cliVersion` | `0.9.0` | CLI version |
 | `environment` | `production` | `production` / `development` / `ci` (dev & CI traffic filtered out) |
 | `skillHash` | `9f2a…` (SHA-256) | Hash of the skill name — the raw name is **never** sent |
 | `riskScore` | `15` | Numeric risk score |
@@ -163,13 +173,16 @@ Config is stored in `~/.clawvet/config.json`.
 
 ## Tests
 
-72 tests covering:
+93 tests covering:
 - All 6 fixture skills (benign → malicious)
 - Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
 - Regex catastrophic backtracking safety
-- 54 threat patterns across 12 categories
+- 57 threat patterns across 13 categories
 - API route validation (auth, webhooks, scans — incl. authenticated scan listing)
-- SSRF guard (scheme allowlist + private/metadata IP-range blocking)
+- SSRF guard (scheme allowlist, private/metadata IP ranges, connect-time pinning)
+- API key hashing (keys are never stored or returned in plaintext)
+- Semantic-pass prompt injection defense (boundary + untrusted-data instruction)
+- Cross-file payload assembly (split payloads, precision guard, binary skip)
 - CLI end-to-end integration (--format json, --fail-on, exit codes)
 
 ## License

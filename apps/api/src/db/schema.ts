@@ -37,7 +37,8 @@ export const users = pgTable("users", {
   githubUsername: text("github_username").notNull(),
   email: text("email"),
   plan: planEnum("plan").default("free"),
-  apiKey: text("api_key").unique(),
+  // SHA-256 of the API key, never the key itself — see services/api-key.ts.
+  apiKeyHash: text("api_key_hash").unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

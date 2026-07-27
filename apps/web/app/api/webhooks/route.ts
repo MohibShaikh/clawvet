@@ -2,19 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.API_URL || "http://localhost:3001";
 
-function getApiKey(request: NextRequest): string | null {
-  return request.headers.get("x-api-key");
+// The dashboard authenticates with its session cookie, not the API key: keys
+// are now stored hashed and shown only once, so the browser never holds one.
+function getAuthHeaders(request: NextRequest): Record<string, string> | null {
+  const session = request.cookies.get("cg_session")?.value;
+  if (session) return { Cookie: `cg_session=${session}` };
+  const apiKey = request.headers.get("x-api-key");
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : null;
 }
 
 export async function GET(request: NextRequest) {
-  const apiKey = getApiKey(request);
-  if (!apiKey) {
+  const auth = getAuthHeaders(request);
+  if (!auth) {
     return NextResponse.json({ webhooks: [] }, { status: 200 });
   }
 
   try {
     const res = await fetch(`${API_URL}/api/v1/webhooks`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: auth,
       cache: "no-store",
     });
 
@@ -30,8 +35,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = getApiKey(request);
-  if (!apiKey) {
+  const auth = getAuthHeaders(request);
+  if (!auth) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        ...auth,
       },
       body: JSON.stringify(body),
     });

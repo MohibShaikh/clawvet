@@ -23,6 +23,10 @@ clawvet scan ./my-skill/
 clawvet scan ./my-skill/SKILL.md
 ```
 
+Scanning a **folder** also pulls in the companion files the `SKILL.md` actually
+references (e.g. `bash ./setup.sh`), so payloads split across files are caught
+instead of missed. Scanning a single `SKILL.md` path scans only that file.
+
 ### JSON output (for CI/CD)
 
 ```bash
@@ -61,11 +65,14 @@ ClawVet runs a 6-pass analysis on every skill:
 | Pass | What it checks |
 |------|---------------|
 | **Skill Parser** | Extracts YAML frontmatter, code blocks, URLs, IPs, domains |
-| **Static Analysis** | 54 regex patterns: RCE, reverse shells, credential theft, obfuscation, DNS exfil, privilege escalation |
+| **Static Analysis** | 57 regex patterns: RCE, reverse shells, credential theft, obfuscation, DNS exfil, privilege escalation |
 | **Metadata Validator** | Undeclared binaries, env vars, missing descriptions, invalid semver |
 | **Dependency Checker** | `npx -y` auto-install, global `npm install`, risky packages |
 | **Typosquat Detector** | Levenshtein distance against popular skills, suspicious naming patterns |
-| **Semantic Analysis** | AI-powered detection of social engineering & prompt injection (optional) |
+| **Semantic Analysis** | AI-powered detection of social engineering & prompt injection (optional, bring your own API key) |
+
+Referenced companion files are assembled into the scan on folder scans, so
+cross-file payloads are analysed by every pass above.
 
 ## Risk Scoring
 

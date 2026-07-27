@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { randomBytes, createHmac, timingSafeEqual } from "node:crypto";
+import { generateApiKey, hashApiKey } from "../services/api-key.js";
+import { requireAuth } from "../services/require-auth.js";
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
@@ -155,14 +157,14 @@ export async function authRoutes(app: FastifyInstance) {
         });
 
         if (!user) {
-          const apiKey = `cg_${randomBytes(24).toString("hex")}`;
+          const apiKey = generateApiKey();
           const [newUser] = await db
             .insert(schema.users)
             .values({
               githubId: String(ghUser.id),
               githubUsername: ghUser.login,
               email: ghUser.email || null,
-              apiKey,
+              apiKeyHash: hashApiKey(apiKey),
             })
             .returning();
           user = newUser;
@@ -223,13 +225,13 @@ export async function authRoutes(app: FastifyInstance) {
           githubUsername: user.githubUsername,
           email: user.email,
           plan: user.plan,
-          apiKey: user.apiKey,
+          hasApiKey: Boolean(user.apiKeyHash),
           createdAt: user.createdAt,
         });
       }
 
       const user = await db.query.users.findFirst({
-        where: eq(schema.users.apiKey, apiKey!),
+        where: eq(schema.users.apiKeyHash, hashApiKey(apiKey!)),
       });
 
       if (!user) {
@@ -241,13 +243,39 @@ export async function authRoutes(app: FastifyInstance) {
         githubUsername: user.githubUsername,
         email: user.email,
         plan: user.plan,
-        apiKey: user.apiKey,
+        hasApiKey: Boolean(user.apiKeyHash),
         createdAt: user.createdAt,
       });
     } catch {
       return reply.status(503).send({ error: "Database not available" });
     }
   });
+
+  // Issue a fresh API key. Only the hash is stored, so this response is the one
+  // and only time the plaintext exists outside the caller's hands — there is no
+  // endpoint that can show it again. Regenerating invalidates the previous key.
+  app.post(
+    "/api/v1/auth/api-key",
+    { preHandler: requireAuth },
+    async (request, reply) => {
+      const user = request.authUser!;
+      try {
+        const { db, schema } = await import("../db/index.js");
+        const apiKey = generateApiKey();
+        await db
+          .update(schema.users)
+          .set({ apiKeyHash: hashApiKey(apiKey) })
+          .where(eq(schema.users.id, user.id));
+
+        return reply.send({
+          apiKey,
+          note: "Store this now — it cannot be retrieved again, only regenerated.",
+        });
+      } catch {
+        return reply.status(503).send({ error: "Database not available" });
+      }
+    }
+  );
 
   app.post("/api/v1/auth/logout", async (request, reply) => {
     reply.header(

@@ -7,6 +7,7 @@ import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
 import { assembleSkill } from "../assemble.js";
+import { FEEDBACK_DISPLAY_URL } from "../feedback.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
@@ -170,12 +171,12 @@ export async function scanCommand(
   // Await telemetry so it completes before any process.exit()
   await sendTelemetry(result);
 
-  // Show Tally CTA every 5th scan (after increment)
+  // Show feedback CTA every 5th scan (after increment)
   if (isInteractive && getScanCount() % 5 === 0) {
     console.log(
       chalk.dim("  ") +
-      chalk.cyan("Got feedback? Want threat alerts? → ") +
-      chalk.underline.cyan("https://tally.so/r/jaMdaa")
+      chalk.cyan("Got feedback? → ") +
+      chalk.underline.cyan(FEEDBACK_DISPLAY_URL)
     );
     console.log();
   }

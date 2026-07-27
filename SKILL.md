@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.6.3
+version: 0.9.0
 description: Code quality and safety linter for OpenClaw skills. Runs 6 analysis passes before you install.
 author: MohibShaikh
 license: MIT
@@ -33,6 +33,9 @@ Scan a local skill:
 npx clawvet scan ./skill-folder/
 ```
 
+Scanning a folder also assembles the companion files the `SKILL.md` references
+(e.g. `bash ./setup.sh`), so payloads split across multiple files are caught.
+
 JSON output for CI/CD:
 
 ```bash
@@ -51,7 +54,7 @@ Watch mode — auto-block risky installs:
 npx clawvet watch --threshold 50
 ```
 
-Submit feedback or get alerts:
+Report a bug or send feedback (opens a prefilled GitHub issue):
 
 ```bash
 npx clawvet feedback
@@ -60,25 +63,23 @@ npx clawvet feedback
 ## Analysis Passes
 
 1. **Skill Parser** — Extracts YAML frontmatter, code blocks, URLs, and domains
-2. **Static Analysis** — 54 pattern rules across multiple categories
+2. **Static Analysis** — 57 pattern rules across 13 categories
 3. **Metadata Validator** — Checks for undeclared binaries, env vars, missing descriptions
 4. **Dependency Checker** — Flags auto-install and global package installs
 5. **Typosquat Detector** — Levenshtein distance against popular skill names
-6. **Semantic Analysis** — AI-powered contextual analysis (Pro)
+6. **Semantic Analysis** — AI-powered contextual analysis (optional, bring your own API key)
 
-## What's New in v0.6
+## What's New in v0.9
 
-- **Reliable telemetry** — Telemetry now awaits before exit, so no data is lost.
-- **CI-safe** — Opt-in prompt is skipped in non-TTY environments (piped stdin, CI).
-- **Less noise** — Feedback CTA shows every 5th scan instead of every scan.
-- **Trust badges** — Generate trust badges for skill READMEs with `npx clawvet badge`.
-- **Ban lists** — Block skills by name/author/slug via `.clawvetban` files.
-- **Confidence scores** — Each finding shows a confidence percentage. Risk scores are weighted accordingly.
-- **Fix suggestions** — Every finding includes an actionable remediation in terminal and SARIF output.
-- **Content-hash caching** — Repeat scans of unchanged files are near-instant.
-- **Trust badges** — Run `npx clawvet badge ./skill/` to generate a shields.io trust badge for your README.
-- **Ban list** — Create a `.clawvetban` file to block skills by name, author, or slug.
-- **Feedback form** — Run `npx clawvet feedback` to share what you think.
+- **Cross-file payload assembly** — folder scans now include the companion files
+  a `SKILL.md` references, closing the split-payload blind spot.
+- **Bring your own LLM** — the optional semantic pass works with Anthropic,
+  OpenAI, Zhipu, or a local model via Ollama. No key ships with ClawVet.
+- **Feedback via GitHub** — `npx clawvet feedback` opens a prefilled issue
+  instead of a form.
+- **Security hardening** — see SECURITY.md; the self-hosted API server now
+  requires `JWT_SECRET`, stores API keys hashed, and validates webhook targets
+  against SSRF.
 
 ## Note on Monorepo
 

@@ -1,0 +1,55 @@
+name: Publish to npm
+
+# Publishing from CI with provenance means users can cryptographically verify
+# that the tarball on npm was built from this repo at this commit, rather than
+# uploaded from someone's laptop. ClawVet runs inside other people's CI, so a
+# tampered release would be a supply-chain incident — provenance makes that
+# detectable. See `npm audit signatures`.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm dist-tag to publish under"
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for npm provenance (OIDC)
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npx turbo build --filter=clawvet
+
+      - name: Test
+        run: npx vitest run
+        working-directory: apps/api
+
+      - name: Verify CLI works
+        run: node packages/cli/dist/index.js --version
+
+      - name: Publish
+        run: npm publish --provenance --access public --tag "${{ inputs.tag || 'latest' }}"
+        working-directory: packages/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
