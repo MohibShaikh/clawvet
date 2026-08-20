@@ -516,6 +516,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     category: "file_system",
     title: "Path traversal",
     description: "Uses relative path traversal (../) which could access files outside expected directories.",
+    codeOnly: true,
     fix: "Use absolute paths or paths relative to the skill's working directory.",
   },
 

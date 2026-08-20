@@ -1,4 +1,4 @@
-import type { Finding, ScanResult } from "../types.js";
+import type { Finding, ParsedSkill, ScanResult } from "../types.js";
 import { parseSkill } from "./skill-parser.js";
 import { runStaticAnalysis } from "./static-analysis.js";
 import { validateMetadata } from "./metadata-validator.js";
@@ -7,6 +7,17 @@ import { detectTyposquats } from "./typosquat-detector.js";
 import { applyContext } from "./context-classifier.js";
 import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.js";
 import { getCached, setCached } from "./cache.js";
+
+// Line numbers that fall inside a fenced code block. The context pass uses this
+// to tell a real use of a credential or exfil channel from a mention of one in
+// prose or frontmatter.
+function codeLinesOf(skill: ParsedSkill): Set<number> {
+  const lines = new Set<number>();
+  for (const cb of skill.codeBlocks) {
+    for (let l = cb.lineStart; l <= cb.lineEnd; l++) lines.add(l);
+  }
+  return lines;
+}
 
 export interface ScanOptions {
   semantic?: boolean;
@@ -53,7 +64,7 @@ export async function scanSkill(
     : allFindings;
 
   // Context pass: downweight dual-use capabilities that have no exfil/exec sink.
-  const contextFindings = applyContext(filteredFindings);
+  const contextFindings = applyContext(filteredFindings, codeLinesOf(skill));
 
   const riskScore = calculateRiskScore(contextFindings);
   const riskGrade = getRiskGrade(riskScore);

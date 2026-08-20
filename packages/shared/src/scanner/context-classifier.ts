@@ -38,6 +38,10 @@ const SINK_TITLES = new Set([
 
 const DOWNWEIGHT = 0.3;
 
+function inCode(line: number | null | undefined, codeLines: Set<number>): boolean {
+  return line !== null && line !== undefined && codeLines.has(line);
+}
+
 // The install-me envelope. Real malicious skills keep the payload in a
 // referenced script or binary and leave only the instructions that get a user
 // to run it in the markdown. Each half is common on its own: 48 of 400 clean
@@ -115,10 +119,17 @@ function promoteEnvelope(findings: Finding[]): Finding[] {
 // a secret is read and something sends data out. This is the mirror of the
 // downweight below, and the reason it can be stated with confidence 1.0 is the
 // same: the co-occurrence is exact, not a guess about any single line.
-function taintExfiltration(findings: Finding[]): Finding[] {
+function taintExfiltration(findings: Finding[], codeLines: Set<number>): Finding[] {
   const source = findings.find((f) => f.category === "credential_theft");
   const sink = findings.find((f) => f.category === "data_exfiltration");
   if (!source || !sink) return findings;
+  // Both halves must be actual uses: a declaration in frontmatter or a prose
+  // threat-table mention is documenting, not doing. An OAuth client declaring
+  // its API key and posting to the user's own webhook, or a security scanner
+  // listing exfiltration patterns, is not the exfiltration pattern.
+  if (!inCode(source.lineNumber, codeLines) || !inCode(sink.lineNumber, codeLines)) {
+    return findings;
+  }
 
   return [
     ...findings,
@@ -136,13 +147,14 @@ function taintExfiltration(findings: Finding[]): Finding[] {
   ];
 }
 
-export function applyContext(findings: Finding[]): Finding[] {
+export function applyContext(findings: Finding[], codeLines?: Set<number>): Finding[] {
   const withEnvelope = promoteEnvelope(findings).map((f) =>
     fromTrustedInstaller(f)
       ? { ...f, severity: "low" as const, confidence: 0.3, description: `${f.description} This one points at a well-known vendor installer.` }
       : f
   );
-  if (withEnvelope.some(isSink)) return taintExfiltration(withEnvelope);
+  const lines = codeLines ?? new Set<number>();
+  if (withEnvelope.some(isSink)) return taintExfiltration(withEnvelope, lines);
   return withEnvelope.map((f) =>
     isDualUse(f) && !f.disqualifying
       ? { ...f, confidence: Math.round((f.confidence ?? 1.0) * DOWNWEIGHT * 100) / 100 }
