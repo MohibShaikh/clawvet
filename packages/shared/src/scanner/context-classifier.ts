@@ -38,6 +38,18 @@ const SINK_TITLES = new Set([
 
 const DOWNWEIGHT = 0.3;
 
+// The install-me envelope. Real malicious skills keep the payload in a
+// referenced script or binary and leave only the instructions that get a user
+// to run it in the markdown. Each half is common on its own: 48 of 400 clean
+// ClawHub skills say "install X first", and legitimate READMEs tell you to run
+// a command. Together they are not: on the 500-skill real corpus this pair
+// fires on 48 of 50 malicious skills and 0 of 450 benign ones.
+//
+// Each half is medium severity, so an envelope-only skill tops out at 24 and
+// never crosses the warn line at 26. Promoting the pair is what closes that
+// two-point gap on the threat class where the payload is out of file.
+const ENVELOPE_TITLES = ["Prerequisite install trick", "Copy-paste command instruction"];
+
 function isSink(f: Finding): boolean {
   return SINK_CATEGORIES.has(f.category) || SINK_TITLES.has(f.title);
 }
@@ -46,9 +58,61 @@ function isDualUse(f: Finding): boolean {
   return DUAL_USE_CATEGORIES.has(f.category);
 }
 
+function promoteEnvelope(findings: Finding[]): Finding[] {
+  const titles = new Set(findings.map((f) => f.title));
+  if (!ENVELOPE_TITLES.every((t) => titles.has(t))) return findings;
+
+  // The pair is its own concern, not a louder version of either half, so it is
+  // reported as a separate finding and the halves stay as the evidence for it.
+  // Confidence is 1.0 for the same reason a curated indicator of compromise is:
+  // this is an exact co-occurrence, not a fuzzy heuristic that gets less
+  // certain depending on where in the file it matched.
+  const anchor = findings.find((f) => f.title === ENVELOPE_TITLES[0])!;
+  const envelope: Finding = {
+    category: "social_engineering",
+    severity: "high",
+    title: "Install-me envelope",
+    description:
+      "The skill tells the user to install a prerequisite and run a command, without the payload being in SKILL.md. This is how a skill gets code it does not contain executed.",
+    evidence: anchor.evidence,
+    lineNumber: anchor.lineNumber,
+    analysisPass: "context-classifier",
+    confidence: 1.0,
+    fix: "Declare dependencies in `metadata.openclaw.requires.bins` and ship the code you run, so it can be reviewed before it executes.",
+  };
+  return [...findings, envelope];
+}
+
+// A credential read on its own is configuration, and an outbound request on its
+// own is an API call. Together in one skill they are the exfiltration pattern:
+// a secret is read and something sends data out. This is the mirror of the
+// downweight below, and the reason it can be stated with confidence 1.0 is the
+// same: the co-occurrence is exact, not a guess about any single line.
+function taintExfiltration(findings: Finding[]): Finding[] {
+  const source = findings.find((f) => f.category === "credential_theft");
+  const sink = findings.find((f) => f.category === "data_exfiltration");
+  if (!source || !sink) return findings;
+
+  return [
+    ...findings,
+    {
+      category: "data_exfiltration",
+      severity: "critical",
+      title: "Credential exfiltration",
+      description: `The skill reads credentials (${source.title}) and sends data out (${sink.title}). Together these are the pattern used to steal secrets.`,
+      evidence: source.evidence,
+      lineNumber: source.lineNumber,
+      analysisPass: "context-classifier",
+      confidence: 1.0,
+      fix: "Remove the outbound send, or document exactly what is transmitted and let the user supply their own endpoint.",
+    },
+  ];
+}
+
 export function applyContext(findings: Finding[]): Finding[] {
-  if (findings.some(isSink)) return findings;
-  return findings.map((f) =>
+  const withEnvelope = promoteEnvelope(findings);
+  if (withEnvelope.some(isSink)) return taintExfiltration(withEnvelope);
+  return withEnvelope.map((f) =>
     isDualUse(f) && !f.disqualifying
       ? { ...f, confidence: Math.round((f.confidence ?? 1.0) * DOWNWEIGHT * 100) / 100 }
       : f

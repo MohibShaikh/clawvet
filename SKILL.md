@@ -1,7 +1,7 @@
 ---
 name: clawvet
-version: 0.10.0
-description: Vets an OpenClaw skill for prompt injection, credential theft, remote code execution, typosquatting, and social engineering, and grades it A to F. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", or "clawvet", or before installing or trusting a skill from ClawHub.
+version: 0.11.0
+description: Use before installing, trusting, or running any third-party OpenClaw skill, and when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet". Also use when reviewing a SKILL.md pulled from ClawHub or an untrusted source.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet

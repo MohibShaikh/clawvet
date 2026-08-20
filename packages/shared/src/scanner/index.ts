@@ -57,7 +57,10 @@ export async function scanSkill(
 
   const riskScore = calculateRiskScore(contextFindings);
   const riskGrade = getRiskGrade(riskScore);
-  const findingsCount = countFindings(filteredFindings);
+  // Report what was scored. Showing the pre-context findings would explain the
+  // score wrong: a promoted envelope pair would read as two mediums next to a
+  // score only a high can produce.
+  const findingsCount = countFindings(contextFindings);
 
   const recommendation =
     riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
@@ -70,7 +73,7 @@ export async function scanSkill(
     riskScore,
     riskGrade,
     findingsCount,
-    findings: filteredFindings,
+    findings: contextFindings,
     recommendation,
   };
 

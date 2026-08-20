@@ -1,7 +1,7 @@
 ---
 name: clawvet-guard
 version: 1.0.0
-description: Vet any OpenClaw skill for prompt injection, credential theft, and RCE before you install it. Runs a clawvet scan and blocks risky installs.
+description: Use before installing, enabling, or running any third-party OpenClaw skill, and when the user says "install this skill", "is this skill safe", "scan/vet/check this skill", or "should I trust this". Also use when a skill is pulled from ClawHub or any untrusted source.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet

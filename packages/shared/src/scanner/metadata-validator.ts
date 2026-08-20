@@ -81,12 +81,25 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
 
   const rawEnv = fm.metadata?.openclaw?.requires?.env;
   const declaredEnv = new Set(Array.isArray(rawEnv) ? rawEnv : []);
+
+  // A variable the skill assigns itself is a local, not an environment
+  // dependency. Without this, every `RESULT=$(curl ...)` in a shell block gets
+  // reported as an undeclared env var, which buries the real ones.
+  const assigned = new Set<string>();
+  for (const re of [
+    /^\s*(?:export\s+|local\s+|declare\s+(?:-\w+\s+)?)?([A-Z][A-Z0-9_]+)=/gm,
+    /\bread\s+(?:-\w+\s+)*([A-Z][A-Z0-9_]+)/g,
+    /\bfor\s+([A-Z][A-Z0-9_]+)\s+in\b/g,
+  ]) {
+    for (const m of skill.rawContent.matchAll(re)) assigned.add(m[1]);
+  }
+
   const envRe = /\$\{?([A-Z][A-Z0-9_]+)\}?/g;
   let match: RegExpExecArray | null;
 
   while ((match = envRe.exec(skill.rawContent)) !== null) {
     const envVar = match[1];
-    if (!declaredEnv.has(envVar) && envVar.length > 2) {
+    if (!declaredEnv.has(envVar) && !assigned.has(envVar) && envVar.length > 2) {
       findings.push({
         category: "metadata",
         severity: "low",

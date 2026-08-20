@@ -14,3 +14,10 @@ apps/vscode/
 
 # Local AI assistant context (never commit to the public repo)
 CLAUDE.md
+
+# Real-world benchmark skill bodies. Labels and scores are committed in
+# benchmarks/corpus500/results.csv; rebuild the bodies with extract-clawhub.mjs.
+benchmarks/corpus500/malicious/
+benchmarks/corpus500/benign/
+benchmarks/corpus500/hard-negatives/
+benchmarks/scan-sieve.mjs

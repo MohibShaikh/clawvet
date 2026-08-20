@@ -1,0 +1,3002 @@
+[
+ {
+  "tier": "benign",
+  "author": "RIJOYAI",
+  "skill": "cart-bundle-aov-upsell",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "california",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "PHY041",
+  "skill": "phy-paper-polish",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TheShadowRose",
+  "skill": "openclaw-api-tester",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "nutstrut",
+  "skill": "settlement-witness",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-cloud-cost-audit",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "persona-project-manager",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "newsletter",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kambrosgroup",
+  "skill": "content-ideas-free",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "dox012",
+  "skill": "play-dumb",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "twinsgeeks",
+  "skill": "adopt-a-sphinx",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "harrylabsj",
+  "skill": "contract-risk-scan",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "crazyozzy",
+  "skill": "crazyozzy-auto-updater",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "JosunLP",
+  "skill": "pi-health",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "bengali",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jisuapi",
+  "skill": "train",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "furukama",
+  "skill": "context-viz",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "rachidjarray-hk-qa-fdt",
+  "skill": "authenticate",
+  "score": 15
+ },
+ {
+  "tier": "benign",
+  "author": "javainthinking",
+  "skill": "apipick-telegram-phone-check",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kenz1117",
+  "skill": "claw-security-suite",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "Alita-real",
+  "skill": "dream-maker",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yangruihan",
+  "skill": "image-edit-skill",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jdrhyne",
+  "skill": "gsc",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "aboutyao",
+  "skill": "team-collab-skill",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "wadxm",
+  "skill": "meegle-connector",
+  "score": 17
+ },
+ {
+  "tier": "benign",
+  "author": "xammarie",
+  "skill": "jarvis-db-query-doctor-01",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Jbrawner",
+  "skill": "march-madness-bracket",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "wangyendt",
+  "skill": "ahrs-tools",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "persona-customer-support",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "macdesire",
+  "skill": "nomad-backup",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "leduc121",
+  "skill": "rapidapi-launch-assistant",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zy84338719",
+  "skill": "sidecar-onestep",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "Michael-laffin",
+  "skill": "price-tracker",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Veeramanikandanr48",
+  "skill": "seo-optimizer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "driftsbot",
+  "skill": "experience-iceland-aurora-fever",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Veeramanikandanr48",
+  "skill": "scenario-analyzer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "matthewpoe",
+  "skill": "personal-crm",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "aloth",
+  "skill": "olcli",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "Dangsllc",
+  "skill": "hipaa-gap-analysis",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ewankeynes",
+  "skill": "protocol-deviation-classifier",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "earthwalking",
+  "skill": "inno-guide",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "bytesagain",
+  "skill": "font",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TarasShyn",
+  "skill": "adaptlypost",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "yflmq001",
+  "skill": "yingdao",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "travel-planning",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "ramspan",
+  "skill": "pascal-playwright-mcp",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "niracler",
+  "skill": "nini-anki-card-generator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "hughtan93-dev",
+  "skill": "podcast-summarize",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Egge21M",
+  "skill": "cocod",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "EduardoU24",
+  "skill": "ogt-docs-create",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "cerbug45",
+  "skill": "agents-skill-podcastifier",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "ui-design-system",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1970168137",
+  "skill": "china-home-appliances-sourcing",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "wangyaok1",
+  "skill": "daily-tech-broadcast",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jeffjhunter",
+  "skill": "openclaw-cost-optimizer",
+  "score": 16
+ },
+ {
+  "tier": "benign",
+  "author": "litiao1224",
+  "skill": "gog-litiao",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "backend",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "deeplearning1993",
+  "skill": "whale-alert",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Lucasnocodo",
+  "skill": "weather-ensemble-forecast",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Leo-zzl",
+  "skill": "leo-reading-notes",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yanji84",
+  "skill": "pain-point-finder",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Ricardodpalmeida",
+  "skill": "book-capture-obsidian",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "mlops",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Judyzj",
+  "skill": "compass-ai-bazi",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "liangmu-git2",
+  "skill": "qq-email-manager",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "marketing-ideas",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "MuseLinn",
+  "skill": "fis-architecture",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "twinsgeeks",
+  "skill": "adopt-a-persian",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "findhappy7",
+  "skill": "china-apparel-and-accessories-suppliers",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "CodeKungfu",
+  "skill": "brand-positioning",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TsukiSama9292",
+  "skill": "huggingface",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Zerone-Agent",
+  "skill": "skill-market",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Mingo-318",
+  "skill": "annotation-visualizer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "harshhmaniya",
+  "skill": "linkedin-lead-gen",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jeffjhunter",
+  "skill": "frontend-design-skill",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "dtjohnson83",
+  "skill": "opportunity-discovery",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "gora050",
+  "skill": "mautic",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "c-suite-competitive-intel",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "stuart5915",
+  "skill": "inclawnch-analytics",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "karlinmoon",
+  "skill": "stock-insight",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Acidias",
+  "skill": "clawpost-2",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "97fusky-droid",
+  "skill": "shihongbingtouzi",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "samuel-dunlap",
+  "skill": "im-framework-team",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "Dimillian",
+  "skill": "app-store-changelog",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "smorzandos",
+  "skill": "openclaw-diary-core",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "Xzhenxing666",
+  "skill": "listed-company-compliance",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kvy",
+  "skill": "cargo-policy-analyzer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "spain",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "tjefferson",
+  "skill": "skills-rank",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "52YuanChangXing",
+  "skill": "reviewer-rebuttal-coach",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "codefarmerman",
+  "skill": "tax-calculator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "youyancheng1",
+  "skill": "dailys-report",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "edwardrodriguez703-design",
+  "skill": "book-flooring",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "mikecourt",
+  "skill": "wisdom-accountability-coach",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "steipete",
+  "skill": "gifgrep",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "xiaoxty",
+  "skill": "job-search-report",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "cyyinfo",
+  "skill": "software-development",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "nucliweb",
+  "skill": "webperf-interaction",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "OpieTaylor911",
+  "skill": "ai-compliance",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zhouzhi-tal",
+  "skill": "xueersi-daily-question",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "CoCokkxy",
+  "skill": "marketing-calendar",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "mickmicksh",
+  "skill": "lap-stripe-api",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "antoinedc",
+  "skill": "renderkit",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "al-one",
+  "skill": "mcp-hass",
+  "score": 9
+ },
+ {
+  "tier": "benign",
+  "author": "anmolnagpal",
+  "skill": "guardduty-explainer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "giraffe-tree",
+  "skill": "flomo-add",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "byungkyu",
+  "skill": "linkedin-api",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "Koba42Corp",
+  "skill": "spacescan",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "Johnnywang2001",
+  "skill": "cors-tester",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "ramensushi2026",
+  "skill": "openclaw-cli",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "irish",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "lux-sp4rk",
+  "skill": "my-ai-familiar",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "atlassian-templates",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "JackKuo666",
+  "skill": "creating-r-research-projects",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "aiwithabidi",
+  "skill": "pagerduty",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "JithinM",
+  "skill": "mongo-db",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TheShadowRose",
+  "skill": "invoice-forge",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yushimohuang",
+  "skill": "system-monitor-tool",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Grenzlinie",
+  "skill": "semantic-scholar",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "372768498",
+  "skill": "xhs-content-creator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TheShadowRose",
+  "skill": "focus-timer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Leooooooow",
+  "skill": "ugc-brief-to-script-engine",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "brunobuddy",
+  "skill": "shut-up-openclaw-cli",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "earthwalking",
+  "skill": "tiaozhanbei-datiao",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "sealawyer2026",
+  "skill": "zhang-civil-litigation",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "arkulkarni",
+  "skill": "cricket-live-score",
+  "score": 16
+ },
+ {
+  "tier": "benign",
+  "author": "CanXiangCC",
+  "skill": "aminer-open-academic",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "recipe-find-large-files",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "turkey",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "lstpsche",
+  "skill": "gog-calendar",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "react",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "yang1002378395-cmyk",
+  "skill": "ai-model-comparison",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "WebGuHui",
+  "skill": "fact-check",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Omar-Khaleel",
+  "skill": "qr-code-pro",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "coin-identifier",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "AIsaDocs",
+  "skill": "openclaw-aisa-leading-chinese-llm",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "yejiming",
+  "skill": "techflow-news",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "pdfco",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "openlang-cn",
+  "skill": "open",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ckchzh",
+  "skill": "mileage",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ckrissun",
+  "skill": "chinese-novelist-skill",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "cnvipstar",
+  "skill": "telcall-twilio",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "remimikalsen",
+  "skill": "a-safer-email-assistant",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "richard7463",
+  "skill": "miraix-binance-agent-firewall",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "vince199907",
+  "skill": "cn-ecommerce-search-v2",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Trumppo",
+  "skill": "search-memory",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "avmw2025",
+  "skill": "crypto-market-intel",
+  "score": 12
+ },
+ {
+  "tier": "benign",
+  "author": "nickjuntilla",
+  "skill": "meatmarket",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "LeoCryptoFlow",
+  "skill": "zhouhongyi",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "archive",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "iml885203",
+  "skill": "youtube-transcribe",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "coolhackboy",
+  "skill": "kling-3",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "oyi77",
+  "skill": "joko-jobhunter",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "umami",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "DobrinAlexandru",
+  "skill": "aubrai-longevity",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "tianjin-ren",
+  "skill": "summarize-tianjin",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "TinaDu-AI",
+  "skill": "feishu-troubleshoot",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kaiofreitas",
+  "skill": "ticktick-api",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "gora050",
+  "skill": "document360",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "coolhackboy",
+  "skill": "hailuo2",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ferminrp",
+  "skill": "travel-promos-argentinas",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "sstklen",
+  "skill": "yes-md-ja",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "luochang212",
+  "skill": "github-research-assistant",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Wscats",
+  "skill": "weiyun-skills",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "khaney64",
+  "skill": "session-cost",
+  "score": 13
+ },
+ {
+  "tier": "benign",
+  "author": "heyixuan2",
+  "skill": "bambu-studio-ai",
+  "score": 18
+ },
+ {
+  "tier": "benign",
+  "author": "daniellummis",
+  "skill": "github-actions-timeout-risk-audit",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "sebclawops",
+  "skill": "project-workflow-scheduler",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "ads",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "harrylabsj",
+  "skill": "meituan",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "KhalilHsu",
+  "skill": "article-summarizer-plus",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yangdaowan",
+  "skill": "test-upload-2026",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "lijiangtai",
+  "skill": "openclaw-all-backup",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "coder-pig",
+  "skill": "fast-claw-paid-api",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "giorgallidis",
+  "skill": "clawcrm",
+  "score": 5
+ },
+ {
+  "tier": "benign",
+  "author": "AnoyiX",
+  "skill": "stock-cli",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "cfo",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "heyalerio",
+  "skill": "memesio-meme-generator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "lawyer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yushimohuang",
+  "skill": "qr-code-toolkit",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "RIJOYAI",
+  "skill": "custom-preview-flow",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "FranckStone",
+  "skill": "giveaway-skills",
+  "score": 5
+ },
+ {
+  "tier": "benign",
+  "author": "solpenguin",
+  "skill": "opendex",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "tingdall",
+  "skill": "china-stock-screener",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "GrantGochnauer",
+  "skill": "capacities-lookup",
+  "score": 9
+ },
+ {
+  "tier": "benign",
+  "author": "lokendragami1",
+  "skill": "envato-comment-task-to-sheet",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "bangkok",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "qwe123sddfsdfs",
+  "skill": "batch-processing",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "SakuraLeanne",
+  "skill": "gold-analyst",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "rotemtam",
+  "skill": "usedada",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "jwt",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yc556600",
+  "skill": "xhs-note-gen",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "aiagentstore",
+  "skill": "claw-earn",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "welderjustin",
+  "skill": "welderjustin-imap-smtp-email",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "driftsbot",
+  "skill": "experience-camilletchi-foster-kittens-seattle",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "byungkyu",
+  "skill": "active-campaign",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-postmortem",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "accounting",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "HarleysCodes",
+  "skill": "xrpl-tx-builder",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "gora050",
+  "skill": "quickmailio",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "LucasGulino",
+  "skill": "lead-gen-website",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "npfaerber",
+  "skill": "okr-consulting",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Sube-py",
+  "skill": "check-workday-cn",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "PeterKouss",
+  "skill": "arxiv-master-search",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Mingo-318",
+  "skill": "image-cropper",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Te1man",
+  "skill": "podcast-insider-top10",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "BiyaoShang",
+  "skill": "myfood-by",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "patches429",
+  "skill": "giggle-generation-speech",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "woodstocksoftware",
+  "skill": "adaptivetest",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "lwd815813",
+  "skill": "wechat-mp-monitor",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "daoistbro",
+  "skill": "memory-system",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "liqiwa",
+  "skill": "crabpet",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "WesLon1987",
+  "skill": "operations-engineer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Lion504",
+  "skill": "language-learning-1-0-0",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "haohanyang92",
+  "skill": "stop-loss-optimization",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jiwenbing",
+  "skill": "insurance-compare",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "wsygcn",
+  "skill": "test-restaurant-inspection",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "jau123",
+  "skill": "creative-toolkit",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "doctor",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "agentsleader",
+  "skill": "uncle-bob",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "imkiiki",
+  "skill": "fundreport-scrape",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ayue-oss",
+  "skill": "meituan-coupon-auto",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "killerapp",
+  "skill": "copywriter",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "AlphaFactor",
+  "skill": "alpha",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "newlux",
+  "skill": "ctrip",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "legal",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "DeepCapt",
+  "skill": "agent-signet-id",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "vishalgojha",
+  "skill": "summary-generator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "satoshistackalotto",
+  "skill": "greek-email-processor",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "coolhackboy",
+  "skill": "poyo-sora-2-pro",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "liuxxxu",
+  "skill": "skill-sharpener",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "byungkyu",
+  "skill": "exa-api",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "stuhorsman",
+  "skill": "yahoo-finance-cli",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "nyxun123",
+  "skill": "agent-heartbeat",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "L-U-C-K-Y",
+  "skill": "asana-pat",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "gora050",
+  "skill": "everhour",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "openlang-cn",
+  "skill": "git-cli",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "cnoder-wgh",
+  "skill": "doc-diff",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "gora050",
+  "skill": "linkedin-integration",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "business-intelligence",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "mohdalhashemi98-hue",
+  "skill": "mh-openai-whisper",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "femto",
+  "skill": "acp-loop",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "G9Pedro",
+  "skill": "the-pool",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "voxbase",
+  "skill": "echomindr-founder-retrieval",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "byungkyu",
+  "skill": "unbounce",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "earthwalking",
+  "skill": "lab-to-market-co-creation-agent",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "nocodemf",
+  "skill": "returns-reverse-logistics",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "artyomx33",
+  "skill": "jtbd-analyzer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Trypto1019",
+  "skill": "arc-memory-pruner",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "YannBoy",
+  "skill": "feishu-meeting-summary",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "motivationationdaily",
+  "skill": "awesome-claude-skills",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "IISweetHeartII",
+  "skill": "agentgram-openclaw",
+  "score": 5
+ },
+ {
+  "tier": "benign",
+  "author": "s-annam",
+  "skill": "dizest-summarize",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "aaigotchi",
+  "skill": "gotchi-finder",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "dreams",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jingrongx",
+  "skill": "sendfiles-to-feishu",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "yafetful",
+  "skill": "moltdrop",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "beSaif",
+  "skill": "recipe-video-extractor",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "sebclawops",
+  "skill": "openclaw-meta-ads",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "flynndavid",
+  "skill": "ai-os-blueprint",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "gavinchengcool",
+  "skill": "openclaw-strava",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "niracler",
+  "skill": "nini-writing-proofreading",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "bojieli",
+  "skill": "pine-voice",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "JK-0001",
+  "skill": "grant-writing-framework",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "dependency-auditor",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "bryan-cmc",
+  "skill": "market-report-using-cmc-mcp",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-startup-fundraising",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "spbavarva",
+  "skill": "openclaw-policy-check",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "52YuanChangXing",
+  "skill": "deck-narrative-planner",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "hartlco",
+  "skill": "miniflux-news",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "leoyessi10-tech",
+  "skill": "context-engineering",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "afrexai-cto",
+  "skill": "afrexai-compliance-readiness",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Digidai",
+  "skill": "product-manager-skills",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ollieb89",
+  "skill": "self-improving-agent-ollieb89",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "StudyWorkLife",
+  "skill": "crayfish-sticker",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "aniebyl",
+  "skill": "financial-analyst",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "alirezarezvani",
+  "skill": "marketing-ops",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "julianengel",
+  "skill": "premium-domains",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "AIPOCH-AI",
+  "skill": "abstract-trimmer",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "therohitdas",
+  "skill": "video-transcript",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "yinanping-CPU",
+  "skill": "yinan-api-integrator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "eyadhrif",
+  "skill": "persistent-user-memory",
+  "score": 10
+ },
+ {
+  "tier": "benign",
+  "author": "saba-ch",
+  "skill": "cloak",
+  "score": 12
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "game-development",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "sshnii",
+  "skill": "tronscan-block-info",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "phheng",
+  "skill": "amazon-product-api-skill",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "codedao12",
+  "skill": "meeting-to-action",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "stofancy",
+  "skill": "reinforced-thinking-mode",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zhaog100",
+  "skill": "sjykj-auto-pipeline",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "binyuli",
+  "skill": "traffic-monitor",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "SHENRUIYANG",
+  "skill": "orbcafe-agentui-chat",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "smallccwc",
+  "skill": "chronosync",
+  "score": 10
+ },
+ {
+  "tier": "benign",
+  "author": "RuneweaverStudios",
+  "skill": "skills-compat",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "engahmedsalah358-lgtm",
+  "skill": "whats",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "xinyuqinfeng",
+  "skill": "fusionalpha-acrypto-desk",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "harrylabsj",
+  "skill": "complaint-draft",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "bytesagain",
+  "skill": "quiz-generator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "AGIstack",
+  "skill": "hotel",
+  "score": 5
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-whistleblower",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kadbbz",
+  "skill": "forguncy-web-operator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "rbcp18",
+  "skill": "tellermcp",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "dongfeng3692",
+  "skill": "email-designer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "gmsx000-cloud",
+  "skill": "chinese-ai-agent-guide",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "therohitdas",
+  "skill": "youtube-data",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "guohongbin-git",
+  "skill": "wechat-mp-cn",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "anmolnagpal",
+  "skill": "s3-exposure-auditor",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ericsantos",
+  "skill": "show-my-ip",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "elitex45",
+  "skill": "zeruai",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "dktrn9ne",
+  "skill": "mux-video",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jeremyknows",
+  "skill": "prism",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-building-permits",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "bytesagain",
+  "skill": "battery",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "boy-hack",
+  "skill": "aig",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "diagnostikon",
+  "skill": "polymarket-real-estate-trader",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-seo-content-engine",
+  "score": 8
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-post-mortem",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "xHUNx",
+  "skill": "elevenlabs-stt-openclaw",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "exact-online",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "Trypto1019",
+  "skill": "arc-metrics-dashboard",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "TheSethRose",
+  "skill": "vercel",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "notbdu",
+  "skill": "obul-proxy",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "lhwa8685",
+  "skill": "code-documenter",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-pricing-strategy",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Robin797860",
+  "skill": "otaku-wiki",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "daniellummis",
+  "skill": "render-deploy-diff",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "michaelhmiv",
+  "skill": "sportfolio-market",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "chef",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "oksign",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "InphinitiZ",
+  "skill": "grok-query",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "persona-hr-coordinator",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "Tarnadas",
+  "skill": "orderly-sdk-debugging",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "XinHao-96",
+  "skill": "academic-discussion-assistant",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "GravityPoet",
+  "skill": "skill-scanner-pro",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "kanbanize",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "antaeus001",
+  "skill": "xiaohongshu-post-antaeus",
+  "score": 16
+ },
+ {
+  "tier": "benign",
+  "author": "rogue-agent1",
+  "skill": "brew-audit",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Jaskies",
+  "skill": "mail-sender-vutran",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "shatianming5",
+  "skill": "langskills-search",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kai-tw",
+  "skill": "notion-2025-api",
+  "score": 6
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "bigpictureio",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "cinience",
+  "skill": "alicloud-ai-misc-crawl-and-skill",
+  "score": 9
+ },
+ {
+  "tier": "benign",
+  "author": "OpenWaygate",
+  "skill": "youtube-member",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "wsjwoods",
+  "skill": "qianfan-usage",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "MoonBall",
+  "skill": "cg-test-skill",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "afrexai-cto",
+  "skill": "afrexai-plumbing-operations",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "unixlamadev-spec",
+  "skill": "aiprox-orchestrator",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "xammarie",
+  "skill": "micro-offer-forge",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "edwardrodriguez703-design",
+  "skill": "book-window-cleaning",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "honeybee1130",
+  "skill": "checker",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Quarantiine",
+  "skill": "effortlist-ai",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "persona-team-lead",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "quizlet",
+  "score": 1
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "sqlite",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "kostja94",
+  "skill": "creator-program",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "qingnaniso",
+  "skill": "media-news-summary",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "jcools1977",
+  "skill": "tech-debt-ledger",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "DeAntiWang",
+  "skill": "willow-inference-server",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "nantes",
+  "skill": "arxiv-research",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "googleworkspace-bot",
+  "skill": "recipe-create-task-list",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "systems-architect",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zhaog100",
+  "skill": "smart-model-switch",
+  "score": 9
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "founder",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-founder-os",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "yixinli867",
+  "skill": "skill-creator-2",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "tristanmanchester",
+  "skill": "notion-api-automation",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Rakesh1002",
+  "skill": "unsearch",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "xiangxinag-princess",
+  "skill": "feishu-bot-manager",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "datadrivenconstruction",
+  "skill": "price-api",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "NimaChu",
+  "skill": "nima-skill-creator",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "wells1137",
+  "skill": "seedance-prompt-designer",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "ironmanc2014",
+  "skill": "cn-api-router",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Shaojie66",
+  "skill": "auto-redbook-content",
+  "score": 5
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "calendly-integration",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "franklu0819-lang",
+  "skill": "zhipu-tts",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "1kalin",
+  "skill": "afrexai-web3-engineering",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "sacravenger",
+  "skill": "nanmesh",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zhangifonly",
+  "skill": "qqlive",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "sshnii",
+  "skill": "tronscan-contract-analysis",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "AIsaPay",
+  "skill": "financial-data",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "Zeyu426",
+  "skill": "alibaba-url-builder",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "chaimengphp",
+  "skill": "openclaw-aisa-market-pulse",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "tenmyword",
+  "skill": "ontology-1-0-4",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "icecat2005",
+  "skill": "roomsound",
+  "score": 4
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "b2b",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "byungkyu",
+  "skill": "typeform",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "chilu18",
+  "skill": "sustainability-playbook",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Focusshang",
+  "skill": "mineru-ocr-local-api",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "wpank",
+  "skill": "websocket-hub-patterns",
+  "score": 7
+ },
+ {
+  "tier": "benign",
+  "author": "edwardrodriguez703-design",
+  "skill": "book-tires",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "membranedev",
+  "skill": "agencyzoom",
+  "score": 11
+ },
+ {
+  "tier": "benign",
+  "author": "CodeKungfu",
+  "skill": "lagou",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "azep-ninja",
+  "skill": "tator-trader",
+  "score": 2
+ },
+ {
+  "tier": "benign",
+  "author": "jkc3080",
+  "skill": "cognitive-bullwhip",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "adisinghstudent",
+  "skill": "pm-skills-marketplace",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "Nerikko",
+  "skill": "sql-profiler",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "zendenho7",
+  "skill": "workspace-analyzer",
+  "score": 13
+ },
+ {
+  "tier": "benign",
+  "author": "ckchzh",
+  "skill": "live-stream-script",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "alexwoo-awso",
+  "skill": "ksef-accountant-pl",
+  "score": 0
+ },
+ {
+  "tier": "benign",
+  "author": "TerryRen2024",
+  "skill": "memory-work",
+  "score": 3
+ },
+ {
+  "tier": "benign",
+  "author": "ivangdavila",
+  "skill": "invest",
+  "score": 0
+ },
+ {
+  "tier": "hard-negative",
+  "author": "MESevenJourney",
+  "skill": "karpathy-curated-rss-brief",
+  "score": 27
+ },
+ {
+  "tier": "hard-negative",
+  "author": "Ultronprime2026",
+  "skill": "proxyclaw",
+  "score": 12
+ },
+ {
+  "tier": "hard-negative",
+  "author": "DLhugly",
+  "skill": "vault0",
+  "score": 27
+ },
+ {
+  "tier": "hard-negative",
+  "author": "beelzebub520",
+  "skill": "element-nft-tracker",
+  "score": 3
+ },
+ {
+  "tier": "hard-negative",
+  "author": "youna12345",
+  "skill": "compdf-conversion-cli",
+  "score": 15
+ },
+ {
+  "tier": "hard-negative",
+  "author": "byungkyu",
+  "skill": "mailchimp",
+  "score": 3
+ },
+ {
+  "tier": "hard-negative",
+  "author": "j-shao1",
+  "skill": "pipe17-openclaw-skill",
+  "score": 0
+ },
+ {
+  "tier": "hard-negative",
+  "author": "royhk920",
+  "skill": "ai-cli-builder",
+  "score": 5
+ },
+ {
+  "tier": "hard-negative",
+  "author": "drewM33",
+  "skill": "clawmon",
+  "score": 11
+ },
+ {
+  "tier": "hard-negative",
+  "author": "rosseyre",
+  "skill": "openrouter-usage",
+  "score": 22
+ },
+ {
+  "tier": "hard-negative",
+  "author": "jru001",
+  "skill": "roborock-2014",
+  "score": 27
+ },
+ {
+  "tier": "hard-negative",
+  "author": "SKULLHAVEN",
+  "skill": "meta-tags-optimizer-2",
+  "score": 52
+ },
+ {
+  "tier": "hard-negative",
+  "author": "jaschadub",
+  "skill": "schemapin",
+  "score": 4
+ },
+ {
+  "tier": "hard-negative",
+  "author": "mysunsi",
+  "skill": "1lunar",
+  "score": 34
+ },
+ {
+  "tier": "hard-negative",
+  "author": "byungkyu",
+  "skill": "google-tasks-api",
+  "score": 10
+ },
+ {
+  "tier": "hard-negative",
+  "author": "0xRapi",
+  "skill": "isnad-scan",
+  "score": 82
+ },
+ {
+  "tier": "hard-negative",
+  "author": "haohanyang92",
+  "skill": "sar-calculator",
+  "score": 7
+ },
+ {
+  "tier": "hard-negative",
+  "author": "hhq0421",
+  "skill": "strava-training-coach",
+  "score": 73
+ },
+ {
+  "tier": "hard-negative",
+  "author": "Fullstop000",
+  "skill": "toll",
+  "score": 31
+ },
+ {
+  "tier": "hard-negative",
+  "author": "byungkyu",
+  "skill": "brave-search-api",
+  "score": 3
+ },
+ {
+  "tier": "hard-negative",
+  "author": "paulscode",
+  "skill": "serper-clone",
+  "score": 9
+ },
+ {
+  "tier": "hard-negative",
+  "author": "shawnyeager",
+  "skill": "nostr-social",
+  "score": 5
+ },
+ {
+  "tier": "hard-negative",
+  "author": "m9rco",
+  "skill": "p4u",
+  "score": 6
+ },
+ {
+  "tier": "hard-negative",
+  "author": "levi-law",
+  "skill": "moltmail",
+  "score": 21
+ },
+ {
+  "tier": "hard-negative",
+  "author": "wangkang5",
+  "skill": "wangkang-skill1",
+  "score": 14
+ },
+ {
+  "tier": "hard-negative",
+  "author": "byungkyu",
+  "skill": "klaviyo",
+  "score": 3
+ },
+ {
+  "tier": "hard-negative",
+  "author": "niracler",
+  "skill": "nini-workspace-init",
+  "score": 15
+ },
+ {
+  "tier": "hard-negative",
+  "author": "JackKuo666",
+  "skill": "pubmed-search-skill",
+  "score": 46
+ },
+ {
+  "tier": "hard-negative",
+  "author": "TheAgentWire",
+  "skill": "agent-rate-limiter",
+  "score": 36
+ },
+ {
+  "tier": "hard-negative",
+  "author": "appback",
+  "skill": "gridclash",
+  "score": 81
+ },
+ {
+  "tier": "hard-negative",
+  "author": "akhmittra",
+  "skill": "skill-security-auditor",
+  "score": 100
+ },
+ {
+  "tier": "hard-negative",
+  "author": "OreoAndYuumi",
+  "skill": "maxclaw-doctor",
+  "score": 17
+ },
+ {
+  "tier": "hard-negative",
+  "author": "Yash-Kavaiya",
+  "skill": "dialogflow-cx-nlu",
+  "score": 4
+ },
+ {
+  "tier": "hard-negative",
+  "author": "humanjudge-arthur",
+  "skill": "openclaw-validate",
+  "score": 13
+ },
+ {
+  "tier": "hard-negative",
+  "author": "jooey",
+  "skill": "add-minimax-provider",
+  "score": 38
+ },
+ {
+  "tier": "hard-negative",
+  "author": "Zhaobudaoyuema",
+  "skill": "openwechat-im-client",
+  "score": 46
+ },
+ {
+  "tier": "hard-negative",
+  "author": "TunaIssaCoding",
+  "skill": "portable-tools",
+  "score": 11
+ },
+ {
+  "tier": "hard-negative",
+  "author": "JimLiu",
+  "skill": "baoyu-slide-deck",
+  "score": 15
+ },
+ {
+  "tier": "hard-negative",
+  "author": "Arnarsson",
+  "skill": "fzf-fuzzy-finder",
+  "score": 11
+ },
+ {
+  "tier": "hard-negative",
+  "author": "MeNoPeter",
+  "skill": "google-lyria-integration",
+  "score": 61
+ },
+ {
+  "tier": "hard-negative",
+  "author": "billychl1",
+  "skill": "openclawarena-arena",
+  "score": 6
+ },
+ {
+  "tier": "hard-negative",
+  "author": "DophinL",
+  "skill": "youmind-deep-research",
+  "score": 58
+ },
+ {
+  "tier": "hard-negative",
+  "author": "kanfred",
+  "skill": "pollinations-ai",
+  "score": 7
+ },
+ {
+  "tier": "hard-negative",
+  "author": "gitgoodordietrying",
+  "skill": "encoding-formats",
+  "score": 100
+ },
+ {
+  "tier": "hard-negative",
+  "author": "MahmoudAdelbghany",
+  "skill": "ffmpeg-video-editor",
+  "score": 27
+ },
+ {
+  "tier": "hard-negative",
+  "author": "jortega0033",
+  "skill": "gcloud",
+  "score": 7
+ },
+ {
+  "tier": "hard-negative",
+  "author": "LuckyJin",
+  "skill": "my-test-2",
+  "score": 14
+ },
+ {
+  "tier": "hard-negative",
+  "author": "eplt",
+  "skill": "local-deep-research",
+  "score": 7
+ },
+ {
+  "tier": "hard-negative",
+  "author": "HookCatch",
+  "skill": "hookcatch",
+  "score": 14
+ },
+ {
+  "tier": "hard-negative",
+  "author": "aliramw",
+  "skill": "marila-skill-publish",
+  "score": 20
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-96ys3",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-nlt3m",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-f3qcn",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-sxtsn",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-ja7eh",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-8xwp6",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-jkiuq",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-hylhq",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-i7oci",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-gstca",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-xcgnm",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-hh1fd",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-i9zhz",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-d4kxr",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "autoupdate",
+  "score": 17
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-lth9t",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-161ks",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-5fhqm",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-uoeym",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-dzuba",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-osasg",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-43c6i",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-oihpl",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-gpcrq",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-ocn18",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-gpwp7",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-sxdg2",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-e89da",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-olgys",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-gw6f5",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-deza8",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-eclpb",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-mkukz",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-tlxx5",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-3rk1s",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-mclql",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-rkvny",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-2yq87",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-mn5ri",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-xsunp",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-5buwl",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-c9y4p",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-krmvq",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-m0fsa",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-hfmct",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-p5rmt",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-se38e",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "clawhub-6yr3b",
+  "score": 28
+ },
+ {
+  "tier": "malicious",
+  "author": "hightower6eu",
+  "skill": "auto-updater-qdyme",
+  "score": 36
+ },
+ {
+  "tier": "malicious",
+  "author": "bowen31337",
+  "skill": "alex-browser-use",
+  "score": 7
+ }
+]

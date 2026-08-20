@@ -115,7 +115,11 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   // ═══════════════════════════════════════════════════════
   {
     name: "ENV_FILE_READ",
-    pattern: /\.env|credentials|\.aws|\.ssh|keychain/gi,
+    // Match credential files, not the words. A leading letter before ".env"
+    // means it is a property access like `process.env`, and bare "credentials"
+    // is ordinary English ("store your credentials"); both were the top two
+    // false-positive sources on real skills.
+    pattern: /(?<![A-Za-z0-9_])\.env\b|[./\\-]credentials\b|credentials\.(?:json|ya?ml)|\.aws\b|\.ssh\b|keychain/gi,
     severity: "high",
     category: "credential_theft",
     title: "Sensitive file access",

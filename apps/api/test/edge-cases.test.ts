@@ -6,9 +6,12 @@ describe("scanner edge cases", () => {
     const result = await scanSkill("");
     expect(result.status).toBe("complete");
     expect(result.skillName).toBe("unknown");
-    // Empty file gets flagged for missing name + description = 14 points (2x medium)
-    expect(result.riskScore).toBe(14);
-    expect(result.riskGrade).toBe("B");
+    // Missing name and description are still reported, but metadata findings
+    // are hygiene rather than risk, so an empty file scores 0. It is
+    // incomplete, not dangerous.
+    expect(result.findings.some((f) => f.category === "metadata")).toBe(true);
+    expect(result.riskScore).toBe(0);
+    expect(result.riskGrade).toBe("A");
   });
 
   it("handles file with only frontmatter, no body", async () => {

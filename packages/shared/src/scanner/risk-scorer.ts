@@ -34,6 +34,12 @@ function repeatKey(f: Finding): string {
 export function calculateRiskScore(findings: Finding[]): number {
   const byKey = new Map<string, Finding[]>();
   for (const f of findings) {
+    // Metadata findings are documentation hygiene, not risk. An undeclared
+    // `grep` says the frontmatter is incomplete, not that the skill is
+    // dangerous, and a skill using eight ordinary unix tools would otherwise
+    // accumulate enough of them to be flagged on its own. They are still
+    // reported, they just do not move the score.
+    if (f.category === "metadata") continue;
     const key = repeatKey(f);
     const arr = byKey.get(key);
     if (arr) arr.push(f);

@@ -77,7 +77,12 @@ Findings are turned into a 0-100 score in three steps.
 
 1. Weight each finding by severity and confidence: critical 30, high 15, medium 7, low 3.
 2. Discount repeats. The first hit of a rule counts full, each extra hit of the same rule counts at 0.25. A skill that reads `~/.ssh` on four lines is mostly one concern repeated, not four.
-3. Context pass. If the skill has no exfiltration or remote-exec sink, downweight its dual-use capabilities (reading a credential file, `docker exec`, installing a cron job). Reading `~/.aws/credentials` is theft when it is piped to a webhook and configuration when it is not.
+3. Context pass, which reads the findings together rather than one at a time:
+   - No exfiltration or remote-exec sink in the skill? Downweight its dual-use capabilities (reading a credential file, `docker exec`, installing a cron job). Reading `~/.aws/credentials` is theft when it is piped to a webhook and configuration when it is not.
+   - A credential read *and* an outbound send? Raise one critical "Credential exfiltration" finding.
+   - "Install a prerequisite" *and* "run this command"? Raise one high "Install-me envelope" finding. That pair is how a skill gets code it does not contain executed.
+
+Metadata findings (undeclared binaries and env vars, missing description) are reported but do not affect the score. They are documentation hygiene, not risk.
 
 A disqualifying finding, such as a known C2 IP, pins the score to the F band on its own and is never averaged away.
 
@@ -85,15 +90,16 @@ Grades: A (0-10), B (11-25), C (26-50), D (51-75), F (76-100). The CLI recommend
 
 ## Benchmarks
 
-`benchmarks/` holds a labeled corpus of 101 SKILL.md fixtures (51 malicious, 30 benign, 20 hard negatives) and `eval.py`, a stdlib-only harness that reports precision, recall, F1, MCC, ROC-AUC and bootstrap confidence intervals.
+`benchmarks/` holds two labeled corpora and `eval.py`, a stdlib-only harness that reports precision, recall, F1, MCC, ROC-AUC and bootstrap confidence intervals.
 
 Hard negatives are legitimate skills that trip credential and exec rules, an ssh helper that reads `~/.ssh/config`, a base64 utility, a `curl | bash` installer. They carry label 0, so their scores count against the false-positive rate. That is where the context pass earns its keep.
 
-Static-only baseline at the warn threshold, from the committed `benchmarks/results.csv`:
+Static-only baseline at the warn threshold, from the committed results:
 
 ```
-precision 0.926   recall 0.980   F1 0.952   FPR 0.080   MCC 0.903   ROC-AUC 0.969
-95% CI  F1 [0.904, 0.990]   MCC [0.810, 0.980]
+101 in-text corpus   P 0.909  R 0.980  F1 0.943  FPR 0.100
+500 real-world       P 0.727  R 0.960  F1 0.828  FPR 0.040  ROC-AUC 0.969
+95% CI (real)  F1 [0.745, 0.897]   MCC [0.737, 0.886]
 ```
 
 Regenerate and re-run:
@@ -101,30 +107,31 @@ Regenerate and re-run:
 ```bash
 npx tsx benchmarks/scan-all.mjs
 python3 benchmarks/eval.py benchmarks/results.csv --threshold 26
+
+npx tsx benchmarks/scan-corpus500.mjs
+python3 benchmarks/eval.py benchmarks/corpus500/results.csv --threshold 26
 ```
 
-### Two corpora, two very different numbers
+### Two corpora
 
-The scoring changes here were measured as a before/after pair. All four rows below are measured on this repo with the committed harness; nothing here is a competitor number (see the note that follows).
+The 101-skill corpus is hand-authored, with the malicious payload written into the SKILL.md text. That is exactly what regex is built to catch, so it flatters the scanner and is best read as a regression suite. The 500-skill corpus is real: 50 ClawHavoc skills, 400 clean ClawHub skills, and 50 hard negatives, where the payload usually lives in a referenced script rather than the markdown. Numbers below are all measured on this repo with the committed harness at threshold 26.
 
-| ClawVet | Corpus | P | R | F1 | FPR | notes |
-|---|---|---|---|---|---|---|
-| before (linear scoring) | 101 in-text, 51/50 | 0.820 | 0.980 | 0.893 | 0.220 | threshold 26 |
-| after (dedup + context) | 101 in-text, 51/50 | 0.926 | 0.980 | 0.952 | 0.080 | threshold 26 |
-| after | 500 real-world, 50/450 | 0.000 | 0.000 | 0.000 | 0.111 | threshold 26 |
-| after | 500 real-world, 50/450 | 0.296 | 0.580 | 0.392 | 0.153 | threshold 20 |
+| ClawVet | Corpus | P | R | F1 | FPR |
+|---|---|---|---|---|---|
+| 0.9.0 (linear scoring) | 101 in-text | 0.820 | 0.980 | 0.893 | 0.220 |
+| 0.11.0 | 101 in-text | 0.909 | 0.980 | 0.943 | 0.100 |
+| 0.10.0 | 500 real-world | 0.000 | 0.000 | 0.000 | 0.111 |
+| 0.11.0 | 500 real-world | 0.727 | 0.960 | 0.828 | 0.040 |
 
-The 101-skill corpus is hand-authored: the malicious payload sits in the SKILL.md text, which is exactly what regex is built to catch, so the numbers look great. The 500-skill corpus is real ClawHub and reconstructed ClawHavoc skills.
+The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real corpus scored 14 to 24, and the warn threshold is 26, so the scanner caught none of them. The cause was mechanical rather than fundamental: the markdown carries the install-me envelope (install a prerequisite, run a command) while the payload sits in a referenced file, and both halves of that envelope are medium severity, so they capped two points under the line.
 
-On the real set the scanner does fire, it just doesn't fire hard enough. Every ClawHavoc skill trips medium social-engineering rules (prerequisite install, copy-paste command, npm install), because the markdown carries the install-me envelope while the actual payload lives in referenced scripts and binaries. Those mediums cap out at 24, one notch under the 26 warn threshold, so at the shipped cutoff recall is 0. To cross 26 you need a high-severity hit (15+ points) or about seven mediums, and the high-severity behavior is never in the file. Drop the threshold to 20, the "suspicious" cutoff, and recall climbs to 0.58 at precision 0.30. ROC-AUC is 0.841 on the real set versus 0.969 on the synthetic one: the signal is there but weak, and a threshold tuned on synthetic data sits just above where real malware lands.
+0.11.0 closes it by treating the envelope as one finding rather than two mediums, and by raising a credential read plus an outbound send to a single critical finding. Both are co-occurrence rules, so they cost almost nothing in false positives: the envelope pair appears in 48 of 50 malicious skills and 0 of 450 benign ones. Removing metadata hygiene from the score did the rest, since a skill using eight ordinary unix tools was collecting 24 points for incomplete frontmatter alone.
 
-Read that as the case for the design, not against it. Static is a cheap first-stage filter for the in-text threat class. The real-world collapse is the evidence for why the opt-in semantic stage has to exist, and it is the more honest headline than a single 0.95 F1.
-
-The before/after gain on the 101 corpus: F1 +0.059, FPR -0.140, MCC +0.126. The two confusion matrices differ only in benign fixtures flipping from false positive to true negative (7 fixed, 0 broken), so McNemar is exact at p = 0.0156. The wins are all hard negatives, ssh-config-manager (47 to 9) and dotenv-loader (33 to 5), skills that trip credential rules without an exfiltration sink.
+What remains is the honest limit. Two malicious skills are still missed, and the clearest of them is a browser-automation skill whose malice is "registering for internet services as Alex Chen" and "solving CAPTCHAs and bypassing browser-checks", stated in fluent English with no dangerous token anywhere. No pattern reaches that. Of the 18 remaining false positives, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
 
 ### Other tools, as reported in their papers
 
-Verified against the arXiv full texts, not repeated from memory. Each row is on that paper's own corpus, so none of this is head-to-head with the rows above. The one anchor is SkillSieve, which measured ClawVet itself on their real 390-skill set and got F1 0.248, which lines up with the real-corpus collapse above.
+Verified against the arXiv full texts, not repeated from memory. Each row is on that paper's own corpus, so none of this is head-to-head with the rows above. The one anchor is SkillSieve, which measured ClawVet 0.6.0 on their real 390-skill set and got F1 0.248.
 
 | Tool | Source | Corpus | P | R | F1 | FPR |
 |---|---|---|---|---|---|---|
