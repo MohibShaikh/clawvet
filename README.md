@@ -98,8 +98,9 @@ Static-only baseline at the warn threshold, from the committed results:
 
 ```
 101 in-text corpus   P 0.909  R 0.980  F1 0.943  FPR 0.100
-500 real-world       P 0.727  R 0.960  F1 0.828  FPR 0.040  ROC-AUC 0.969
-95% CI (real)  F1 [0.745, 0.897]   MCC [0.737, 0.886]
+500 real-world       P 0.750  R 0.960  F1 0.842  FPR 0.036  ROC-AUC 0.971
+392 live clean       FPR 0.023  (false positives only, no positive class available)
+95% CI (real)  F1 [0.761, 0.909]   MCC [0.752, 0.900]
 ```
 
 Regenerate and re-run:
@@ -122,12 +123,27 @@ The 101-skill corpus is hand-authored, with the malicious payload written into t
 | 0.11.0 | 101 in-text | 0.909 | 0.980 | 0.943 | 0.100 |
 | 0.10.0 | 500 real-world | 0.000 | 0.000 | 0.000 | 0.111 |
 | 0.11.0 | 500 real-world | 0.727 | 0.960 | 0.828 | 0.040 |
+| 0.11.1 | 500 real-world | 0.750 | 0.960 | 0.842 | 0.036 |
 
 The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real corpus scored 14 to 24, and the warn threshold is 26, so the scanner caught none of them. The cause was mechanical rather than fundamental: the markdown carries the install-me envelope (install a prerequisite, run a command) while the payload sits in a referenced file, and both halves of that envelope are medium severity, so they capped two points under the line.
 
 0.11.0 closes it by treating the envelope as one finding rather than two mediums, and by raising a credential read plus an outbound send to a single critical finding. Both are co-occurrence rules, so they cost almost nothing in false positives: the envelope pair appears in 48 of 50 malicious skills and 0 of 450 benign ones. Removing metadata hygiene from the score did the rest, since a skill using eight ordinary unix tools was collecting 24 points for incomplete frontmatter alone.
 
-What remains is the honest limit. Two malicious skills are still missed, and the clearest of them is a browser-automation skill whose malice is "registering for internet services as Alex Chen" and "solving CAPTCHAs and bypassing browser-checks", stated in fluent English with no dangerous token anywhere. No pattern reaches that. Of the 18 remaining false positives, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
+### Held out: false positives on live ClawHub skills
+
+The corpora above are ones this repo assembled, so the false-positive numbers in them reflect choices made here. As a check, 392 skills that ClawHub's own scan labels clean were pulled from the `tomhu/ClawSkills` snapshot and scanned cold.
+
+```
+392 live clean skills   flagged at >=26: 9   FPR 0.023   median score 0   p90 11
+```
+
+Reading all nine: eight genuinely run the thing they were flagged for, `python3 -c`, `node -e`, `curl | sh`, or a read of `~/.openclaw/`. Calling those false alarms is generous. The ninth is `skill-risk-auditor`, a security-auditing skill that scores 100 because it names `.ssh`, `.aws`, and `.env` as the paths it audits. A skill about scanning looks exactly like a skill worth scanning, and no pattern separates those two.
+
+There is no matching recall figure here, and that is a real gap rather than an omission. Confirmed malware is vanishingly rare in the live registry: across 3,907 records there was 1 blocked skill and 2 labelled malicious, while "suspicious" covers roughly 78% of everything and carries no information. Without a usable positive class, the generalization question stays open, and it is probably why every paper in this area builds its own curated benchmark instead.
+
+One caution on interpreting the 500-skill numbers: 49 of its 50 malicious skills are ClawHavoc variants, so they share one campaign's shape. The envelope rule works well against that shape. Whether it transfers to a different campaign is untested.
+
+What remains is the honest limit. Two malicious skills are still missed, and the clearest of them is a browser-automation skill whose malice is "registering for internet services as Alex Chen" and "solving CAPTCHAs and bypassing browser-checks", stated in fluent English with no dangerous token anywhere. No pattern reaches that. Of the 16 remaining false positives on the 500-skill corpus, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
 
 ### Other tools, as reported in their papers
 
