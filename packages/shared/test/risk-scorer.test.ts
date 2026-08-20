@@ -3,11 +3,14 @@ import { calculateRiskScore, getRiskGrade } from "../src/scanner/risk-scorer.js"
 import { scanSkill } from "../src/index.js";
 import type { Finding } from "../src/types.js";
 
+let titleSeq = 0;
 function finding(over: Partial<Finding>): Finding {
+  // Distinct default title per call: repeats of one rule are discounted by the
+  // scorer, so each finding() stands for a separate rule unless a title is set.
   return {
     category: "test",
     severity: "medium",
-    title: "t",
+    title: `t${titleSeq++}`,
     description: "d",
     analysisPass: "test",
     confidence: 1,
@@ -15,9 +18,9 @@ function finding(over: Partial<Finding>): Finding {
   };
 }
 
-describe("risk scoring — disqualifying indicators of compromise", () => {
+describe("risk scoring, disqualifying indicators of compromise", () => {
   // Regression: a payload split across SKILL.md and a referenced setup.sh once
-  // assembled to two HIGH findings that summed to 25 → grade B → "approve". A
+  // assembled to two HIGH findings that summed to 25 -> grade B -> "approve". A
   // credential exfiltrator to a known C2 IP must never grade as passing.
   it("a single disqualifying finding forces the F band regardless of aggregate", () => {
     const score = calculateRiskScore([
@@ -41,7 +44,7 @@ describe("risk scoring — disqualifying indicators of compromise", () => {
       finding({ severity: "high", confidence: 0.8 }),
       finding({ severity: "medium", confidence: 0.6 }),
     ]);
-    // 15*0.8 + 7*0.6 = 16.2 — nowhere near the disqualifying floor.
+    // 15*0.8 + 7*0.6 = 16.2, nowhere near the disqualifying floor.
     expect(score).toBe(16);
     expect(getRiskGrade(score)).toBe("B");
   });

@@ -57,7 +57,10 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
     });
   }
 
-  const declaredBins = new Set(fm.metadata?.openclaw?.requires?.bins || []);
+  // Real-world frontmatter sometimes gives bins/env as a scalar string instead
+  // of a list; guard so `new Set(...)` doesn't throw on it.
+  const rawBins = fm.metadata?.openclaw?.requires?.bins;
+  const declaredBins = new Set(Array.isArray(rawBins) ? rawBins : []);
 
   for (const bin of KNOWN_BINS) {
     const binRe = new RegExp(`\\b${bin}\\b`, "i");
@@ -76,7 +79,8 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
     }
   }
 
-  const declaredEnv = new Set(fm.metadata?.openclaw?.requires?.env || []);
+  const rawEnv = fm.metadata?.openclaw?.requires?.env;
+  const declaredEnv = new Set(Array.isArray(rawEnv) ? rawEnv : []);
   const envRe = /\$\{?([A-Z][A-Z0-9_]+)\}?/g;
   let match: RegExpExecArray | null;
 

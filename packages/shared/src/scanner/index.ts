@@ -4,6 +4,7 @@ import { runStaticAnalysis } from "./static-analysis.js";
 import { validateMetadata } from "./metadata-validator.js";
 import { checkDependencies } from "./dependency-checker.js";
 import { detectTyposquats } from "./typosquat-detector.js";
+import { applyContext } from "./context-classifier.js";
 import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.js";
 import { getCached, setCached } from "./cache.js";
 
@@ -51,7 +52,10 @@ export async function scanSkill(
       )
     : allFindings;
 
-  const riskScore = calculateRiskScore(filteredFindings);
+  // Context pass: downweight dual-use capabilities that have no exfil/exec sink.
+  const contextFindings = applyContext(filteredFindings);
+
+  const riskScore = calculateRiskScore(contextFindings);
   const riskGrade = getRiskGrade(riskScore);
   const findingsCount = countFindings(filteredFindings);
 

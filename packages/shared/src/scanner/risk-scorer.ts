@@ -8,14 +8,44 @@ const SEVERITY_WEIGHTS = {
 } as const;
 
 // A disqualifying indicator of compromise pins the score to the bottom of the
-// F band regardless of aggregate — enough benign signal must never dilute a
+// F band regardless of aggregate, enough benign signal must never dilute a
 // known-bad match down into a passing grade.
 const DISQUALIFYING_FLOOR = 90;
 
+// Identical matches of the same rule count with diminishing returns. A rule
+// matching the same evidence on four lines is one concern repeated, and letting
+// it stack linearly is what pushes legitimate skills (an ssh helper that reads
+// ~/.ssh a few times) into the block band. The first hit counts full; each
+// extra identical hit counts at this fraction, so repetition still adds signal
+// without dominating.
+const REPEAT_FACTOR = 0.25;
+
+function weight(f: Finding): number {
+  return SEVERITY_WEIGHTS[f.severity] * (f.confidence ?? 1.0);
+}
+
+// Key on title plus evidence, not title alone. Five "prerequisite install"
+// matches on five different lines are five separate malicious instructions and
+// each must count full; only identical matches on different lines discount.
+function repeatKey(f: Finding): string {
+  return `${f.title}\u0000${f.evidence ?? ""}`;
+}
+
 export function calculateRiskScore(findings: Finding[]): number {
-  let score = 0;
+  const byKey = new Map<string, Finding[]>();
   for (const f of findings) {
-    score += SEVERITY_WEIGHTS[f.severity] * (f.confidence ?? 1.0);
+    const key = repeatKey(f);
+    const arr = byKey.get(key);
+    if (arr) arr.push(f);
+    else byKey.set(key, [f]);
+  }
+
+  let score = 0;
+  for (const group of byKey.values()) {
+    group.sort((a, b) => weight(b) - weight(a));
+    group.forEach((f, i) => {
+      score += i === 0 ? weight(f) : weight(f) * REPEAT_FACTOR;
+    });
   }
   if (findings.some((f) => f.disqualifying)) {
     score = Math.max(score, DISQUALIFYING_FLOOR);

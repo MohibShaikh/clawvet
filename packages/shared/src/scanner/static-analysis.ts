@@ -55,7 +55,7 @@ export function runStaticAnalysis(skill: ParsedSkill): Finding[] {
 
       const baseConfidence = BASE_CONFIDENCE[threat.severity];
       // A curated indicator of compromise is an exact match, not a fuzzy
-      // heuristic — where it appears does not make it less certain.
+      // heuristic, where it appears does not make it less certain.
       const confidence = threat.disqualifying
         ? 1.0
         : Math.min(1.0, baseConfidence * contextMultiplier);
