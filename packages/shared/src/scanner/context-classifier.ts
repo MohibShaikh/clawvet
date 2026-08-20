@@ -50,7 +50,34 @@ const DOWNWEIGHT = 0.3;
 // two-point gap on the threat class where the payload is out of file.
 const ENVELOPE_TITLES = ["Prerequisite install trick", "Copy-paste command instruction"];
 
+// Hosts whose whole purpose is a documented one-line installer. `curl | sh` off
+// one of these is the vendor's own published instruction, not a dropper, and it
+// was the single most common cause of a real clean skill being flagged. An
+// attacker cannot use this without first compromising the vendor, in which case
+// the install script is the least of anyone's problems.
+const TRUSTED_INSTALLER_HOSTS = [
+  "astral.sh",
+  "sh.rustup.rs",
+  "get.docker.com",
+  "install.python-poetry.org",
+  "get.pnpm.io",
+  "bun.sh",
+  "ollama.com",
+  "deb.nodesource.com",
+  "raw.githubusercontent.com/Homebrew",
+  "get.volta.sh",
+];
+
+const PIPE_TO_SHELL = new Set(["Curl piped to shell", "Wget with shell execution"]);
+
+function fromTrustedInstaller(f: Finding): boolean {
+  if (!PIPE_TO_SHELL.has(f.title)) return false;
+  const ev = f.evidence ?? "";
+  return TRUSTED_INSTALLER_HOSTS.some((h) => ev.includes(h));
+}
+
 function isSink(f: Finding): boolean {
+  if (fromTrustedInstaller(f)) return false;
   return SINK_CATEGORIES.has(f.category) || SINK_TITLES.has(f.title);
 }
 
@@ -110,7 +137,11 @@ function taintExfiltration(findings: Finding[]): Finding[] {
 }
 
 export function applyContext(findings: Finding[]): Finding[] {
-  const withEnvelope = promoteEnvelope(findings);
+  const withEnvelope = promoteEnvelope(findings).map((f) =>
+    fromTrustedInstaller(f)
+      ? { ...f, severity: "low" as const, confidence: 0.3, description: `${f.description} This one points at a well-known vendor installer.` }
+      : f
+  );
   if (withEnvelope.some(isSink)) return taintExfiltration(withEnvelope);
   return withEnvelope.map((f) =>
     isDualUse(f) && !f.disqualifying
