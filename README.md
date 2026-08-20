@@ -123,7 +123,7 @@ The 101-skill corpus is hand-authored, with the malicious payload written into t
 | 0.11.0 | 101 in-text | 0.909 | 0.980 | 0.943 | 0.100 |
 | 0.10.0 | 500 real-world | 0.000 | 0.000 | 0.000 | 0.111 |
 | 0.11.0 | 500 real-world | 0.727 | 0.960 | 0.828 | 0.040 |
-| 0.11.1 (unreleased) | 500 real-world | 0.774 | 0.960 | 0.857 | 0.031 |
+| 0.11.1 | 500 real-world | 0.774 | 0.960 | 0.857 | 0.031 |
 
 The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real corpus scored 14 to 24, and the warn threshold is 26, so the scanner caught none of them. The cause was mechanical rather than fundamental: the markdown carries the install-me envelope (install a prerequisite, run a command) while the payload sits in a referenced file, and both halves of that envelope are medium severity, so they capped two points under the line.
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.11.1
+
+False-positive fixes, all recall-neutral. On the 500-skill real corpus precision
+goes from 0.727 to 0.774 and F1 from 0.828 to 0.857, with recall unchanged at
+0.960. The 101-skill corpus is unchanged.
+
+- `curl` piped to a shell from a well-known vendor installer host (astral.sh,
+  sh.rustup.rs, get.docker.com and similar) is the vendor's own published
+  instruction, not a dropper. It no longer counts as a remote-exec sink.
+- Path traversal only fires inside a code block. A `../` in a markdown link or a
+  documentation path is not traversal.
+- "Credential exfiltration" now requires both the credential read and the
+  outbound send to be real code. A key declared in frontmatter, or an
+  exfiltration pattern listed in a prose threat table, is documenting rather
+  than doing; a security scanner cataloguing these patterns was being scored as
+  if it used them.
+
+Scope worth stating plainly: all 14 remaining false positives on that corpus are
+hard negatives, and the clean tier is 0 of 400. Against 397 live ClawHub skills
+the false-positive count is unchanged at 9. These are correctness fixes measured
+on 50 cases selected because they trip rules, so the F1 gain is narrower than it
+looks.
+
 ## 0.11.0
 
 Measured on a 500-skill real-world corpus (50 ClawHavoc, 400 clean ClawHub, 50
