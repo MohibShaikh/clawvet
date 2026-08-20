@@ -99,7 +99,7 @@ Static-only baseline at the warn threshold, from the committed results:
 ```
 101 in-text corpus   P 0.909  R 0.980  F1 0.943  FPR 0.100
 500 real-world       P 0.774  R 0.960  F1 0.857  FPR 0.031  ROC-AUC 0.977
-392 live clean       FPR 0.023  (false positives only, no positive class available)
+397 live clean       FPR 0.023  (false positives only, no positive class available)
 95% CI (real)  F1 [0.780, 0.921]   MCC [0.769, 0.912]
 ```
 
@@ -123,7 +123,7 @@ The 101-skill corpus is hand-authored, with the malicious payload written into t
 | 0.11.0 | 101 in-text | 0.909 | 0.980 | 0.943 | 0.100 |
 | 0.10.0 | 500 real-world | 0.000 | 0.000 | 0.000 | 0.111 |
 | 0.11.0 | 500 real-world | 0.727 | 0.960 | 0.828 | 0.040 |
-| 0.11.1 | 500 real-world | 0.774 | 0.960 | 0.857 | 0.031 |
+| 0.11.1 (unreleased) | 500 real-world | 0.774 | 0.960 | 0.857 | 0.031 |
 
 The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real corpus scored 14 to 24, and the warn threshold is 26, so the scanner caught none of them. The cause was mechanical rather than fundamental: the markdown carries the install-me envelope (install a prerequisite, run a command) while the payload sits in a referenced file, and both halves of that envelope are medium severity, so they capped two points under the line.
 
@@ -131,13 +131,13 @@ The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real co
 
 ### Held out: false positives on live ClawHub skills
 
-The corpora above are ones this repo assembled, so the false-positive numbers in them reflect choices made here. As a check, 392 skills that ClawHub's own scan labels clean were pulled from the `tomhu/ClawSkills` snapshot and scanned cold.
+The corpora above are ones this repo assembled, so the false-positive numbers in them reflect choices made here. As a check, 397 skills that ClawHub's own scan labels clean were pulled from the `tomhu/ClawSkills` snapshot and scanned cold.
 
 ```
-392 live clean skills   flagged at >=26: 9   FPR 0.023   median score 0   p90 11
+397 live clean skills   flagged at >=26: 9   FPR 0.023   median score 0   p90 11
 ```
 
-Reading all nine: eight genuinely run the thing they were flagged for, `python3 -c`, `node -e`, `curl | sh`, or a read of `~/.openclaw/`. Calling those false alarms is generous. The ninth is `skill-risk-auditor`, a security-auditing skill that scores 100 because it names `.ssh`, `.aws`, and `.env` as the paths it audits. A skill about scanning looks exactly like a skill worth scanning, and no pattern separates those two.
+Reading all nine: eight genuinely run the construct they were flagged for, `python3 -c`, `node -e`, `curl | sh`, or a read of `~/.openclaw/`. The ninth is a security-auditing skill, which scores at the top of the range because it names `.ssh`, `.aws`, and `.env` as the paths it inspects. A skill about scanning looks much like a skill worth scanning, and no pattern separates the two.
 
 Worth knowing before reading the table above as a general improvement: the precision gains from 0.11.0 to 0.11.1 land almost entirely in the hard-negatives tier. Every one of the 14 remaining false positives is a hard negative, and the clean tier sits at 0 out of 400. Run the same versions against these 397 live skills and the false-positive count does not move at all, staying at 9 in both. Two skills merely score lower without crossing back under the threshold. The fixes are correct, and they are measured against 50 cases picked because they trip rules, so the F1 jump reads wider than it is.
 
@@ -145,27 +145,16 @@ There is no matching recall figure here, and that is a real gap rather than an o
 
 One caution on interpreting the 500-skill numbers: 49 of its 50 malicious skills are ClawHavoc variants, so they share one campaign's shape. The envelope rule works well against that shape. Whether it transfers to a different campaign is untested.
 
-What remains is the honest limit. Two malicious skills are still missed, and the clearest of them is a browser-automation skill whose malice is "registering for internet services as Alex Chen" and "solving CAPTCHAs and bypassing browser-checks", stated in fluent English with no dangerous token anywhere. No pattern reaches that. Of the 14 remaining false positives on the 500-skill corpus, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
+What remains is the honest limit. Two malicious skills are still missed. The clearest is a browser-automation skill that describes signing up for services under a fabricated identity and working around bot checks, all in ordinary English with no dangerous token anywhere. No pattern reaches that. Of the 14 remaining false positives on the 500-skill corpus, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
 
-### Other tools, as reported in their papers
+### Prior work
 
-Verified against the arXiv full texts, not repeated from memory. Each row is on that paper's own corpus, so none of this is head-to-head with the rows above. The one anchor is SkillSieve, which measured ClawVet 0.6.0 on their real 390-skill set and got F1 0.248.
+Related systems and measurement studies, listed so the comparison can be made rather than asserted. Their reported figures are not reproduced here: each is measured on that paper's own corpus with its own labelling, so none of it is head-to-head with the numbers above, and any comparison worth publishing should come from running the tools yourself on one shared corpus.
 
-| Tool | Source | Corpus | P | R | F1 | FPR |
-|---|---|---|---|---|---|---|
-| ClawVet (their measurement) | SkillSieve, arXiv:2604.06550 tbl. main | 390 real, 55/335 | 0.162 | 0.527 | 0.248 | 0.448 |
-| SkillSieve L1 (static) | SkillSieve, arXiv:2604.06550 | 390 real, 55/335 | 0.342 | 1.000 | 0.509 | 0.316 |
-| SkillSieve + SSD | SkillSieve, arXiv:2604.06550 | 390 real, 55/335 | 0.663 | 1.000 | 0.797 | 0.084 |
-| SkillSieve full (+ jury) | SkillSieve, arXiv:2604.06550 | 390 real, 55/335 | 0.912 | 0.945 | 0.929 | 0.015 |
-| Behavioral pipeline | Liu et al., arXiv:2602.06547 | 300 eval / 98,380 funnel | 0.996 | n/r | n/r | - |
-| SkillFortify | Bhardwaj, arXiv:2603.00195 | 540 synthetic, 270/270 | 1.000 | 0.926 | 0.962 | 0.000 |
-
-Caveats worth carrying into any writeup:
-- Liu et al. report precision only (0.996, about 0.6 false positives per fold) and deliberately do not report recall or F1; their 157 confirmed skills are a precision-first lower bound, not a recall estimate.
-- SkillFortify's 0% FPR is empirical on a 540-skill synthetic benchmark (270 malicious, 270 benign) and is stated as benchmark-specific, not a universal guarantee. Its formal soundness theorem is scoped more narrowly, and its own E3 experiment is a negative result: information-flow analysis added no detections over pattern matching.
-- SkillSieve's static-only layer L1 hits recall 1.000 on their real set where ClawVet's static layer hits 0 on ours. Different corpora, but that gap is the thing to explain, and the honest lead for the paper.
-
-To make any of this head-to-head, run every tool against one shared open corpus and report that single table.
+- SkillSieve, a hierarchical triage framework combining static checks with LLM analysis: [arXiv:2604.06550](https://arxiv.org/abs/2604.06550). It includes a measurement of an earlier ClawVet release on its own benchmark.
+- A large-scale empirical study of malicious agent skills in the wild: [arXiv:2602.06547](https://arxiv.org/abs/2602.06547).
+- SkillFortify, formal analysis and supply chain security for agent skills: [arXiv:2603.00195](https://arxiv.org/abs/2603.00195).
+- ClawHub security signals across multiple scanners: [arXiv:2606.01494](https://arxiv.org/abs/2606.01494) and the [OpenClaw/clawhub-security-signals](https://huggingface.co/datasets/OpenClaw/clawhub-security-signals) dataset. Note that this dataset stores `skill_md_content` with newlines stripped, which breaks frontmatter and code-fence parsing for any structure-aware scanner.
 
 ## API
 
