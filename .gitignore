@@ -21,3 +21,10 @@ benchmarks/corpus500/malicious/
 benchmarks/corpus500/benign/
 benchmarks/corpus500/hard-negatives/
 benchmarks/scan-sieve.mjs
+
+# Research artifacts stay local until hosted on Zenodo/OSF at submission.
+# Never publish third-party skill sources or live-scan evidence in this repo.
+benchmarks/corpus500/benign/
+benchmarks/corpus500/malicious/
+benchmarks/corpus500/hard-negatives/
+paper/
