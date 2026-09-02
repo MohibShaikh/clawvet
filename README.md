@@ -48,21 +48,49 @@ hook. OpenClaw stages the source, writes the install metadata to the command's
 stdin, and reads back one JSON verdict before the install completes. It runs
 whether or not an agent remembers to scan anything.
 
-Print a ready-to-paste config with the paths already resolved:
+Install `clawvet` globally once, then print a ready-to-paste config with the
+paths already resolved:
 
 ```bash
+npm install -g clawvet
 clawvet gate --print-config
 ```
 
-Use that rather than writing the paths by hand. OpenClaw requires the policy
-command and any interpreter script argument to be regular files, and rejects
-symlinks. `npm i -g clawvet` installs a symlink into `bin/`, so pointing
-`installPolicy` at `which clawvet` fails. `--print-config` resolves through to
-the real `dist/index.js` and invokes it via an absolute `node` path.
+Do not use `npx clawvet gate --print-config`. The config embeds resolved paths,
+and npx resolves them into its cache (`~/.npm/_npx/...`). A cache cleanup later
+removes the policy executable the config points at. Every install then fails
+closed, and the only fix is pasting the config again. A global install is
+permanent.
+
+Use the printed block rather than writing the paths by hand. OpenClaw requires
+the policy command and any interpreter script argument to be regular files, and
+rejects symlinks. `npm i -g clawvet` installs a symlink into `bin/`, so
+pointing `installPolicy` at `which clawvet` fails. `--print-config` resolves
+through to the real `dist/index.js` and invokes it via an absolute `node` path.
+The block is valid as-is; it includes the `source: "exec"` field OpenClaw's
+config validation requires.
+
+OpenClaw also refuses to execute the policy through insecure paths. The
+resolved `node` and `dist/index.js`, and every directory above them, must not
+be writable by group or others. A stock npm global install is `0755`, so
+pasting the block and running an install can fail with `... exec.command
+parent directory permissions are too open`. The fix is to remove the
+group/other-write bits on the directories the block names, typically the node
+installation and the npm global prefix. A launcher-managed node such as
+`~/.local/share/fnm/node-versions/<version>` is commonly installed
+group-writable and needs the same treatment. The failure message names the
+offending directory; start there.
 
 `targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
-so a plugin that ships no `SKILL.md` has no instruction layer to inspect and is
-allowed through. Do not add `"plugin"` until that is a real scanner.
+so a plugin that ships no `SKILL.md` is allowed through, and `"plugin"` is not
+listed because it would claim a protection that does not exist yet. A skill
+target that stages no `SKILL.md` is blocked: with the policy aimed only at
+skills, an instruction-less "skill" is either not a skill or installs its
+payload without saying so.
+
+OpenClaw itself runs `clawvet` through whatever `node` launched it, so install
+`clawvet` with the same node that runs OpenClaw. OpenClaw 2026.8.2 requires
+Node 22.22.3+ (or 24.15.0+, or 25.9.0+); `clawvet` engine is `>=22.0.0`.
 
 Verdicts map onto ClawVet's own vocabulary:
 

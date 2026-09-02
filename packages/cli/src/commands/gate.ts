@@ -139,6 +139,9 @@ function printConfig(blockAt: number): void {
         // that does not exist yet.
         targets: ["skill"],
         exec: {
+          // OpenClaw requires exec.source == "exec"; omit it and config
+          // validation rejects the block as-is.
+          source: "exec",
           command: realpathSync(process.execPath),
           args,
           timeoutMs: 10000,
@@ -186,9 +189,16 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
   }
 
   if (!existsSync(skillFile) || statSync(skillFile).isDirectory()) {
-    // No SKILL.md means no instruction layer to vet. Plugins can legitimately
-    // ship without one, so this is not on its own a reason to fail an install.
-    emit({ protocolVersion: PROTOCOL_VERSION, decision: "allow" });
+    // Plugins can legitimately ship without SKILL.md, so a plugin target passes.
+    // installPolicy only targets skills, though, and a skill with no instruction
+    // layer is either not a skill or installs its payload without saying what it
+    // does. Block on the way through so the gap cannot be leaned on.
+    if (req.targetType === "plugin") {
+      emit({ protocolVersion: PROTOCOL_VERSION, decision: "allow" });
+    }
+    blockWith(
+      "ClawVet gate found no SKILL.md in the staged skill. A skill install must stage a SKILL.md to scan."
+    );
   }
 
   let result;

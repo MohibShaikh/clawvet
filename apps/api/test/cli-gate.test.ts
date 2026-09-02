@@ -13,16 +13,20 @@ const CLI_SRC = join(ROOT, "packages/cli/src/index.ts");
 // Feed a request to `clawvet gate` and parse the verdict. stdout must carry
 // exactly one JSON object no matter what happens, because OpenClaw fails the
 // install closed on anything it cannot parse.
-function run(argv: string[], payload?: string): Promise<string> {
+function runRaw(argv: string[], payload?: string): Promise<{ out: string; code: number | null }> {
   return new Promise((res, rej) => {
     const child = spawn("npx", ["tsx", CLI_SRC, ...argv], { shell: process.platform === "win32" });
     let out = "";
     child.stdout.on("data", (d) => (out += d));
     child.on("error", rej);
-    child.on("close", () => res(out));
+    child.on("close", (code) => res({ out, code }));
     if (payload !== undefined) child.stdin.write(payload);
     child.stdin.end();
   });
+}
+
+function run(argv: string[], payload?: string): Promise<string> {
+  return runRaw(argv, payload).then((r) => r.out);
 }
 
 async function gate(payload: string, args: string[] = []) {
@@ -101,6 +105,14 @@ describe("clawvet gate - OpenClaw installPolicy contract", { timeout: 30000 }, (
     expect(lenient.decision).not.toBe("block");
   });
 
+  it("rejects a --block-at outside 0-100 at parse time", async () => {
+    const { out, code } = await runRaw(["gate", "--block-at", "760"], request(stage(BENIGN)));
+    expect(out).toBe("");
+    expect(code).not.toBe(0);
+    const { out: negative } = await runRaw(["gate", "--block-at", "-5"], request(stage(BENIGN)));
+    expect(negative).toBe("");
+  });
+
   it("fails closed on unparseable stdin", async () => {
     const res = await gate("this is not json");
     expect(res.decision).toBe("block");
@@ -122,8 +134,16 @@ describe("clawvet gate - OpenClaw installPolicy contract", { timeout: 30000 }, (
     expect(res.reason).toMatch(/protocol/i);
   });
 
-  it("allows a target with no SKILL.md rather than blocking it", async () => {
+  it("blocks a skill target with no SKILL.md", async () => {
     const res = await gate(request(stage(undefined)));
+    expect(res.decision).toBe("block");
+    expect(res.reason).toMatch(/SKILL\.md/i);
+  });
+
+  it("still allows a plugin target with no SKILL.md", async () => {
+    const req = JSON.parse(request(stage(undefined)));
+    req.targetType = "plugin";
+    const res = await gate(JSON.stringify(req));
     expect(res.decision).toBe("allow");
   });
 
@@ -136,9 +156,10 @@ describe("clawvet gate - OpenClaw installPolicy contract", { timeout: 30000 }, (
     }
   });
 
-  it("--print-config emits skill-only targets and no symlinked paths", async () => {
+  it("--print-config emits skill-only targets, exec source, and no symlinked paths", async () => {
     const cfg = JSON.parse(await run(["gate", "--print-config"]));
     expect(cfg.security.installPolicy.targets).toEqual(["skill"]);
+    expect(cfg.security.installPolicy.exec.source).toBe("exec");
     for (const p of [cfg.security.installPolicy.exec.command, cfg.security.installPolicy.exec.args[0]]) {
       expect(realpathSync(p)).toBe(p);
     }

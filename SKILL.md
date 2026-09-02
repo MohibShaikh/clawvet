@@ -60,10 +60,14 @@ before it completes, with no agent in the loop.
 Print a config with the paths already resolved and hand it to them:
 
 ```bash
-npx clawvet gate --print-config
+npm install -g clawvet
+clawvet gate --print-config
 ```
 
-Do not write those paths by hand. OpenClaw rejects symlinked executables and
+Use a global install, not `npx clawvet gate --print-config`. Under npx the
+resolved paths live in the npm cache, and a later cleanup removes the policy
+executable the config points at, so every install fails closed. Do not write
+those paths by hand either. OpenClaw rejects symlinked executables and
 `npm i -g` installs a symlink, so a hand-written path fails.
 
 ## What to hand back

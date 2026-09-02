@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { readFileSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -36,6 +36,16 @@ function readPackageVersion(): string {
   }
 }
 
+// The blocking line only means something inside 0-100. Rejecting the range at
+// parse time beats silently installing a config that can never block.
+function parseBlockAt(value: string): number {
+  const score = Number(value);
+  if (!Number.isInteger(score) || score < 0 || score > 100) {
+    throw new InvalidArgumentError("--block-at must be an integer from 0 to 100");
+  }
+  return score;
+}
+
 const program = new Command();
 
 program
@@ -71,7 +81,7 @@ program
   .command("gate")
   .alias("policy")
   .description("OpenClaw install-policy hook: staged install metadata on stdin, JSON verdict on stdout")
-  .option("--block-at <score>", "Risk score at or above which to block the install", "76")
+  .option("--block-at <score>", "Risk score at or above which to block the install", parseBlockAt, 76)
   .option("--print-config", "Print a ready-to-paste OpenClaw installPolicy config with resolved paths")
   .action(async (opts) => {
     // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
@@ -83,7 +93,7 @@ program
         "clawvet: 'policy' is deprecated, use 'gate'. Update args to [\"gate\"] in your installPolicy config.\n"
       );
     }
-    await gateCommand({ blockAt: Number(opts.blockAt), printConfig: opts.printConfig });
+    await gateCommand({ blockAt: opts.blockAt, printConfig: opts.printConfig });
   });
 
 program
