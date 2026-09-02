@@ -54,6 +54,57 @@ clawvet audit
 clawvet watch --threshold 50
 ```
 
+## Install-time enforcement
+
+`clawvet gate` is an OpenClaw [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config)
+hook. OpenClaw stages the source, writes the install metadata to the command's
+stdin, and reads back one JSON verdict before the install completes. It runs
+whether or not an agent remembers to scan anything.
+
+Print a ready-to-paste config with the paths already resolved:
+
+```bash
+clawvet gate --print-config
+```
+
+Use that rather than writing the paths by hand. OpenClaw requires the policy
+command and any interpreter script argument to be regular files, and rejects
+symlinks. `npm i -g clawvet` installs a symlink into `bin/`, so pointing
+`installPolicy` at `which clawvet` fails. `--print-config` resolves through to
+the real `dist/index.js` and invokes it via an absolute `node` path.
+
+`targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
+so a plugin that ships no `SKILL.md` has no instruction layer to inspect and is
+allowed through. Do not add `"plugin"` until that is a real scanner.
+
+Verdicts map onto ClawVet's own vocabulary:
+
+| Risk score | Grade | ClawVet | installPolicy |
+|-----------|-------|---------|---------------|
+| 0-25 | A / B | `approve` | `allow` |
+| 26-75 | C / D | `warn` | `warn` |
+| 76-100 | F | `block` | `block` |
+
+A `warn` is not a pass. OpenClaw's docs are explicit: "A warning stops the
+install before commit." An interactive CLI install asks the operator to confirm,
+and Gateway-backed or automatic installs stay blocked without an
+operator-confirmation path.
+
+**Choosing a threshold.** `--block-at <score>` moves the blocking line, default
+76. ClawHavoc campaign fixtures score 28-36, so at the default they warn, which
+stops the install pending review rather than denying it outright. `--block-at
+26` denies them outright at the cost of denying dual-use skills that score above
+26. A finding marked `disqualifying`, such as a known-malicious C2 address,
+blocks at any threshold.
+
+Static passes only, so it fits the install timeout: 119 ms end to end including
+node startup, against the 10 s default. The semantic pass is never reached, so
+no API key and no network round trip.
+
+Anything the host cannot parse fails closed. A malformed payload, an unreadable
+staged path, or a scanner error returns `block` with a reason rather than a bare
+non-zero exit, so the operator sees why the install stopped.
+
 ## What it detects
 
 ClawVet runs a 6-pass analysis on every skill:

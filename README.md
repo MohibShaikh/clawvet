@@ -48,28 +48,23 @@ hook. OpenClaw stages the source, writes the install metadata to the command's
 stdin, and reads back one JSON verdict before the install completes. It runs
 whether or not an agent remembers to scan anything.
 
-```jsonc
-// openclaw config
-{
-  "security": {
-    "installPolicy": {
-      "enabled": true,
-      "targets": ["skill", "plugin"],
-      "exec": {
-        "command": "/absolute/path/to/clawvet",
-        "args": ["gate"],
-        "timeoutMs": 10000
-      }
-    }
-  }
-}
+Print a ready-to-paste config with the paths already resolved:
+
+```bash
+clawvet gate --print-config
 ```
 
-Static passes only, so it fits the install timeout: 119 ms end to end including
-node startup, against the 10 s default. The semantic pass is never reached here,
-so no API key and no network round trip.
+Use that rather than writing the paths by hand. OpenClaw requires the policy
+command and any interpreter script argument to be regular files, and rejects
+symlinks. `npm i -g clawvet` installs a symlink into `bin/`, so pointing
+`installPolicy` at `which clawvet` fails. `--print-config` resolves through to
+the real `dist/index.js` and invokes it via an absolute `node` path.
 
-Verdicts map straight onto ClawVet's own vocabulary:
+`targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
+so a plugin that ships no `SKILL.md` has no instruction layer to inspect and is
+allowed through. Do not add `"plugin"` until that is a real scanner.
+
+Verdicts map onto ClawVet's own vocabulary:
 
 | Risk score | Grade | ClawVet | installPolicy |
 |-----------|-------|---------|---------------|
@@ -77,24 +72,25 @@ Verdicts map straight onto ClawVet's own vocabulary:
 | 26-75 | C / D | `warn` | `warn` |
 | 76-100 | F | `block` | `block` |
 
-Named `gate` rather than `policy` on purpose. [`openclaw policy`](https://github.com/openclaw/openclaw/blob/main/docs/cli/policy.md)
-is a different thing in the same ecosystem: a workspace-config conformance
-linter you run yourself. This is an admission gate the host runs for you.
-OpenClaw policy checks how your agent is configured; ClawVet gate controls which
-skills get into it. `clawvet policy` still works as a deprecated alias.
+A `warn` is not a pass. OpenClaw's docs are explicit: "A warning stops the
+install before commit." An interactive CLI install asks the operator to confirm,
+and Gateway-backed or automatic installs stay blocked without an
+operator-confirmation path.
 
 **Choosing a threshold.** `--block-at <score>` moves the blocking line, default
-76. That default is deliberately permissive: ClawHavoc campaign fixtures score
-28-36, so they warn rather than block, and the install proceeds with the findings
-surfaced. `--block-at 26` uses the scanner's warn line as a hard gate, which stops
-that campaign class at the cost of blocking dual-use skills that score above 26.
-Pick based on whether a false block or a false allow costs you more. A finding
-marked `disqualifying`, such as a known-malicious C2 address, blocks at any
-threshold.
+76. ClawHavoc campaign fixtures score 28-36, so at the default they warn, which
+stops the install pending review rather than denying it outright. `--block-at
+26` denies them outright at the cost of denying dual-use skills that score above
+26. A finding marked `disqualifying`, such as a known-malicious C2 address,
+blocks at any threshold.
+
+Static passes only, so it fits the install timeout: 119 ms end to end including
+node startup, against the 10 s default. The semantic pass is never reached, so
+no API key and no network round trip.
 
 Anything the host cannot parse fails closed. A malformed payload, an unreadable
 staged path, or a scanner error returns `block` with a reason rather than a bare
-non-zero exit, so the user sees why the install stopped.
+non-zero exit, so the operator sees why the install stopped.
 
 ## Architecture
 

@@ -1,5 +1,6 @@
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, existsSync, statSync, realpathSync } from "node:fs";
 import { join, basename, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { scanSkill } from "@clawvet/shared";
 import type { Finding, Recommendation } from "@clawvet/shared";
 import { assembleSkill } from "../assemble.js";
@@ -114,12 +115,49 @@ function summarize(
 
 export interface GateOptions {
   blockAt?: number;
+  printConfig?: boolean;
+}
+
+// OpenClaw requires the policy command and any interpreter script argument to
+// be "direct regular files with trusted ownership, restricted permissions, and
+// verifiable parent directories. Symlinks and insecure paths are rejected."
+// `npm i -g clawvet` puts a symlink in bin/, so pointing installPolicy at
+// `which clawvet` fails. Resolve through to the real file and invoke it via
+// node explicitly, so both the command and the script argument are regular
+// files.
+function printConfig(blockAt: number): void {
+  const self = realpathSync(fileURLToPath(import.meta.url));
+  const args: string[] = [self, "gate"];
+  if (blockAt !== DEFAULT_BLOCK_AT) args.push("--block-at", String(blockAt));
+  const config = {
+    security: {
+      installPolicy: {
+        enabled: true,
+        // Only "skill". ClawVet reads SKILL.md and the files it references. A
+        // plugin with no SKILL.md has no instruction layer to inspect and is
+        // allowed through, so listing "plugin" here would claim a protection
+        // that does not exist yet.
+        targets: ["skill"],
+        exec: {
+          command: realpathSync(process.execPath),
+          args,
+          timeoutMs: 10000,
+        },
+      },
+    },
+  };
+  process.stdout.write(JSON.stringify(config, null, 2) + "\n");
 }
 
 export async function gateCommand(options: GateOptions = {}): Promise<void> {
   const blockAt = Number.isFinite(options.blockAt)
     ? (options.blockAt as number)
     : DEFAULT_BLOCK_AT;
+
+  if (options.printConfig) {
+    printConfig(blockAt);
+    return;
+  }
   let req: PolicyRequest;
   try {
     const raw = await readStdin();

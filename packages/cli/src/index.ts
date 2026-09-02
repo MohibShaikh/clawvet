@@ -72,6 +72,7 @@ program
   .alias("policy")
   .description("OpenClaw install-policy hook: staged install metadata on stdin, JSON verdict on stdout")
   .option("--block-at <score>", "Risk score at or above which to block the install", "76")
+  .option("--print-config", "Print a ready-to-paste OpenClaw installPolicy config with resolved paths")
   .action(async (opts) => {
     // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
     // which lints workspace config rather than gating installs. Kept as an
@@ -82,7 +83,7 @@ program
         "clawvet: 'policy' is deprecated, use 'gate'. Update args to [\"gate\"] in your installPolicy config.\n"
       );
     }
-    await gateCommand({ blockAt: Number(opts.blockAt) });
+    await gateCommand({ blockAt: Number(opts.blockAt), printConfig: opts.printConfig });
   });
 
 program

@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.12.2
+
+Launch-readiness fixes for the install gate, all found by running the published
+package rather than the working tree.
+
+The npm README did not mention the gate at all. `packages/cli/README.md` is what
+ships in the tarball, and only the repo root README had been updated, so anyone
+finding 0.12.x on npm could not see its headline feature. Both now carry it.
+
+`targets` is now documented as `["skill"]`, not `["skill", "plugin"]`. A plugin
+with no `SKILL.md` has no instruction layer to read and is allowed through, so
+listing `"plugin"` claimed a protection that does not exist.
+
+Corrected what a `warn` means. The docs said the install proceeds with findings
+surfaced. OpenClaw's own documentation says "A warning stops the install before
+commit", with operator confirmation required and Gateway-backed installs staying
+blocked. The real behaviour is stronger than what was written.
+
+New `clawvet gate --print-config`, which prints a ready-to-paste config with
+paths already resolved. OpenClaw requires the policy command and interpreter
+script argument to be regular files and rejects symlinks, and `npm i -g clawvet`
+installs a symlink into `bin/`, so the previous `"command": "/path/to/clawvet"`
+example would have failed for anyone with a normal global install.
+
+Eleven contract tests for the gate, covering the verdict schema, reason
+requirements, `--block-at`, the three fail-closed paths, severity mapping,
+no-SKILL.md, `--print-config`, and the deprecated `policy` alias. There were
+none before.
+
 ## 0.12.1
 
 Renames `clawvet policy` to `clawvet gate`. `openclaw policy` already exists and
