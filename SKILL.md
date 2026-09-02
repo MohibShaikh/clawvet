@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.12.3
+version: 0.12.4
 description: Use before installing, trusting, or running any third-party OpenClaw skill, and when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet". Also use when reviewing a SKILL.md pulled from ClawHub or an untrusted source.
 author: MohibShaikh
 license: MIT

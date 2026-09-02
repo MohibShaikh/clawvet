@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.12.4
+
+`clawvet gate --print-config` now emits `source: "exec"` in the printed
+`installPolicy` block. OpenClaw's config validation requires that field;
+without it the pasted block failed `config validate` as-is.
+
+A skill target that stages no `SKILL.md` now blocks. OpenClaw only reaches
+the gate for installs it will actually run, so a skill with no instruction
+layer was a real gap, not an edge case. Plugins that ship no SKILL.md still
+pass, since they can legitimately exist without one.
+
+`--block-at` is validated at parse time. A value outside 0-100, such as a
+pasted `760` that would silently disable blocking, is now rejected before the
+gate starts rather than silently shipped as a broken config.
+
+The CLI readme, root readme, and clawvet skill now steer users to a global
+install with the print-config block instead of npx. The npx cache can be
+cleaned, and that deletes the policy executable the config points at,
+breaking every future install. The gate demo tape now runs the real openclaw
+subcommands (`skills install`, `config validate`).
+
 ## 0.12.3
 
 The clawvet skill now tells an agent that `clawvet gate --print-config` exists.
