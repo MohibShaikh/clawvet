@@ -7,6 +7,7 @@ import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+import { policyCommand } from "./commands/policy.js";
 import { FEEDBACK_URL, FEEDBACK_DISPLAY_URL } from "./feedback.js";
 
 // Open a URL in the user's browser without going through a shell. Using
@@ -64,6 +65,14 @@ program
       remote: opts.remote,
       quiet: opts.quiet,
     });
+  });
+
+program
+  .command("policy")
+  .description("OpenClaw install-policy hook: staged install metadata on stdin, JSON verdict on stdout")
+  .option("--block-at <score>", "Risk score at or above which to block the install", "76")
+  .action(async (opts) => {
+    await policyCommand({ blockAt: Number(opts.blockAt) });
   });
 
 program

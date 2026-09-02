@@ -1,6 +1,6 @@
 ---
 name: clawvet-guard
-version: 1.0.0
+version: 1.0.1
 description: Use before installing, enabling, or running any third-party OpenClaw skill, and when the user says "install this skill", "is this skill safe", "scan/vet/check this skill", or "should I trust this". Also use when a skill is pulled from ClawHub or any untrusted source.
 author: MohibShaikh
 license: MIT
@@ -67,11 +67,16 @@ and often a `fix`.
 
 Decide using the grade:
 
-| Grade | Score | What to do |
-|-------|-------|------------|
-| A / B | 0-25 | Safe — proceed. |
-| C | 26-50 | Report the findings to the user and ask before proceeding. |
-| D / F | 51-100 | **Stop.** Report the findings and do not proceed. |
+| Grade | Score | `recommendation` | What to do |
+|-------|-------|------------------|------------|
+| A / B | 0-25 | `approve` | Safe — proceed. |
+| C | 26-50 | `warn` | Report the findings to the user and ask before proceeding. |
+| D | 51-75 | `warn` | Report the findings and default to not installing. Proceed only if the user decides to, after seeing them. |
+| F | 76-100 | `block` | **Stop.** Report the findings and do not proceed. |
+
+Read `recommendation` straight from the JSON rather than re-deriving it from the
+score. It is the scanner's own verdict and the grade table above is just its
+prose form.
 
 Always surface any `critical` or `high` finding to the user verbatim — the
 title and description — even when the overall grade looks acceptable. Never

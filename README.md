@@ -41,6 +41,55 @@ npx clawvet audit
 
 The scanner is static and offline by default, so `npx clawvet scan` works in CI with no key and no network. The AI stage is opt-in: pass `--semantic`, or set `ANTHROPIC_API_KEY` and it turns on. Nothing is sent anywhere unless you ask for it.
 
+## Install-time enforcement
+
+`clawvet policy` is an OpenClaw [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config)
+hook. OpenClaw stages the source, writes the install metadata to the command's
+stdin, and reads back one JSON verdict before the install completes. It runs
+whether or not an agent remembers to scan anything.
+
+```jsonc
+// openclaw config
+{
+  "security": {
+    "installPolicy": {
+      "enabled": true,
+      "targets": ["skill", "plugin"],
+      "exec": {
+        "command": "/absolute/path/to/clawvet",
+        "args": ["policy"],
+        "timeoutMs": 10000
+      }
+    }
+  }
+}
+```
+
+Static passes only, so it fits the install timeout: 119 ms end to end including
+node startup, against the 10 s default. The semantic pass is never reached here,
+so no API key and no network round trip.
+
+Verdicts map straight onto ClawVet's own vocabulary:
+
+| Risk score | Grade | ClawVet | installPolicy |
+|-----------|-------|---------|---------------|
+| 0-25 | A / B | `approve` | `allow` |
+| 26-75 | C / D | `warn` | `warn` |
+| 76-100 | F | `block` | `block` |
+
+**Choosing a threshold.** `--block-at <score>` moves the blocking line, default
+76. That default is deliberately permissive: ClawHavoc campaign fixtures score
+28-36, so they warn rather than block, and the install proceeds with the findings
+surfaced. `--block-at 26` uses the scanner's warn line as a hard gate, which stops
+that campaign class at the cost of blocking dual-use skills that score above 26.
+Pick based on whether a false block or a false allow costs you more. A finding
+marked `disqualifying`, such as a known-malicious C2 address, blocks at any
+threshold.
+
+Anything the host cannot parse fails closed. A malformed payload, an unreadable
+staged path, or a scanner error returns `block` with a reason rather than a bare
+non-zero exit, so the user sees why the install stopped.
+
 ## Architecture
 
 ```

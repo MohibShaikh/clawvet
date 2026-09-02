@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.12.0
+
+New `clawvet policy` subcommand: an OpenClaw `security.installPolicy` hook.
+OpenClaw writes staged install metadata to stdin after the source is staged and
+before the install completes; the command writes back one JSON verdict of
+`allow`, `warn` or `block`. This is the enforcement path. The clawvet skill asks
+an agent to remember to scan; this runs whether or not it remembers.
+
+Static passes only, so it stays inside the host's install timeout: 119 ms end to
+end including node startup, against a 10 s default. The semantic pass is not
+reachable from this path.
+
+`--block-at <score>` sets the blocking threshold, default 76. ClawHavoc-class
+campaign fixtures score 28-36, so at the default they warn rather than block.
+`--block-at 26` uses the scanner's warn line as a hard gate instead, which
+blocks them at the cost of a higher false-block rate on dual-use skills. Any
+finding marked `disqualifying` blocks regardless of score.
+
 ## 0.11.1
 
 False-positive fixes, all recall-neutral. On the 500-skill real corpus precision

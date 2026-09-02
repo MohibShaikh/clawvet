@@ -213,6 +213,15 @@ for (const slug of ["clawvet", "clawvet-guard"]) {
     fail(`clawhub/${slug}`, "listing exists but has no SKILL.md content attached");
     continue;
   }
+  // The served body must actually be this skill's. On 2026-08-25 both listings
+  // were published with clawvet-guard's SKILL.md, and the version-only check
+  // below reported it as ok because ClawHub versions are expected to differ.
+  const fmn = desc.match(/^name:\s*(.+)$/m);
+  const served = fmn?.[1].trim();
+  if (served && served !== slug) {
+    fail(`clawhub/${slug}`, `serving the WRONG skill body — frontmatter says name: ${served}`);
+    continue;
+  }
   const fmv = desc.match(/^version:\s*(.+)$/m);
   pass(`clawhub/${slug}`, `public, serving version ${fmv ? fmv[1].trim() : "unknown"}`);
 }
