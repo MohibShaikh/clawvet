@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.3
+
+The clawvet skill now tells an agent that `clawvet gate --print-config` exists.
+The gate was documented in both READMEs, which is right for operator config, but
+an agent asked to make scanning automatic had no way to find it.
+
 ## 0.12.2
 
 Launch-readiness fixes for the install gate, all found by running the published
