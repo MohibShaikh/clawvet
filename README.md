@@ -43,7 +43,7 @@ The scanner is static and offline by default, so `npx clawvet scan` works in CI 
 
 ## Install-time enforcement
 
-`clawvet policy` is an OpenClaw [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config)
+`clawvet gate` is an OpenClaw [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config)
 hook. OpenClaw stages the source, writes the install metadata to the command's
 stdin, and reads back one JSON verdict before the install completes. It runs
 whether or not an agent remembers to scan anything.
@@ -57,7 +57,7 @@ whether or not an agent remembers to scan anything.
       "targets": ["skill", "plugin"],
       "exec": {
         "command": "/absolute/path/to/clawvet",
-        "args": ["policy"],
+        "args": ["gate"],
         "timeoutMs": 10000
       }
     }
@@ -76,6 +76,12 @@ Verdicts map straight onto ClawVet's own vocabulary:
 | 0-25 | A / B | `approve` | `allow` |
 | 26-75 | C / D | `warn` | `warn` |
 | 76-100 | F | `block` | `block` |
+
+Named `gate` rather than `policy` on purpose. [`openclaw policy`](https://github.com/openclaw/openclaw/blob/main/docs/cli/policy.md)
+is a different thing in the same ecosystem: a workspace-config conformance
+linter you run yourself. This is an admission gate the host runs for you.
+OpenClaw policy checks how your agent is configured; ClawVet gate controls which
+skills get into it. `clawvet policy` still works as a deprecated alias.
 
 **Choosing a threshold.** `--block-at <score>` moves the blocking line, default
 76. That default is deliberately permissive: ClawHavoc campaign fixtures score

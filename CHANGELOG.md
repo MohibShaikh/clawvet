@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.1
+
+Renames `clawvet policy` to `clawvet gate`. `openclaw policy` already exists and
+means something else: it lints workspace configuration against `policy.jsonc`
+and, in its own words, "does not enforce tool calls or rewrite runtime behavior
+at request time". Two commands called policy in one ecosystem, meaning opposite
+halves of the problem, is a trap. It would also have collided with a future
+declarative `clawvet policy` that reads a rules file.
+
+OpenClaw policy checks how your agent is configured. ClawVet gate controls which
+skills get into it.
+
+`clawvet policy` stays as a deprecated alias so an installPolicy config written
+against 0.12.0 keeps working. It prints a notice on stderr; stdout still carries
+only the JSON verdict.
+
 ## 0.12.0
 
 New `clawvet policy` subcommand: an OpenClaw `security.installPolicy` hook.

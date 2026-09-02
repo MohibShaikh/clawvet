@@ -7,7 +7,7 @@ import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
-import { policyCommand } from "./commands/policy.js";
+import { gateCommand } from "./commands/gate.js";
 import { FEEDBACK_URL, FEEDBACK_DISPLAY_URL } from "./feedback.js";
 
 // Open a URL in the user's browser without going through a shell. Using
@@ -68,11 +68,21 @@ program
   });
 
 program
-  .command("policy")
+  .command("gate")
+  .alias("policy")
   .description("OpenClaw install-policy hook: staged install metadata on stdin, JSON verdict on stdout")
   .option("--block-at <score>", "Risk score at or above which to block the install", "76")
   .action(async (opts) => {
-    await policyCommand({ blockAt: Number(opts.blockAt) });
+    // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
+    // which lints workspace config rather than gating installs. Kept as an
+    // alias so a config written against 0.12.0 keeps working; the notice goes
+    // to stderr because stdout carries the JSON verdict the host parses.
+    if (process.argv[2] === "policy") {
+      process.stderr.write(
+        "clawvet: 'policy' is deprecated, use 'gate'. Update args to [\"gate\"] in your installPolicy config.\n"
+      );
+    }
+    await gateCommand({ blockAt: Number(opts.blockAt) });
   });
 
 program

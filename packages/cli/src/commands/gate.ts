@@ -10,6 +10,12 @@ import { assembleSkill } from "../assemble.js";
 // closed, so this path must emit exactly one JSON object on stdout and put
 // every diagnostic on stderr.
 //
+// Named `gate`, not `policy`. `openclaw policy` is a different thing in the
+// same ecosystem: a workspace-config conformance linter a human runs. This is
+// an install-time admission gate the host runs. Two commands called policy
+// meaning two different things is a trap, and it would also collide with a
+// future declarative `clawvet policy` that reads a rules file.
+//
 // This is the enforcement half of ClawVet. The clawvet skill asks an agent to
 // remember to scan; this runs whether or not it remembers.
 
@@ -106,32 +112,32 @@ function summarize(
   return worst.length ? `${head} ${worst.join("; ")}.` : head;
 }
 
-export interface PolicyOptions {
+export interface GateOptions {
   blockAt?: number;
 }
 
-export async function policyCommand(options: PolicyOptions = {}): Promise<void> {
+export async function gateCommand(options: GateOptions = {}): Promise<void> {
   const blockAt = Number.isFinite(options.blockAt)
     ? (options.blockAt as number)
     : DEFAULT_BLOCK_AT;
   let req: PolicyRequest;
   try {
     const raw = await readStdin();
-    if (!raw.trim()) blockWith("ClawVet policy received no install metadata on stdin.");
+    if (!raw.trim()) blockWith("ClawVet gate received no install metadata on stdin.");
     req = JSON.parse(raw) as PolicyRequest;
   } catch {
-    blockWith("ClawVet policy could not parse the install metadata on stdin.");
+    blockWith("ClawVet gate could not parse the install metadata on stdin.");
   }
 
   if (req.protocolVersion !== undefined && req.protocolVersion !== PROTOCOL_VERSION) {
     blockWith(
-      `ClawVet policy speaks protocol ${PROTOCOL_VERSION}, host sent ${req.protocolVersion}. Upgrade clawvet.`
+      `ClawVet gate speaks protocol ${PROTOCOL_VERSION}, host sent ${req.protocolVersion}. Upgrade clawvet.`
     );
   }
 
   const sourcePath = req.sourcePath;
   if (!sourcePath || !existsSync(sourcePath)) {
-    blockWith(`ClawVet policy could not read the staged source at ${sourcePath ?? "(none)"}.`);
+    blockWith(`ClawVet gate could not read the staged source at ${sourcePath ?? "(none)"}.`);
   }
 
   let skillFile = sourcePath;
@@ -159,7 +165,7 @@ export async function policyCommand(options: PolicyOptions = {}): Promise<void> 
     });
   } catch (err) {
     blockWith(
-      `ClawVet policy failed to scan the staged skill: ${err instanceof Error ? err.message : "unknown error"}`
+      `ClawVet gate failed to scan the staged skill: ${err instanceof Error ? err.message : "unknown error"}`
     );
   }
 
