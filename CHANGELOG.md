@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.2
+
+Fixed `scan --format json` and `--format sarif` cutting their output off when
+piped, as CI and the GitHub Action read it. A failing scan or a `--fail-on`
+match called `process.exit` right after printing, before Node finished writing
+to the pipe, so reports larger than the 64 KiB pipe buffer arrived truncated
+and unparseable. The exit code is unchanged; it is now set instead of forcing
+an exit. Found while replicating a published benchmark against ClawVet.
+
+Added `benchmarks/skillsieve-replication/`, which re-runs the ClawVet baseline
+from the SkillSieve paper on 0.6.3 and 0.13.1 with the paper's own decision
+rule. Removed two unrelated skills and a superseded design note from the
+repository.
+
 ## 0.13.1
 
 Fixed a false block found by auditing real installed skills with 0.13.0. A
@@ -300,7 +314,7 @@ is unchanged at F1 0.943. Four of these are bug fixes, not tuning.
 - Docs: corrected stale counts repo-wide, 57 threat patterns (not 54) across
   13 categories (not 12), and refreshed test counts.
 
-## Unreleased, hosted API (`apps/api`, not the npm CLI)
+## Hosted API (`apps/api`, not the npm CLI), after 0.8.2
 
 - Security hardening for self-hosted deployments: API key storage and proxy/rate-limit configuration. Operators upgrading should apply `apps/api/migrations/0001_hash_api_keys.sql` and re-issue API keys via `POST /api/v1/auth/api-key/rotate`; see `.env.example` for the new `TRUST_PROXY` setting.
 
@@ -330,7 +344,7 @@ is unchanged at F1 0.943. Four of these are bug fixes, not tuning.
 
 - Telemetry: `clawvet audit` now emits a single session-level `audit_completed` event (skills scanned, total findings, grade breakdown, duration) instead of nothing, previously audits were invisible in telemetry. Scan events are tagged `event: "scan_completed"` so the two can be told apart. Still opt-in; no raw skill names are sent. (Requires the telemetry receiver to handle the new `event` field.)
 
-## Unreleased, hosted API server (`apps/api`, not the npm CLI)
+## Hosted API (`apps/api`, not the npm CLI), after 0.7.2
 
 - Security: `GET /api/v1/scans` now requires authentication and returns only the caller's own scans. It previously listed every user's scan records (including `userId`) to anonymous callers, enabling user enumeration (CWE-306). The npm `clawvet` CLI does not include or use this code.
 - Security: webhook target URLs are now validated against SSRF, only `http`/`https` schemes are allowed, and hosts that resolve to loopback/private/link-local/cloud-metadata addresses (e.g. `169.254.169.254`) are rejected. Enforced both at registration and re-checked before every delivery. Previously any authenticated user could point a webhook at internal infrastructure.

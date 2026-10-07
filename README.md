@@ -375,7 +375,7 @@ This repo is a monorepo with two separate concerns.
 
 | Package | Published | Description |
 |---------|-----------|-------------|
-| `packages/cli` | Yes (`npx clawvet`) | Stateless CLI scanner. No databases, no auth, offline by default |
+| `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner. No databases, no auth, offline by default |
 | `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, and 57 threat patterns |
 | `apps/api` | No (self-hosted) | Optional Fastify backend with Postgres, Redis, GitHub OAuth |
 | `apps/web` | No (self-hosted) | Optional Next.js dashboard |

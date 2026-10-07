@@ -1,0 +1,3132 @@
+{
+  "skills": 139,
+  "missing": 194,
+  "summary": {
+    "0.6.3": {
+      "skillsieve": {
+        "tp": 29,
+        "fp": 39,
+        "tn": 50,
+        "fn": 21,
+        "errors": 0,
+        "precision": 0.426,
+        "recall": 0.58,
+        "f1": 0.492,
+        "fpr": 0.438
+      },
+      "block": {
+        "tp": 0,
+        "fp": 12,
+        "tn": 77,
+        "fn": 50,
+        "errors": 0,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "fpr": 0.135
+      },
+      "stopped": {
+        "tp": 0,
+        "fp": 33,
+        "tn": 56,
+        "fn": 50,
+        "errors": 0,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "fpr": 0.371
+      }
+    },
+    "0.13.1": {
+      "skillsieve": {
+        "tp": 48,
+        "fp": 23,
+        "tn": 65,
+        "fn": 2,
+        "errors": 1,
+        "precision": 0.676,
+        "recall": 0.96,
+        "f1": 0.793,
+        "fpr": 0.261
+      },
+      "block": {
+        "tp": 49,
+        "fp": 26,
+        "tn": 62,
+        "fn": 1,
+        "errors": 1,
+        "precision": 0.653,
+        "recall": 0.98,
+        "f1": 0.784,
+        "fpr": 0.295
+      },
+      "stopped": {
+        "tp": 49,
+        "fp": 29,
+        "tn": 59,
+        "fn": 1,
+        "errors": 1,
+        "precision": 0.628,
+        "recall": 0.98,
+        "f1": 0.766,
+        "fpr": 0.33
+      }
+    }
+  },
+  "results": {
+    "0.6.3": {
+      "sunlinlin-aragon/medical-doctor-matcher": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "gxcun17/skywork-ppt": {
+        "riskScore": 57.78,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 18
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "samledger67-dotcom/expense-categorization": {
+        "riskScore": 17,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "yang1002378395-cmyk/ai-intelligent-alerting-system": {
+        "riskScore": 9,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "whisper1952717/spec-steering-workflow": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "abhi152003/maxxit-lazy-trading": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 3,
+          "low": 139
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "qiusuo9809/qiusuo-email-monitor": {
+        "riskScore": 69.6,
+        "findings": {
+          "critical": 0,
+          "high": 6,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "kenz1117/short-play-writer": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "xiaocaijic/ecommerce-voice-cs": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aslancootl/openclaw-win-install-ai-assist": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 1,
+          "high": 2,
+          "medium": 11,
+          "low": 11
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "nightcode112/buff-roundup": {
+        "riskScore": 28.2,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "litiao1224/skill-update-litiao": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hanxueyuan/coze-voice-gen": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "baizhexue/fly-flight": {
+        "riskScore": 2.1,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "lang50/juejin": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "merusaru/agora-marketplace": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "nidhov01/07": {
+        "riskScore": 10.5,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 5
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "2404589803/memory-poison-auditor": {
+        "riskScore": 14.76,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 3,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaiccee/u2-tts": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 31,
+          "medium": 0,
+          "low": 9
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "gora050/lusha": {
+        "riskScore": 35.379999999999995,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "samledger67-dotcom/revenue-recognition-agent": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "calvinzhao/vidu-skill": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 43
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "gora050/emelia": {
+        "riskScore": 35.379999999999995,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "bytesagain3/movie-review": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "agriimony/grand-bazaar-swap": {
+        "riskScore": 3.7800000000000002,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "chinasilva/peter-ci-gate": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "astralwaveorg/smart-router-skill": {
+        "riskScore": 48.8,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 2,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "bryan-cmc/cmc-x402": {
+        "riskScore": 33.900000000000006,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 1,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "memyard/public-google-drive": {
+        "riskScore": 60.599999999999994,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 0,
+          "low": 13
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "liu7yong/hn-daily-brief": {
+        "riskScore": 2.1,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "mfy-apl/airport-pickups-london": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "whale-professor/bapbook": {
+        "riskScore": 52.4,
+        "findings": {
+          "critical": 0,
+          "high": 3,
+          "medium": 2,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "aidescend/minimax-image-understanding": {
+        "riskScore": 87.60000000000001,
+        "findings": {
+          "critical": 0,
+          "high": 7,
+          "medium": 0,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "tianchuanjun64-afk/health-data-analyzer": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "g4dr/web-browser-automation": {
+        "riskScore": 28.4,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 2,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "liuhedev/lh-video-gen": {
+        "riskScore": 6.78,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "rybnikov/plati-mcp-search": {
+        "riskScore": 3.7800000000000002,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "saschabuehrle/cascadeflow": {
+        "riskScore": 45.78,
+        "findings": {
+          "critical": 0,
+          "high": 3,
+          "medium": 1,
+          "low": 3
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "lilei0311/baidunetdisk": {
+        "riskScore": 23,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 4
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "wiimdy/openfunderse-participant": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 14,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "adamkristopher/botcoin": {
+        "riskScore": 65.88,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 20
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "tezatezaz/clawcast-wallet": {
+        "riskScore": 32.94,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 3,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "maypaz/tozil": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 9,
+          "medium": 1,
+          "low": 3
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hoyin258/macos-screenshot-telegram": {
+        "riskScore": 58.5,
+        "findings": {
+          "critical": 0,
+          "high": 4,
+          "medium": 1,
+          "low": 4
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "driftsbot/experience-alexandria": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "dannyshmueli/chart-image": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "seanwyngaard/freelance-proposal-engine": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "adibirzu/openclaw-security-monitor": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 2,
+          "high": 22,
+          "medium": 5,
+          "low": 3
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "appback/gridclash": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 9,
+          "high": 1,
+          "medium": 0,
+          "low": 99
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "aaigotchi/pet-me-master": {
+        "riskScore": 32.4,
+        "findings": {
+          "critical": 0,
+          "high": 3,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "crazypatient0/xiaohong-hot-tracker": {
+        "riskScore": 14,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "dunwood/company-search-2": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "mmsneaks11-max/trading-card-specialist": {
+        "riskScore": 92.39999999999999,
+        "findings": {
+          "critical": 0,
+          "high": 9,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "ppopen/podcast-manager": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "findhappy7/china-furniture-factory": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "bytesagain1/notion-template": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "space0mel/statsfm": {
+        "riskScore": 5.1,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ohalo/p3c-code-quality": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "asterisk622/dinstein-tech-news-digest": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 10,
+          "medium": 0,
+          "low": 17
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "alirezarezvani/cpo-advisor": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ivangdavila/tuya": {
+        "riskScore": 47.19,
+        "findings": {
+          "critical": 0,
+          "high": 4,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "luis2404123/proxy-setup": {
+        "riskScore": 22.799999999999997,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 6
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "qwe123sddfsdfs/http-retry-circuit-breaker": {
+        "riskScore": 17,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "anmolnagpal/ri-savings-advisor": {
+        "riskScore": 32.4,
+        "findings": {
+          "critical": 0,
+          "high": 3,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "liangdabiao/amazon-sorftime-research-mcp-skill": {
+        "riskScore": 9,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaigotchi/gotchi-pocket": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "huanz/bootstrap": {
+        "riskScore": 45.36000000000001,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 12,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "aaigotchi/gotchi-dao-voting": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "byungkyu/google-analytics": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 14,
+          "medium": 0,
+          "low": 7
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "yting27/global-holidays": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "leeguooooo/leeguooooo-newsnow": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "wespeakallday/email-campaign": {
+        "riskScore": 21.599999999999998,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "gricha/dex": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "vokaplok/generect-api": {
+        "riskScore": 13,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "wrannaman/agentdo": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 12
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "nftechie/strava-skill": {
+        "riskScore": 22.5,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 8
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "cesco345/capital-equipment": {
+        "riskScore": 14,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "juanre/claweb": {
+        "riskScore": 10.799999999999999,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "aianonymous1993-source/fitness-support": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "goforu/phoenixclaw-ledger": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "chrisvoncsefalvay/wandb-monitor": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "alvinecarn/call-web-search-agent": {
+        "riskScore": 12,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 4
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "jhillin8/quit-vaping": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "arein/onchain": {
+        "riskScore": 16.799999999999997,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "minduploadedcrab/platform-healthcheck": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "1kalin/afrexai-observability-engine": {
+        "riskScore": 54.6,
+        "findings": {
+          "critical": 0,
+          "high": 4,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "arthurelgindell/dellight-cro-revenue-ops": {
+        "riskScore": 14,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-3rk1s": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-5fhqm": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-43c6i": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-5buwl": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-2yq87": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-161ks": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "halbotley/duely": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ussyalfaks/near-qr-skill": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "andyxinweiminicloud/protocol-doc-auditor": {
+        "riskScore": 71.28,
+        "findings": {
+          "critical": 0,
+          "high": 4,
+          "medium": 3,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "hightower6eu/auto-updater-96ys3": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-hfmct": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-m0fsa": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-dzuba": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-8xwp6": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-gw6f5": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-deza8": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-eclpb": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-e89da": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-mclql": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-jkiuq": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-lth9t": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-nlt3m": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-ocn18": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/autoupdate": {
+        "riskScore": 20.220000000000002,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 5,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-xcgnm": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-p5rmt": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-se38e": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-sxdg2": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-mkukz": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-6yr3b": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-xsunp": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-mn5ri": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-qdyme": {
+        "riskScore": 24.000000000000004,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-krmvq": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-i9zhz": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-hh1fd": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-gstca": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-gpcrq": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-c9y4p": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-f3qcn": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-d4kxr": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-hylhq": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-i7oci": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-gpwp7": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-ja7eh": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-oihpl": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-osasg": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-tlxx5": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-olgys": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-rkvny": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-sxtsn": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/clawhub-uoeym": {
+        "riskScore": 16.44,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      }
+    },
+    "0.13.1": {
+      "nightcode112/buff-roundup": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "litiao1224/skill-update-litiao": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "xiaocaijic/ecommerce-voice-cs": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "kenz1117/short-play-writer": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aslancootl/openclaw-win-install-ai-assist": {
+        "riskScore": 48,
+        "findings": {
+          "critical": 1,
+          "high": 0,
+          "medium": 11,
+          "low": 11
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "yang1002378395-cmyk/ai-intelligent-alerting-system": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "whisper1952717/spec-steering-workflow": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "samledger67-dotcom/expense-categorization": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "qiusuo9809/qiusuo-email-monitor": {
+        "riskScore": 7,
+        "findings": {
+          "critical": 0,
+          "high": 5,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "sunlinlin-aragon/medical-doctor-matcher": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "abhi152003/maxxit-lazy-trading": {
+        "riskScore": 13,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 3,
+          "low": 23
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "gxcun17/skywork-ppt": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 6
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "gora050/lusha": {
+        "riskScore": 11,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "baizhexue/fly-flight": {
+        "riskScore": 2,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "lang50/juejin": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaiccee/u2-tts": {
+        "riskScore": 13,
+        "findings": {
+          "critical": 0,
+          "high": 6,
+          "medium": 0,
+          "low": 9
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "gora050/emelia": {
+        "riskScore": 11,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "samledger67-dotcom/revenue-recognition-agent": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hanxueyuan/coze-voice-gen": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "merusaru/agora-marketplace": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "2404589803/memory-poison-auditor": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 5,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "calvinzhao/vidu-skill": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 43
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "bytesagain3/movie-review": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "nidhov01/07": {
+        "riskScore": 96,
+        "findings": {
+          "critical": 0,
+          "high": 12,
+          "medium": 18,
+          "low": 7
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "whale-professor/bapbook": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 2,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "aidescend/minimax-image-understanding": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 11,
+          "medium": 0,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "liuhedev/lh-video-gen": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "g4dr/web-browser-automation": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "memyard/public-google-drive": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "mfy-apl/airport-pickups-london": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "bryan-cmc/cmc-x402": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 5
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "agriimony/grand-bazaar-swap": {
+        "riskScore": 15,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 1,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "chinasilva/peter-ci-gate": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "liu7yong/hn-daily-brief": {
+        "riskScore": 2,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "astralwaveorg/smart-router-skill": {
+        "riskScore": 19,
+        "findings": {
+          "critical": 0,
+          "high": 8,
+          "medium": 4,
+          "low": 15
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "tianchuanjun64-afk/health-data-analyzer": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "rybnikov/plati-mcp-search": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "lilei0311/baidunetdisk": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 4
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hoyin258/macos-screenshot-telegram": {
+        "riskScore": 74,
+        "findings": {
+          "critical": 1,
+          "high": 6,
+          "medium": 1,
+          "low": 5
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "wiimdy/openfunderse-participant": {
+        "riskScore": 31,
+        "findings": {
+          "critical": 0,
+          "high": 13,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "dannyshmueli/chart-image": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "adamkristopher/botcoin": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 20
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "saschabuehrle/cascadeflow": {
+        "riskScore": 22,
+        "findings": {
+          "critical": 0,
+          "high": 9,
+          "medium": 1,
+          "low": 4
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "seanwyngaard/freelance-proposal-engine": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "tezatezaz/clawcast-wallet": {
+        "riskScore": 27,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 5,
+          "low": 14
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "driftsbot/experience-alexandria": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "maypaz/tozil": {
+        "riskScore": 30,
+        "findings": {
+          "critical": 0,
+          "high": 23,
+          "medium": 1,
+          "low": 10
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "adibirzu/openclaw-security-monitor": {
+        "error": "scan output unparseable"
+      },
+      "dunwood/company-search-2": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ppopen/podcast-manager": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "appback/gridclash": {
+        "riskScore": 81,
+        "findings": {
+          "critical": 9,
+          "high": 0,
+          "medium": 0,
+          "low": 21
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "crazypatient0/xiaohong-hot-tracker": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "bytesagain1/notion-template": {
+        "riskScore": 8,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "space0mel/statsfm": {
+        "riskScore": 2,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "findhappy7/china-furniture-factory": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ohalo/p3c-code-quality": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "mmsneaks11-max/trading-card-specialist": {
+        "riskScore": 16,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 1,
+          "low": 13
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "alirezarezvani/cpo-advisor": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaigotchi/pet-me-master": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 26,
+          "medium": 0,
+          "low": 67
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "asterisk622/dinstein-tech-news-digest": {
+        "riskScore": 100,
+        "findings": {
+          "critical": 0,
+          "high": 42,
+          "medium": 3,
+          "low": 24
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "huanz/bootstrap": {
+        "riskScore": 6,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 17,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "leeguooooo/leeguooooo-newsnow": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "anmolnagpal/ri-savings-advisor": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "wespeakallday/email-campaign": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "yting27/global-holidays": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "qwe123sddfsdfs/http-retry-circuit-breaker": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "ivangdavila/tuya": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 6,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "byungkyu/google-analytics": {
+        "riskScore": 3,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 4
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaigotchi/gotchi-pocket": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 11
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "liangdabiao/amazon-sorftime-research-mcp-skill": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aaigotchi/gotchi-dao-voting": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 0,
+          "low": 8
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "luis2404123/proxy-setup": {
+        "riskScore": 4,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 6
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "jhillin8/quit-vaping": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "aianonymous1993-source/fitness-support": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "cesco345/capital-equipment": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "nftechie/strava-skill": {
+        "riskScore": 2,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "vokaplok/generect-api": {
+        "riskScore": 7,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "juanre/claweb": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "gricha/dex": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "goforu/phoenixclaw-ledger": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "alvinecarn/call-web-search-agent": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 4
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "wrannaman/agentdo": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "chrisvoncsefalvay/wandb-monitor": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "arein/onchain": {
+        "riskScore": 11,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "allow"
+      },
+      "ussyalfaks/near-qr-skill": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 2
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-3rk1s": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "arthurelgindell/dellight-cro-revenue-ops": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 0
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-43c6i": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-5buwl": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "1kalin/afrexai-observability-engine": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 3
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "andyxinweiminicloud/protocol-doc-auditor": {
+        "riskScore": 15,
+        "findings": {
+          "critical": 0,
+          "high": 4,
+          "medium": 3,
+          "low": 2
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "halbotley/duely": {
+        "riskScore": 0,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "allow"
+      },
+      "hightower6eu/auto-updater-5fhqm": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-2yq87": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-161ks": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "minduploadedcrab/platform-healthcheck": {
+        "riskScore": 49,
+        "findings": {
+          "critical": 0,
+          "high": 12,
+          "medium": 0,
+          "low": 0
+        },
+        "skillsieve": true,
+        "decision": "warn"
+      },
+      "hightower6eu/auto-updater-dzuba": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-e89da": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-eclpb": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-gw6f5": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-m0fsa": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-deza8": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-8xwp6": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-mclql": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-jkiuq": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-lth9t": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-hfmct": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-96ys3": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-ocn18": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-qdyme": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-p5rmt": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-mn5ri": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-nlt3m": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-se38e": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-mkukz": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-xsunp": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-sxdg2": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-6yr3b": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/auto-updater-xcgnm": {
+        "riskScore": 36,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 6,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/autoupdate": {
+        "riskScore": 17,
+        "findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 5,
+          "low": 1
+        },
+        "skillsieve": false,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-gpwp7": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-krmvq": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-d4kxr": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-hh1fd": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-f3qcn": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-c9y4p": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-gpcrq": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-gstca": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-hylhq": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-i7oci": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-ja7eh": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-i9zhz": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-oihpl": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-osasg": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-uoeym": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-rkvny": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-olgys": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-tlxx5": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      },
+      "hightower6eu/clawhub-sxtsn": {
+        "riskScore": 28,
+        "findings": {
+          "critical": 0,
+          "high": 1,
+          "medium": 4,
+          "low": 1
+        },
+        "skillsieve": true,
+        "decision": "block"
+      }
+    }
+  }
+}

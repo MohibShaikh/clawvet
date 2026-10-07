@@ -238,7 +238,12 @@ export async function scanCommand(
     console.log();
   }
 
-  if (result.status === "failed") process.exit(1);
+  // Set the code and return rather than exit: process.exit() here cut piped
+  // output off at the 64 KiB pipe buffer before Node finished writing it.
+  if (result.status === "failed") {
+    process.exitCode = 1;
+    return;
+  }
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);
   if (failOn) {
@@ -247,8 +252,6 @@ export async function scanCommand(
     const hasFailure = result.findings.some(
       (f) => severityOrder.indexOf(f.severity) >= threshold
     );
-    if (hasFailure) {
-      process.exit(1);
-    }
+    if (hasFailure) process.exitCode = 1;
   }
 }

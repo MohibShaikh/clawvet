@@ -11,7 +11,11 @@ it("reports a remote manifest as incomplete and exits 1 instead of approving the
   vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("EXIT:1"); });
   vi.spyOn(process.stderr, "write").mockImplementation(() => true);
   const output = vi.spyOn(console, "log").mockImplementation(() => {});
-  await expect(scanCommand("remote-coverage", { remote: true, format: "json" })).rejects.toThrow("EXIT:1");
+  // The report is printed, then the exit code is set rather than process.exit
+  // called, so piped output is not cut off.
+  await scanCommand("remote-coverage", { remote: true, format: "json" });
+  expect(process.exitCode).toBe(1);
+  process.exitCode = undefined;
   const result = JSON.parse(output.mock.calls[0][0]);
   expect(result).toMatchObject({ status: "failed", recommendation: "block", coverage: { complete: false } });
   expect(result.coverage.issues[0].reason).toMatch(/only the manifest/);
