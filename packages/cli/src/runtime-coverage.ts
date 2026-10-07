@@ -348,11 +348,13 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       } else if (commandPosition && token.dynamic && !assignment && !lenient && /^(?:["']?\$|\.\.?\/|`)/.test(token.value)) {
         add(lineNumber, "computed-command");
       }
-      if (commandPosition && /^\.\.?\//.test(token.value) && !token.dynamic) result.executedFiles.push(token.value);
+      // In a code-labelled fence, `import('./x')` puts a path after "(" too; that
+      // is an import argument, not a command, so only shell reads it as one.
+      if (commandPosition && !lenient && /^\.\.?\//.test(token.value) && !token.dynamic) result.executedFiles.push(token.value);
       // An absolute command runs a file outside the bundle, except the system
       // binary directories, which need root to change. A single segment such as
       // /deploy is an agent slash command, not a path.
-      if (commandPosition && !prose && /^\/[^/\s]+\/[^/\s]/.test(token.value) && !token.dynamic &&
+      if (commandPosition && !prose && !lenient && /^\/[^/\s]+\/[^/\s]/.test(token.value) && !token.dynamic &&
           !/^\/(?:usr\/(?:local\/)?)?s?bin\/|^\/opt\/homebrew\/bin\//.test(token.value)) {
         result.executedFiles.push(token.value);
       }

@@ -1,6 +1,6 @@
 ---
 name: clawvet-guard
-version: 1.0.4
+version: 1.0.5
 description: Use before installing, enabling, or running any third-party OpenClaw skill, and when the user asks to scan, vet, or check a skill they did not author, or whether such a skill from ClawHub or another untrusted source is safe to install.
 author: MohibShaikh
 license: MIT

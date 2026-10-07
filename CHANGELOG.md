@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.1
+
+Fixed a false block found by auditing real installed skills with 0.13.0. A
+file that `SKILL.md` only mentions, such as "Node.js", "Three.js", or
+`retry.ts`, was treated as a missing script, and a missing script blocked:
+6 of 36 legitimate skills were blocked this way. A missing file now blocks
+only when something runs it, such as an interpreter target or a `./script`
+command; a mention cannot hide code. Git's `*.sample` hooks, which git never
+runs, are no longer inspected as bundled code, and `import('./x')` in a
+code-labelled fence is no longer read as running `./x`. Detection on the
+MalSkillBench tune half and on corpus500 is unchanged.
+
 ## 0.13.0
 
 Fixed an install-gate bypass where relocating a referenced payload into nested

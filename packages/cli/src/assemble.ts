@@ -295,7 +295,9 @@ export function assembleSkill(
     .filter(Boolean).map((name) => name.toLowerCase()));
   // An agent can find and run any script installed with the skill, so bundled
   // code is inspected whether or not the manifest names it.
-  const bundledCode = candidates.filter((file) => EXECUTABLE.test(file) || shebang(file));
+  // Git never runs its *.sample hooks; a live hook without the suffix stays in.
+  const bundledCode = candidates.filter((file) => !/(?:^|\/)\.git\/hooks\/[^/]+\.sample$/.test(file) &&
+    (EXECUTABLE.test(file) || shebang(file)));
   for (let index = 0; index < queue.length; index++) {
     const source = queue[index];
     const text = scriptRelative(source.text.replace(SKILL_ROOT, ""));
@@ -360,7 +362,9 @@ export function assembleSkill(
       // A file the skill downloads is not missing from the bundle; whether it
       // is run or followed is checked against the download below.
       const downloaded = downloads.some((download) => same(download, { path: source.path, target: ref }));
-      if (!matches.length && !downloaded && (EXECUTABLE.test(ref) || runtime.executedFiles.includes(ref))) {
+      // A file only mentioned, such as "Node.js" or "Three.js" in prose, cannot
+      // hide code. Missing matters when something runs it.
+      if (!matches.length && !downloaded && runs) {
         issue(ref, "missing-file");
       }
       for (const path of matches) {
