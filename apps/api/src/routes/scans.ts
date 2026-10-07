@@ -1,3 +1,4 @@
+import { reserveSemanticScan } from "../services/semantic-quota.js";
 import type { FastifyInstance } from "fastify";
 import { scanSkill } from "../services/scanner.js";
 import { resolveUser } from "../services/resolve-user.js";
@@ -27,7 +28,7 @@ async function getUserScanCount(userId: string): Promise<number> {
       );
     return Number(result?.count || 0);
   } catch {
-    return 0;
+    throw new Error("Scan quota store unavailable");
   }
 }
 
@@ -37,7 +38,18 @@ export async function scanRoutes(app: FastifyInstance) {
   // per-user quota enforced below. Bounds anonymous resource abuse.
   app.post<{ Body: ScanBody }>(
     "/api/v1/scans",
-    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    {
+      bodyLimit: 300 * 1024,
+      schema: { body: {
+        type: "object", required: ["content"], additionalProperties: false,
+        properties: {
+          content: { type: "string", minLength: 1, maxLength: 262144 },
+          semantic: { type: "boolean" },
+          skillName: { type: "string", maxLength: 200 },
+        },
+      } },
+      config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+    },
     async (request, reply) => {
     const { content, semantic, skillName } = request.body;
 
@@ -46,10 +58,16 @@ export async function scanRoutes(app: FastifyInstance) {
     }
 
     const user = await resolveUser(request);
+    if (semantic && !user) return reply.status(401).send({ error: "Authentication required for semantic analysis" });
+    if (semantic && Buffer.byteLength(content) > 64 * 1024) {
+      return reply.status(413).send({ error: "Semantic input exceeds 64 KiB" });
+    }
     const plan = user ? getPlanLimits(user.plan) : getPlanLimits("free");
 
     if (user && plan.apiScansPerMonth !== Infinity) {
-      const used = await getUserScanCount(user.id);
+      let used: number;
+      try { used = await getUserScanCount(user.id); }
+      catch { return reply.status(503).send({ error: "Scan quota store unavailable" }); }
       if (used >= plan.apiScansPerMonth) {
         return reply.status(429).send({
           error: "Monthly scan limit reached",
@@ -72,6 +90,15 @@ export async function scanRoutes(app: FastifyInstance) {
       }
     }
 
+    if (semanticEnabled && user) {
+      try {
+        if (!await reserveSemanticScan(user.id, plan.apiScansPerMonth)) {
+          return reply.status(429).send({ error: "Semantic analysis budget exhausted" });
+        }
+      } catch {
+        return reply.status(503).send({ error: "Semantic quota store unavailable; analysis was not started" });
+      }
+    }
     const result = await scanSkill(content, { semantic: semanticEnabled });
     if (skillName) {
       result.skillName = skillName;

@@ -48,7 +48,7 @@ Does nothing.`,
 
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.payload);
-    expect(body.error).toBe("content is required");
+    expect(body.message).toContain("content");
   });
 
   it("POST /api/v1/scans detects malicious content", async () => {

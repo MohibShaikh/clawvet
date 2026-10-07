@@ -21,10 +21,21 @@ runs:
   using: "composite"
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: "22"
 
     - name: Run ClawVet scan
       shell: bash
-      run: npx clawvet@0.7.0 scan ${{ inputs.path }} --fail-on ${{ inputs.fail-on }} --format ${{ inputs.format }}
+      env:
+        CLAWVET_ACTION_PATH: ${{ github.action_path }}
+        CLAWVET_INPUT_PATH: ${{ inputs.path }}
+        CLAWVET_FAIL_ON: ${{ inputs.fail-on }}
+        CLAWVET_FORMAT: ${{ inputs.format }}
+        CLAWVET_TELEMETRY: "off"
+      run: |
+        case "$CLAWVET_FAIL_ON" in critical|high|medium|low) ;; *) echo "Invalid fail-on" >&2; exit 1 ;; esac
+        case "$CLAWVET_FORMAT" in terminal|json|sarif) ;; *) echo "Invalid format" >&2; exit 1 ;; esac
+        npm ci --prefix "$CLAWVET_ACTION_PATH" --ignore-scripts --no-audit --no-fund
+        npm run build --prefix "$CLAWVET_ACTION_PATH" --workspace=clawvet
+        node "$CLAWVET_ACTION_PATH/packages/cli/dist/index.js" scan --fail-on "$CLAWVET_FAIL_ON" --format "$CLAWVET_FORMAT" -- "$CLAWVET_INPUT_PATH"

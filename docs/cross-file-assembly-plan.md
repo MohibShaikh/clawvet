@@ -1,4 +1,8 @@
-# Plan: Cross-File Payload Assembly (Approach A)
+# Historical plan: Cross-File Payload Assembly (Approach A)
+
+Superseded by the coverage-aware implementation described under “Inspection
+coverage” in the root README. The shallow traversal and silent skips below
+caused an install-gate bypass and are no longer the implementation contract.
 
 ## Goal
 Close ClawVet's single-file blind spot. Today `scanSkill(content)` only sees the

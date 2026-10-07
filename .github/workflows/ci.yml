@@ -31,9 +31,10 @@ jobs:
       - name: Build shared package
         run: npx turbo build --filter=@clawvet/shared
 
+      # Only the packages with tests. A bare `turbo test` also builds the CLI,
+      # and tests must pass without packages/cli/dist (see the next step).
       - name: Run tests
-        run: npx vitest run
-        working-directory: apps/api
+        run: npx turbo test --filter=@clawvet/shared --filter=@clawvet/api --force
 
       - name: Build CLI
         run: npx tsup

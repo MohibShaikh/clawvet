@@ -122,7 +122,10 @@ describe("CLI integration", { timeout: 30000 }, () => {
     const { stdout, exitCode } = await run(
       `scan ${join(FIXTURES, "malicious-stealer")}`
     );
-    expect(exitCode).toBe(0);
+    // The fixture downloads and executes code, so its local coverage is now
+    // incomplete even when --fail-on was not requested.
+    expect(exitCode).toBe(1);
+    expect(stdout).toContain("Inspection incomplete");
     expect(stdout).toContain("ClawVet Scan Report");
     expect(stdout).toContain("productivity-boost");
     expect(stdout).toContain("Risk Score:");

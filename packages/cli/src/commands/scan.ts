@@ -6,7 +6,9 @@ import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
-import { assembleSkill } from "../assemble.js";
+import { assembleSkill, ASSEMBLY_LIMITS, type AssemblyResult } from "../assemble.js";
+import { applyCoverage } from "../local-scan.js";
+import { RULES } from "../policy.js";
 import { FEEDBACK_DISPLAY_URL } from "../feedback.js";
 
 export interface ScanOptions {
@@ -15,9 +17,32 @@ export interface ScanOptions {
   semantic?: boolean;
   remote?: boolean;
   quiet?: boolean;
+  strict?: boolean;
 }
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
+async function readRemoteResponse(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  try {
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > ASSEMBLY_LIMITS.fileBytes) {
+        await reader.cancel();
+        throw new Error("Remote manifest exceeds the 256 KiB inspection limit");
+      }
+      chunks.push(chunk.value);
+    }
+    return new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 async function fetchRemoteSkill(slug: string): Promise<string> {
   if (!SLUG_PATTERN.test(slug)) {
@@ -44,9 +69,10 @@ async function fetchRemoteSkill(slug: string): Promise<string> {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) continue;
 
-      if (!json) return await res.text();
+      const text = await readRemoteResponse(res);
+      if (!json) return text;
 
-      const body = (await res.json()) as {
+      const body = JSON.parse(text) as {
         skill?: { description?: string };
       };
       const content = body?.skill?.description;
@@ -67,7 +93,13 @@ export async function scanCommand(
   target: string,
   options: ScanOptions
 ): Promise<void> {
+  if (options.semantic) {
+    console.error("CLI semantic analysis is not implemented. Use the authenticated API for semantic analysis; no scan was performed.");
+    process.exitCode = 1;
+    return;
+  }
   let content: string;
+  let assembly: AssemblyResult | undefined;
   let fallbackName: string | undefined;
 
   if (options.remote) {
@@ -75,6 +107,15 @@ export async function scanCommand(
       process.stderr.write(`Fetching "${target}" from ClawHub...\n`);
       content = await fetchRemoteSkill(target);
       fallbackName = target;
+      assembly = {
+        content,
+        coverage: {
+          complete: false,
+          files: [{ path: "SKILL.md", startLine: 1, endLine: content.split("\n").length }],
+          issues: [{ path: target, rule: "remote-manifest", reason: RULES["remote-manifest"].message }],
+          warnings: [],
+        },
+      };
     } catch (err) {
       console.error(
         err instanceof Error ? err.message : "Failed to fetch remote skill"
@@ -101,8 +142,8 @@ export async function scanCommand(
       process.exit(1);
     }
 
-    const skillMd = readFileSync(skillFile, "utf-8");
-    content = skillDir ? assembleSkill(skillDir, skillMd) : skillMd;
+    assembly = assembleSkill(skillDir || dirname(skillFile), undefined, basename(skillFile));
+    content = assembly.content;
     fallbackName = basename(dirname(skillFile));
   }
 
@@ -150,11 +191,12 @@ export async function scanCommand(
     }
   }
 
-  const result = await scanSkill(content, {
+  const scanned = await scanSkill(content, {
     semantic: options.semantic ?? false,
     ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
     skillName: fallbackName,
   });
+  const result = assembly ? applyCoverage(scanned, assembly, options.strict ? "strict" : "default") : scanned;
 
   if (!options.quiet) {
     if (options.format === "sarif") {
@@ -184,7 +226,7 @@ export async function scanCommand(
   }
 
   // Await telemetry so it completes before any process.exit()
-  await sendTelemetry(result);
+  if (result.status === "complete") await sendTelemetry(result);
 
   // Show feedback CTA every 5th scan (after increment)
   if (isInteractive && getScanCount() % 5 === 0) {
@@ -195,6 +237,8 @@ export async function scanCommand(
     );
     console.log();
   }
+
+  if (result.status === "failed") process.exit(1);
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);
   if (failOn) {

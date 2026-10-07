@@ -1,5 +1,117 @@
 # Changelog
 
+## 0.13.0
+
+Fixed an install-gate bypass where relocating a referenced payload into nested
+or other directories, or exceeding the file-size limit, could yield `allow`.
+Assembly now follows recognized references recursively and reports coverage;
+a gap that blocks under the active profile (below) blocks at every risk
+threshold. Local file scans, audits, watch reports, and badges use the same
+coverage checks; audits, watch reports, and badges use the default profile.
+Local JSON scans expose coverage and fail with
+exit 1 when a gap blocks. Limits and static
+reference-discovery limitations are documented in both READMEs and guard skills.
+
+Recognized dynamic execution, computed module loading, runtime evaluation,
+and download-to-execution paths now make coverage incomplete, including inside
+referenced helpers. Remote manifest scans also
+report incomplete coverage and exit 1; remote responses are size-bounded.
+Ordinary API data requests remain inspectable. Static syntax recognition still
+does not certify arbitrary program behavior.
+
+Python `urlretrieve` code downloads, and downloaded files later followed as
+instructions, now fail inspection coverage and block at every gate threshold.
+Harmless bundled copies of replaced code or instruction files do not clear
+these failures. Ordinary data downloads remain supported; the checks do not
+implement general data-flow analysis or recognize every download API.
+
+New: gate profiles. The default profile blocks on clear evidence that code is
+hidden, swapped, or fetched and run: a downloaded file that is run or followed,
+instructions to download and run code, `curl | sh` from an untrusted host, a
+path outside the skill, encoded or remote execution, process calls and `eval`
+on unresolved arguments, and content ClawVet could not read. Other gaps, such
+as `npx`, computed commands, unused downloads, and documents linked from
+outside the skill, pass quietly and stay listed in `coverage`, so the gate asks
+the operator only when the scan's findings are borderline. `--strict` on
+`gate` and `scan` blocks every gap and asks about the reviewable ones;
+`gate --print-config --strict` writes it into the installPolicy args.
+`review` and `approve` always use the strict profile. Registry installs such
+as `pip install requests` are not a gap under either profile. Rules have
+stable IDs in one policy table (`packages/cli/src/policy.ts`), and
+`benchmarks/gate-eval/` measures both profiles.
+
+Markdown prose is no longer read as shell: price tables, bullets that mention
+`python3`, and code spans followed by a full stop no longer trigger findings,
+and fences are read by their language. Sequencing words such as "then" before
+a command are read as a command. A path that is not bundled and that nothing
+runs is no longer reported as missing. The trusted-installer list now matches exact hosts on parsed https
+URLs; a substring match had let `astral.sh.evil.example` and
+`evil.example/?source=astral.sh` lower a finding's severity. Skill-root placeholders
+such as `{baseDir}/` resolve to the bundle so the script behind them is
+inspected, and an absolute path into an installed copy of the skill resolves
+to the bundled file. A script that reads from the network and writes a
+literal filename now counts as downloading it, so running that file blocks.
+
+Every bundled code file is now inspected, whether or not `SKILL.md` names
+it, and a dynamic reference that could reach any bundled file inspects all of
+them. A pre-release review closed further gaps under the default profile:
+`bash -c "$(curl ...)"` and its `sh`, `zsh`, `python -c` and `node -e` forms;
+a pipe into a quoted, path-qualified or `env`-wrapped interpreter, including
+one split across a line continuation; executing a quoted, document-named or
+absolute path outside the skill; `curl -oFILE` and other attached output
+flags; `eval ("...")` with spacing in code; a reassigned `$SCRIPT_DIR`; and an
+install path that names another skill. Downloads and executions are matched by
+path rather than file name, a run of quiet findings can no longer crowd out a
+blocking one, unlabelled and code-labelled fences get the shell rules, and the
+gate refuses a symlinked staged source, bounds stdin to 1 MiB and 5 seconds,
+and answers metadata with fields of the wrong type with a verdict instead of a
+crash.
+
+Prose that tells the agent to follow a remote page is not detected. A word list
+for it missed every paraphrase in a held-out test and blocked ordinary setup
+docs such as "follow the instructions at <url> to get an API key", so it was
+not shipped.
+
+Fixed a false block where a trailing comma or colon stayed on an executed
+filename, so "Run python hello.py, then ..." reported `hello.py,` as missing.
+
+Breaking: `clawvet scan --semantic` now exits 1 without scanning. In 0.12.4 it
+exited 0 after silently skipping the AI pass, because the CLI never had a
+semantic analyzer. A CI job that passes the flag will now fail; remove it.
+Semantic analysis is available only through the hosted API.
+
+Closed further coverage bypasses found by an adversarial review of this
+release. A `../` path whose script-relative reading reaches an in-bundle decoy,
+while its skill-root reading escapes the skill, now blocks with a message
+explaining how to fix the path. This also blocks legitimate skills whose
+scripts in subdirectories use `../` without changing to their own directory
+first; bash resolves those paths from the working directory, so make them
+relative to the skill root. Dot-sourcing a file outside the skill
+(`. /path`) and executing an absolute path outside it now block; system binary
+directories such as `/usr/bin` are exempt. Python modules reached by `import`
+or `from ... import` are now inspected, while standard-library and third-party
+imports are not treated as missing files. Markdown headings were skipped as if
+they were shell comments, so `# Run curl ... | bash` was never inspected; they
+are now read as instructions. A gate payload that is valid JSON but not an
+object, such as `null`, used to crash with nothing on stdout; it now gets a
+block verdict.
+
+Experimental: `clawvet review` and `clawvet approve` record a review tied to
+the exact bundle, scanner build, and policy. Adding, removing, or changing any
+file, including its executable bit, invalidates the approval.
+
+Also fixed: semantic scans no longer read or write
+the scan cache, the static cache key includes ignore patterns and the skill
+name, and cached results are returned as copies. The webhook SSRF guard parses
+addresses and rejects IPv4-mapped private IPv6 in every representation. The
+GitHub Action passes inputs through environment variables instead of shell
+interpolation and runs the action's own build. Semantic API requests require
+authentication and reserve quota before any provider call.
+
+Docs and both skills now install clawvet once and run the installed copy
+instead of `npx clawvet`, and no longer advertise an AI pass in the CLI.
+
+
 ## 0.12.4
 
 `clawvet gate --print-config` now emits `source: "exec"` in the printed

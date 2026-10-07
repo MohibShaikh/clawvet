@@ -1,9 +1,11 @@
-import { readFileSync, existsSync, statSync, realpathSync } from "node:fs";
-import { join, basename, dirname } from "node:path";
+import { checkApproval } from "../review.js";
+import { existsSync, lstatSync, statSync, realpathSync } from "node:fs";
+import { join, basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanSkill } from "@clawvet/shared";
 import type { Finding, Recommendation } from "@clawvet/shared";
-import { assembleSkill } from "../assemble.js";
+import { assembleSkill, coverageReason, coverageWarning, type AssemblyResult } from "../assemble.js";
+import { applyProfile, type Profile } from "../policy.js";
 
 // OpenClaw's security.installPolicy hook. It writes staged install metadata to
 // our stdin and reads a single JSON verdict from our stdout, after the source
@@ -93,9 +95,22 @@ function blockWith(reason: string): never {
   });
 }
 
+// Install metadata is a few hundred bytes. Bound both size and time, so a host
+// that never closes stdin still gets a verdict before its own timeout.
+const STDIN_MAX = 1024 * 1024;
+const STDIN_DEADLINE_MS = 5000;
+
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  let size = 0;
+  const deadline = setTimeout(() => blockWith("ClawVet gate timed out waiting for install metadata on stdin."), STDIN_DEADLINE_MS);
+  try {
+    for await (const chunk of process.stdin) {
+      size += (chunk as Buffer).length;
+      if (size > STDIN_MAX) blockWith("ClawVet gate received install metadata larger than 1 MiB.");
+      chunks.push(chunk as Buffer);
+    }
+  } finally { clearTimeout(deadline); }
   return Buffer.concat(chunks).toString("utf-8");
 }
 
@@ -116,6 +131,8 @@ function summarize(
 export interface GateOptions {
   blockAt?: number;
   printConfig?: boolean;
+  approval?: string;
+  strict?: boolean;
 }
 
 // OpenClaw requires the policy command and any interpreter script argument to
@@ -125,10 +142,12 @@ export interface GateOptions {
 // `which clawvet` fails. Resolve through to the real file and invoke it via
 // node explicitly, so both the command and the script argument are regular
 // files.
-function printConfig(blockAt: number): void {
+function printConfig(blockAt: number, approval?: string, strict?: boolean): void {
   const self = realpathSync(fileURLToPath(import.meta.url));
   const args: string[] = [self, "gate"];
   if (blockAt !== DEFAULT_BLOCK_AT) args.push("--block-at", String(blockAt));
+  if (approval) args.push("--approval", resolve(approval));
+  if (strict) args.push("--strict");
   const config = {
     security: {
       installPolicy: {
@@ -158,7 +177,7 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
     : DEFAULT_BLOCK_AT;
 
   if (options.printConfig) {
-    printConfig(blockAt);
+    printConfig(blockAt, options.approval, options.strict);
     return;
   }
   let req: PolicyRequest;
@@ -169,7 +188,28 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
   } catch {
     blockWith("ClawVet gate could not parse the install metadata on stdin.");
   }
+  // `null` parses fine but has no properties, so reading one crashed the gate
+  // with nothing on stdout. Answer every non-object with a verdict instead.
+  if (typeof req !== "object" || req === null || Array.isArray(req)) {
+    blockWith("ClawVet gate received install metadata that is not a JSON object.");
+  }
 
+  // Host fields are untrusted: an object with a hostile toString must not reach
+  // a template string, and anything unexpected below must still get a verdict.
+  if ((req.protocolVersion !== undefined && typeof req.protocolVersion !== "number") ||
+      (req.sourcePath !== undefined && typeof req.sourcePath !== "string") ||
+      (req.targetType !== undefined && typeof req.targetType !== "string") ||
+      (req.targetName !== undefined && typeof req.targetName !== "string")) {
+    blockWith("ClawVet gate received install metadata with fields of the wrong type.");
+  }
+  try {
+    await gateRequest(req, blockAt, options);
+  } catch (err) {
+    blockWith(`ClawVet gate failed: ${err instanceof Error ? err.message : "unknown error"}`);
+  }
+}
+
+async function gateRequest(req: PolicyRequest, blockAt: number, options: GateOptions): Promise<void> {
   if (req.protocolVersion !== undefined && req.protocolVersion !== PROTOCOL_VERSION) {
     blockWith(
       `ClawVet gate speaks protocol ${PROTOCOL_VERSION}, host sent ${req.protocolVersion}. Upgrade clawvet.`
@@ -181,6 +221,10 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
     blockWith(`ClawVet gate could not read the staged source at ${sourcePath ?? "(none)"}.`);
   }
 
+  // The staged source must be the staged source, not a link to somewhere else.
+  if (lstatSync(sourcePath).isSymbolicLink()) {
+    blockWith("ClawVet gate refuses a staged source that is a symlink.");
+  }
   let skillFile = sourcePath;
   let skillDir: string | undefined;
   if (statSync(sourcePath).isDirectory()) {
@@ -201,21 +245,57 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
     );
   }
 
+  if (options.approval) {
+    try { await checkApproval(skillFile, options.approval, blockAt); }
+    catch (err) { blockWith(`ClawVet approval required: ${err instanceof Error ? err.message : "invalid approval"}`); }
+  }
+
+  const { response } = await evaluateSkill(skillDir || dirname(skillFile), {
+    blockAt,
+    profile: options.strict ? "strict" : "default",
+    entryFile: basename(skillFile),
+    skillName: req.targetName || req.origin?.slug || basename(dirname(skillFile)),
+  });
+  emit(response);
+}
+
+export interface Evaluation {
+  response: PolicyResponse;
+  // Present when assembly ran. Benchmarks read it instead of the reason text,
+  // which is truncated for the host.
+  coverage?: AssemblyResult["coverage"];
+  content?: string;
+}
+
+/**
+ * The gate's verdict for a staged skill folder, without stdin or exit. Never
+ * throws: a scanner failure is a block, as on the command line.
+ */
+export async function evaluateSkill(
+  skillDir: string,
+  options: { blockAt?: number; entryFile?: string; skillName?: string; profile?: Profile } = {},
+): Promise<Evaluation> {
+  const blockAt = options.blockAt ?? DEFAULT_BLOCK_AT;
+  const block = (reason: string, assembly?: AssemblyResult): Evaluation => ({
+    response: { protocolVersion: PROTOCOL_VERSION, decision: "block", reason: reason.slice(0, REASON_MAX) },
+    ...(assembly ? { coverage: assembly.coverage, content: assembly.content } : {}),
+  });
   let result;
+  let assembly: AssemblyResult;
+  let ask: AssemblyResult["coverage"]["issues"] = [];
   try {
-    const skillMd = readFileSync(skillFile, "utf-8");
-    // Assemble referenced files so a payload split across them cannot hide.
-    const content = skillDir ? assembleSkill(skillDir, skillMd) : skillMd;
+    if (lstatSync(skillDir).isSymbolicLink()) return block("ClawVet gate refuses a staged source that is a symlink.");
+    assembly = assembleSkill(skillDir, undefined, options.entryFile ?? "SKILL.md");
+    const coverage = applyProfile(assembly.coverage, options.profile);
+    if (coverage.block.length) return block(coverageReason(coverage.block), assembly);
+    ask = coverage.ask;
     // Static passes only. The semantic pass needs a key and a network round
     // trip, and this runs inside the host's install timeout.
-    result = await scanSkill(content, {
-      skillName: req.targetName || req.origin?.slug || basename(dirname(skillFile)),
-    });
+    result = await scanSkill(assembly.content, { skillName: options.skillName ?? basename(skillDir) });
   } catch (err) {
-    blockWith(
-      `ClawVet gate failed to scan the staged skill: ${err instanceof Error ? err.message : "unknown error"}`
-    );
+    return block(`ClawVet gate failed to scan the staged skill: ${err instanceof Error ? err.message : "unknown error"}`);
   }
+  const evaluated = { coverage: assembly.coverage, content: assembly.content };
 
   // A disqualifying indicator is a verdict on its own, independent of score.
   const disqualified = result.findings.some((f) => f.disqualifying);
@@ -234,18 +314,21 @@ export async function gateCommand(options: GateOptions = {}): Promise<void> {
   }));
 
   if (decision === "allow") {
-    emit({ protocolVersion: PROTOCOL_VERSION, decision, findings });
+    // A reviewable gap is not an uninspectable payload, but nothing here has
+    // resolved it. Under the profiles that ask, the operator decides.
+    if (ask.length) {
+      return { ...evaluated, response: { protocolVersion: PROTOCOL_VERSION, decision: "warn", reason: coverageWarning(ask), findings } };
+    }
+    return { ...evaluated, response: { protocolVersion: PROTOCOL_VERSION, decision, findings } };
   }
 
-  emit({
-    protocolVersion: PROTOCOL_VERSION,
-    decision,
-    reason: summarize(
-      result.skillName,
-      result.riskGrade,
-      result.riskScore,
-      result.findings
-    ).slice(0, REASON_MAX),
-    findings,
-  });
+  return {
+    ...evaluated,
+    response: {
+      protocolVersion: PROTOCOL_VERSION,
+      decision,
+      reason: summarize(result.skillName, result.riskGrade, result.riskScore, result.findings).slice(0, REASON_MAX),
+      findings,
+    },
+  };
 }

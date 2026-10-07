@@ -13,7 +13,7 @@
       "name": "clawvet-guard",
       "source": "./plugins/clawvet-guard",
       "description": "Scan a skill with ClawVet and act on its risk grade before trusting it.",
-      "version": "1.0.2",
+      "version": "1.0.4",
       "author": {
         "name": "MohibShaikh",
         "url": "https://github.com/MohibShaikh"

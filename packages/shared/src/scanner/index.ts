@@ -32,8 +32,14 @@ export async function scanSkill(
   content: string,
   options: ScanOptions = {}
 ): Promise<ScanResult> {
-  if (!options.skipCache) {
-    const cached = getCached(content);
+  if (options.semantic && !options.semanticAnalyzer) {
+    throw new Error("Semantic analysis requested without a semantic analyzer");
+  }
+  // Provider identity/configuration may change: semantic results are never cached.
+  const cacheable = !options.skipCache && !options.semantic;
+  const cacheKey = JSON.stringify([content, options.ignorePatterns ?? [], options.skillName ?? null]);
+  if (cacheable) {
+    const cached = getCached(cacheKey);
     if (cached) {
       return { ...cached, cached: true };
     }
@@ -88,14 +94,15 @@ export async function scanSkill(
     recommendation,
   };
 
-  if (!options.skipCache) {
-    setCached(content, result);
+  if (cacheable) {
+    setCached(cacheKey, result);
   }
 
   return result;
 }
 
 export { parseSkill } from "./skill-parser.js";
+export { isTrustedInstallerUrl, onlyTrustedInstallers } from "./context-classifier.js";
 export { runStaticAnalysis } from "./static-analysis.js";
 export { validateMetadata } from "./metadata-validator.js";
 export { checkDependencies } from "./dependency-checker.js";

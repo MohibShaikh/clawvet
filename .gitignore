@@ -28,3 +28,8 @@ benchmarks/corpus500/benign/
 benchmarks/corpus500/malicious/
 benchmarks/corpus500/hard-negatives/
 paper/
+
+# MalSkillBench-derived results: its license is academic-research-only.
+# Kept locally; regenerate with benchmarks/gate-eval/evaluate.mts.
+benchmarks/gate-eval/results/msb-*
+benchmarks/gate-eval/.codex-*.log

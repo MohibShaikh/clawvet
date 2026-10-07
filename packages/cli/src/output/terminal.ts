@@ -29,6 +29,12 @@ export function printScanResult(result: ScanResult): void {
   }
   console.log();
 
+  if (result.status === "failed") {
+    console.log(chalk.red(`  Inspection incomplete: ${result.summary || "Could not inspect all referenced files."}`));
+    console.log(chalk.red("  Partial results below cannot clear this skill for installation."));
+    console.log();
+  }
+
   // Risk score
   const gradeColor = GRADE_COLORS[result.riskGrade] || chalk.white;
   console.log(
@@ -49,7 +55,7 @@ export function printScanResult(result: ScanResult): void {
     console.log(`    ${SEVERITY_COLORS.medium("MEDIUM")}   ${fc.medium}`);
   if (fc.low) console.log(`    ${SEVERITY_COLORS.low("LOW")}      ${fc.low}`);
   if (!fc.critical && !fc.high && !fc.medium && !fc.low) {
-    console.log(`    ${chalk.green("No findings — skill looks clean!")}`);
+    console.log(`    ${chalk.green("No findings in inspected content.")}`);
   }
   console.log();
 

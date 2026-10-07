@@ -7,6 +7,7 @@ import { scanCommand } from "./commands/scan.js";
 import { auditCommand } from "./commands/audit.js";
 import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
+import { reviewCommand, approveCommand } from "./commands/review.js";
 import { gateCommand } from "./commands/gate.js";
 import { FEEDBACK_URL, FEEDBACK_DISPLAY_URL } from "./feedback.js";
 
@@ -59,9 +60,10 @@ program
   .argument("<target>", "Path to skill folder or SKILL.md file")
   .option("--format <format>", "Output format: terminal, json, or sarif", "terminal")
   .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
-  .option("--semantic", "Enable AI semantic analysis (requires ANTHROPIC_API_KEY)")
+  .option("--semantic", "Unsupported in CLI; exits with an error (semantic analysis is API-only)")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
   .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
+  .option("--strict", "Fail on every gap in inspection coverage, not only clear evidence")
   .option("--subscribe", "Open a prefilled GitHub issue to send feedback")
   .action(async (target, opts) => {
     if (opts.subscribe) {
@@ -74,15 +76,35 @@ program
       semantic: opts.semantic,
       remote: opts.remote,
       quiet: opts.quiet,
+      strict: opts.strict,
     });
   });
+
+program
+  .command("review")
+  .description("Review a staged skill and compare it with an earlier approval")
+  .argument("<target>", "Skill directory or SKILL.md")
+  .requiredOption("--output <file>", "Write a new JSON review outside the skill directory")
+  .option("--baseline <file>", "Previous approval receipt to compare against")
+  .option("--block-at <score>", "Approval blocking threshold", parseBlockAt, 76)
+  .action(reviewCommand);
+
+program
+  .command("approve")
+  .description("Approve a reviewed skill after verifying that its files and analysis still match")
+  .argument("<target>", "Skill directory or SKILL.md")
+  .requiredOption("--review <file>", "JSON report you have reviewed")
+  .requiredOption("--output <file>", "Write a new approval receipt outside the skill directory")
+  .action(approveCommand);
 
 program
   .command("gate")
   .alias("policy")
   .description("OpenClaw install-policy hook: staged install metadata on stdin, JSON verdict on stdout")
   .option("--block-at <score>", "Risk score at or above which to block the install", parseBlockAt, 76)
+  .option("--approval <file>", "Require a matching operator-owned approval receipt")
   .option("--print-config", "Print a ready-to-paste OpenClaw installPolicy config with resolved paths")
+  .option("--strict", "Block every gap in inspection coverage and ask about reviewable ones")
   .action(async (opts) => {
     // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
     // which lints workspace config rather than gating installs. Kept as an
@@ -93,7 +115,7 @@ program
         "clawvet: 'policy' is deprecated, use 'gate'. Update args to [\"gate\"] in your installPolicy config.\n"
       );
     }
-    await gateCommand({ blockAt: opts.blockAt, printConfig: opts.printConfig });
+    await gateCommand({ blockAt: opts.blockAt, printConfig: opts.printConfig, approval: opts.approval, strict: opts.strict });
   });
 
 program
@@ -106,7 +128,7 @@ program
 
 program
   .command("watch")
-  .description("Pre-install hook — blocks risky skill installs")
+  .description("Monitor skill file changes and report risks (does not block installs)")
   .option("--threshold <score>", "Risk score threshold (default 50)", "50")
   .option("--dir <path>", "Custom skills directory to watch")
   .action(async (opts) => {

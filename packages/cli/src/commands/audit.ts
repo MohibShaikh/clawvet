@@ -1,7 +1,7 @@
-import { readdirSync, existsSync, readFileSync } from "node:fs";
+import { readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
-import { scanSkill } from "@clawvet/shared";
+import { scanLocalSkill } from "../local-scan.js";
 import { printScanResult } from "../output/terminal.js";
 import { sendAuditTelemetry } from "../telemetry.js";
 import chalk from "chalk";
@@ -18,6 +18,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
   const startedAt = Date.now();
   let totalScanned = 0;
   let totalThreats = 0;
+  let incomplete = 0;
   const grades: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
 
   for (const dir of SKILL_DIRS) {
@@ -32,11 +33,13 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     // If the dir itself contains a SKILL.md, scan it directly
     const directSkillFile = join(dir, "SKILL.md");
     if (existsSync(directSkillFile)) {
-      const content = readFileSync(directSkillFile, "utf-8");
-      const result = await scanSkill(content, { skillName: basename(dir) });
+      const result = await scanLocalSkill(directSkillFile, { skillName: basename(dir) });
+      if (result.status === "failed") incomplete++;
       totalScanned++;
       totalThreats += result.findings.length;
-      grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
+      if (result.status !== "failed") {
+        grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
+      }
       printScanResult(result);
       continue;
     }
@@ -47,11 +50,13 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
       const skillFile = join(dir, entry.name, "SKILL.md");
       if (!existsSync(skillFile)) continue;
 
-      const content = readFileSync(skillFile, "utf-8");
-      const result = await scanSkill(content, { skillName: entry.name });
+      const result = await scanLocalSkill(skillFile, { skillName: entry.name });
+      if (result.status === "failed") incomplete++;
       totalScanned++;
       totalThreats += result.findings.length;
-      grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
+      if (result.status !== "failed") {
+        grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
+      }
 
       printScanResult(result);
     }
@@ -83,6 +88,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
       chalk.red(`  ${blocked} skill${blocked > 1 ? "s" : ""} graded D or F — review before use`)
     );
   }
+  if (incomplete) console.error(`${incomplete} skill(s) could not be fully inspected; review required.`);
   console.log();
 
   // One session-level telemetry event for the whole audit (best-effort).
@@ -92,4 +98,5 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     grades,
     durationMs: Date.now() - startedAt,
   });
+  if (incomplete) process.exitCode = 1;
 }

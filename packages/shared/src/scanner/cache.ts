@@ -16,7 +16,7 @@ export function getCached(content: string): ScanResult | undefined {
     cache.delete(key);
     cache.set(key, result);
   }
-  return result;
+  return result ? structuredClone(result) : undefined;
 }
 
 export function setCached(content: string, result: ScanResult): void {
@@ -28,5 +28,5 @@ export function setCached(content: string, result: ScanResult): void {
     const oldest = cache.keys().next().value!;
     cache.delete(oldest);
   }
-  cache.set(key, result);
+  cache.set(key, structuredClone(result));
 }

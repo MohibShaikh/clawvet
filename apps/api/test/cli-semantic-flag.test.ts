@@ -22,23 +22,20 @@ describe("CLI semantic flag wiring", () => {
     scanSkillMock.mockClear();
   });
 
-  it("passes semantic=true to scanSkill when --semantic is enabled", async () => {
+  it("refuses --semantic without calling scanSkill (semantic analysis is API-only)", async () => {
     const { scanCommand } = await import("../../../packages/cli/src/commands/scan.ts");
 
     const dir = mkdtempSync(join(tmpdir(), "clawvet-semantic-"));
     const skillPath = join(dir, "SKILL.md");
-    const skillMd = "---\nname: test\ndescription: test\n---\n";
-    writeFileSync(skillPath, skillMd);
+    writeFileSync(skillPath, "---\nname: test\ndescription: test\n---\n");
 
     try {
       await scanCommand(skillPath, { format: "json", semantic: true });
-      expect(scanSkillMock).toHaveBeenCalledTimes(1);
-      expect(scanSkillMock).toHaveBeenCalledWith(
-        skillMd,
-        expect.objectContaining({ semantic: true })
-      );
+      expect(process.exitCode).toBe(1);
+      expect(scanSkillMock).not.toHaveBeenCalled();
     } finally {
       rmSync(dir, { recursive: true, force: true });
+      process.exitCode = 0;
     }
   });
 

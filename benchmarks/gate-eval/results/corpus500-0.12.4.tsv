@@ -1,0 +1,500 @@
+benign	1kalin__afrexai-cloud-cost-audit	allow	
+benign	1kalin__afrexai-seo-content-engine	allow	
+benign	1kalin__afrexai-startup-fundraising	allow	
+benign	1kalin__afrexai-pricing-strategy	allow	
+benign	1kalin__afrexai-postmortem	allow	
+benign	1970168137__china-home-appliances-sourcing	allow	
+benign	1kalin__afrexai-post-mortem	allow	
+benign	372768498__xhs-content-creator	allow	
+benign	1kalin__afrexai-founder-os	allow	
+benign	1kalin__afrexai-building-permits	allow	
+benign	1kalin__afrexai-whistleblower	allow	
+benign	1kalin__afrexai-web3-engineering	allow	
+benign	52YuanChangXing__deck-narrative-planner	allow	
+benign	97fusky-droid__shihongbingtouzi	allow	
+benign	52YuanChangXing__reviewer-rebuttal-coach	allow	
+benign	aaigotchi__gotchi-finder	allow	
+benign	aboutyao__team-collab-skill	allow	
+benign	adisinghstudent__pm-skills-marketplace	allow	
+benign	aiagentstore__claw-earn	allow	
+benign	afrexai-cto__afrexai-compliance-readiness	allow	
+benign	agentsleader__uncle-bob	allow	
+benign	AGIstack__hotel	allow	
+benign	Acidias__clawpost-2	allow	
+benign	AIPOCH-AI__abstract-trimmer	allow	
+benign	afrexai-cto__afrexai-plumbing-operations	allow	
+benign	AIsaDocs__openclaw-aisa-leading-chinese-llm	allow	
+benign	AIsaPay__financial-data	allow	
+benign	alirezarezvani__c-suite-competitive-intel	allow	
+benign	aiwithabidi__pagerduty	allow	
+benign	alirezarezvani__atlassian-templates	allow	
+benign	alexwoo-awso__ksef-accountant-pl	allow	
+benign	alirezarezvani__dependency-auditor	allow	
+benign	alirezarezvani__ui-design-system	allow	
+benign	alirezarezvani__marketing-ops	allow	
+benign	al-one__mcp-hass	allow	
+benign	aloth__olcli	allow	
+benign	Alita-real__dream-maker	allow	
+benign	alirezarezvani__marketing-ideas	allow	
+benign	aniebyl__financial-analyst	allow	
+benign	AnoyiX__stock-cli	allow	
+benign	anmolnagpal__guardduty-explainer	allow	
+benign	AlphaFactor__alpha	allow	
+benign	anmolnagpal__s3-exposure-auditor	allow	
+benign	antoinedc__renderkit	allow	
+benign	arkulkarni__cricket-live-score	allow	
+benign	antaeus001__xiaohongshu-post-antaeus	allow	
+benign	artyomx33__jtbd-analyzer	allow	
+benign	azep-ninja__tator-trader	allow	
+benign	ayue-oss__meituan-coupon-auto	allow	
+benign	beSaif__recipe-video-extractor	allow	
+benign	binyuli__traffic-monitor	allow	
+benign	avmw2025__crypto-market-intel	allow	
+benign	bojieli__pine-voice	allow	
+benign	bytesagain__battery	allow	
+benign	BiyaoShang__myfood-by	allow	
+benign	brunobuddy__shut-up-openclaw-cli	allow	
+benign	bryan-cmc__market-report-using-cmc-mcp	allow	
+benign	bytesagain__font	allow	
+benign	boy-hack__aig	allow	
+benign	bytesagain__quiz-generator	allow	
+benign	byungkyu__typeform	allow	
+benign	byungkyu__exa-api	allow	
+benign	byungkyu__linkedin-api	allow	
+benign	byungkyu__active-campaign	allow	
+benign	CanXiangCC__aminer-open-academic	allow	
+benign	byungkyu__unbounce	allow	
+benign	cerbug45__agents-skill-podcastifier	allow	
+benign	chilu18__sustainability-playbook	allow	
+benign	cinience__alicloud-ai-misc-crawl-and-skill	allow	
+benign	chaimengphp__openclaw-aisa-market-pulse	allow	
+benign	ckrissun__chinese-novelist-skill	allow	
+benign	ckchzh__live-stream-script	allow	
+benign	cnvipstar__telcall-twilio	allow	
+benign	ckchzh__mileage	allow	
+benign	CoCokkxy__marketing-calendar	allow	
+benign	CodeKungfu__lagou	allow	
+benign	cnoder-wgh__doc-diff	allow	
+benign	codedao12__meeting-to-action	allow	
+benign	codefarmerman__tax-calculator	allow	
+benign	coder-pig__fast-claw-paid-api	allow	
+benign	CodeKungfu__brand-positioning	allow	
+benign	coolhackboy__poyo-sora-2-pro	allow	
+benign	coolhackboy__kling-3	allow	
+benign	coolhackboy__hailuo2	allow	
+benign	crazyozzy__crazyozzy-auto-updater	allow	
+benign	cyyinfo__software-development	allow	
+benign	Dangsllc__hipaa-gap-analysis	allow	
+benign	daniellummis__github-actions-timeout-risk-audit	allow	
+benign	daniellummis__render-deploy-diff	allow	
+benign	deeplearning1993__whale-alert	allow	
+benign	daoistbro__memory-system	allow	
+benign	DeAntiWang__willow-inference-server	allow	
+benign	DeepCapt__agent-signet-id	allow	
+benign	datadrivenconstruction__price-api	allow	
+benign	diagnostikon__polymarket-real-estate-trader	allow	
+benign	Digidai__product-manager-skills	allow	
+benign	dongfeng3692__email-designer	allow	
+benign	DobrinAlexandru__aubrai-longevity	allow	
+benign	Dimillian__app-store-changelog	allow	
+benign	dtjohnson83__opportunity-discovery	allow	
+benign	dktrn9ne__mux-video	allow	
+benign	earthwalking__inno-guide	allow	
+benign	driftsbot__experience-iceland-aurora-fever	allow	
+benign	driftsbot__experience-camilletchi-foster-kittens-seattle	allow	
+benign	dox012__play-dumb	allow	
+benign	earthwalking__lab-to-market-co-creation-agent	allow	
+benign	earthwalking__tiaozhanbei-datiao	allow	
+benign	EduardoU24__ogt-docs-create	allow	
+benign	edwardrodriguez703-design__book-flooring	allow	
+benign	edwardrodriguez703-design__book-window-cleaning	allow	
+benign	elitex45__zeruai	allow	
+benign	Egge21M__cocod	allow	
+benign	edwardrodriguez703-design__book-tires	allow	
+benign	engahmedsalah358-lgtm__whats	allow	
+benign	ewankeynes__protocol-deviation-classifier	allow	
+benign	findhappy7__china-apparel-and-accessories-suppliers	allow	
+benign	eyadhrif__persistent-user-memory	allow	
+benign	ericsantos__show-my-ip	allow	
+benign	femto__acp-loop	allow	
+benign	flynndavid__ai-os-blueprint	allow	
+benign	ferminrp__travel-promos-argentinas	allow	
+benign	Focusshang__mineru-ocr-local-api	allow	
+benign	franklu0819-lang__zhipu-tts	allow	
+benign	G9Pedro__the-pool	allow	
+benign	furukama__context-viz	allow	
+benign	FranckStone__giveaway-skills	allow	
+benign	gavinchengcool__openclaw-strava	allow	
+benign	gmsx000-cloud__chinese-ai-agent-guide	allow	
+benign	giorgallidis__clawcrm	allow	
+benign	googleworkspace-bot__persona-customer-support	allow	
+benign	giraffe-tree__flomo-add	allow	
+benign	googleworkspace-bot__persona-project-manager	allow	
+benign	googleworkspace-bot__persona-hr-coordinator	allow	
+benign	googleworkspace-bot__recipe-create-task-list	allow	
+benign	googleworkspace-bot__persona-team-lead	allow	
+benign	googleworkspace-bot__recipe-find-large-files	allow	
+benign	gora050__mautic	allow	
+benign	gora050__document360	allow	
+benign	gora050__linkedin-integration	allow	
+benign	gora050__everhour	allow	
+benign	GrantGochnauer__capacities-lookup	allow	
+benign	GravityPoet__skill-scanner-pro	allow	
+benign	guohongbin-git__wechat-mp-cn	allow	
+benign	HarleysCodes__xrpl-tx-builder	allow	
+benign	gora050__quickmailio	allow	
+benign	Grenzlinie__semantic-scholar	allow	
+benign	harrylabsj__complaint-draft	allow	
+benign	haohanyang92__stop-loss-optimization	allow	
+benign	harrylabsj__contract-risk-scan	allow	
+benign	harshhmaniya__linkedin-lead-gen	allow	
+benign	hartlco__miniflux-news	allow	
+benign	heyalerio__memesio-meme-generator	allow	
+benign	heyixuan2__bambu-studio-ai	allow	
+benign	harrylabsj__meituan	allow	
+benign	honeybee1130__checker	allow	
+benign	hughtan93-dev__podcast-summarize	allow	
+benign	IISweetHeartII__agentgram-openclaw	allow	
+benign	imkiiki__fundreport-scrape	allow	
+benign	icecat2005__roomsound	allow	
+benign	iml885203__youtube-transcribe	allow	
+benign	ivangdavila__archive	allow	
+benign	InphinitiZ__grok-query	allow	
+benign	ivangdavila__accounting	allow	
+benign	ironmanc2014__cn-api-router	allow	
+benign	ivangdavila__ads	allow	
+benign	ivangdavila__b2b	allow	
+benign	ivangdavila__business-intelligence	allow	
+benign	ivangdavila__bengali	allow	
+benign	ivangdavila__backend	allow	
+benign	ivangdavila__bangkok	allow	
+benign	ivangdavila__cfo	allow	
+benign	ivangdavila__chef	allow	
+benign	ivangdavila__california	allow	
+benign	ivangdavila__coin-identifier	allow	
+benign	ivangdavila__doctor	allow	
+benign	ivangdavila__dreams	allow	
+benign	ivangdavila__founder	allow	
+benign	ivangdavila__irish	allow	
+benign	ivangdavila__game-development	allow	
+benign	ivangdavila__jwt	allow	
+benign	ivangdavila__legal	allow	
+benign	ivangdavila__invest	allow	
+benign	ivangdavila__mlops	allow	
+benign	ivangdavila__sqlite	allow	
+benign	ivangdavila__quizlet	allow	
+benign	ivangdavila__react	allow	
+benign	ivangdavila__newsletter	allow	
+benign	ivangdavila__spain	allow	
+benign	ivangdavila__lawyer	allow	
+benign	ivangdavila__travel-planning	allow	
+benign	ivangdavila__systems-architect	allow	
+benign	ivangdavila__turkey	allow	
+benign	ivangdavila__umami	allow	
+benign	javainthinking__apipick-telegram-phone-check	allow	
+benign	Jaskies__mail-sender-vutran	allow	
+benign	jcools1977__tech-debt-ledger	allow	
+benign	JackKuo666__creating-r-research-projects	allow	
+benign	jeffjhunter__frontend-design-skill	allow	
+benign	jau123__creative-toolkit	allow	
+benign	Jbrawner__march-madness-bracket	allow	
+benign	jdrhyne__gsc	allow	
+benign	jeremyknows__prism	allow	
+benign	jeffjhunter__openclaw-cost-optimizer	allow	
+benign	jingrongx__sendfiles-to-feishu	allow	
+benign	jiwenbing__insurance-compare	allow	
+benign	jisuapi__train	allow	
+benign	JithinM__mongo-db	allow	
+benign	jkc3080__cognitive-bullwhip	allow	
+benign	JK-0001__grant-writing-framework	allow	
+benign	Johnnywang2001__cors-tester	allow	
+benign	Judyzj__compass-ai-bazi	allow	
+benign	JosunLP__pi-health	allow	
+benign	julianengel__premium-domains	allow	
+benign	kaiofreitas__ticktick-api	allow	
+benign	kai-tw__notion-2025-api	allow	
+benign	kadbbz__forguncy-web-operator	allow	
+benign	karlinmoon__stock-insight	allow	
+benign	khaney64__session-cost	allow	
+benign	kenz1117__claw-security-suite	allow	
+benign	kambrosgroup__content-ideas-free	allow	
+benign	Koba42Corp__spacescan	allow	
+benign	killerapp__copywriter	allow	
+benign	KhalilHsu__article-summarizer-plus	allow	
+benign	kvy__cargo-policy-analyzer	allow	
+benign	kostja94__creator-program	allow	
+benign	leduc121__rapidapi-launch-assistant	allow	
+benign	Leooooooow__ugc-brief-to-script-engine	allow	
+benign	LeoCryptoFlow__zhouhongyi	allow	
+benign	leoyessi10-tech__context-engineering	allow	
+benign	lhwa8685__code-documenter	allow	
+benign	Leo-zzl__leo-reading-notes	allow	
+benign	liangmu-git2__qq-email-manager	allow	
+benign	lijiangtai__openclaw-all-backup	allow	
+benign	liuxxxu__skill-sharpener	allow	
+benign	lokendragami1__envato-comment-task-to-sheet	allow	
+benign	litiao1224__gog-litiao	allow	
+benign	Lion504__language-learning-1-0-0	allow	
+benign	liqiwa__crabpet	allow	
+benign	lstpsche__gog-calendar	allow	
+benign	Lucasnocodo__weather-ensemble-forecast	allow	
+benign	LucasGulino__lead-gen-website	allow	
+benign	L-U-C-K-Y__asana-pat	allow	
+benign	luochang212__github-research-assistant	allow	
+benign	macdesire__nomad-backup	allow	
+benign	matthewpoe__personal-crm	allow	
+benign	lux-sp4rk__my-ai-familiar	allow	
+benign	membranedev__bigpictureio	allow	
+benign	lwd815813__wechat-mp-monitor	allow	
+benign	membranedev__calendly-integration	allow	
+benign	membranedev__exact-online	allow	
+benign	membranedev__agencyzoom	allow	
+benign	membranedev__oksign	allow	
+benign	membranedev__pdfco	allow	
+benign	membranedev__kanbanize	allow	
+benign	michaelhmiv__sportfolio-market	allow	
+benign	Michael-laffin__price-tracker	allow	
+benign	mickmicksh__lap-stripe-api	allow	
+benign	Mingo-318__image-cropper	allow	
+benign	mohdalhashemi98-hue__mh-openai-whisper	allow	
+benign	Mingo-318__annotation-visualizer	allow	
+benign	MoonBall__cg-test-skill	allow	
+benign	mikecourt__wisdom-accountability-coach	allow	
+benign	MuseLinn__fis-architecture	allow	
+benign	newlux__ctrip	allow	
+benign	nantes__arxiv-research	allow	
+benign	Nerikko__sql-profiler	allow	
+benign	nickjuntilla__meatmarket	allow	
+benign	motivationationdaily__awesome-claude-skills	allow	
+benign	niracler__nini-anki-card-generator	allow	
+benign	NimaChu__nima-skill-creator	allow	
+benign	nocodemf__returns-reverse-logistics	allow	
+benign	niracler__nini-writing-proofreading	allow	
+benign	npfaerber__okr-consulting	allow	
+benign	nucliweb__webperf-interaction	allow	
+benign	Omar-Khaleel__qr-code-pro	allow	
+benign	nutstrut__settlement-witness	allow	
+benign	notbdu__obul-proxy	allow	
+benign	ollieb89__self-improving-agent-ollieb89	allow	
+benign	openlang-cn__git-cli	allow	
+benign	openlang-cn__open	allow	
+benign	nyxun123__agent-heartbeat	allow	
+benign	OpieTaylor911__ai-compliance	allow	
+benign	oyi77__joko-jobhunter	allow	
+benign	OpenWaygate__youtube-member	allow	
+benign	patches429__giggle-generation-speech	allow	
+benign	PHY041__phy-paper-polish	allow	
+benign	qwe123sddfsdfs__batch-processing	allow	
+benign	Quarantiine__effortlist-ai	allow	
+benign	PeterKouss__arxiv-master-search	allow	
+benign	Rakesh1002__unsearch	allow	
+benign	phheng__amazon-product-api-skill	allow	
+benign	ramspan__pascal-playwright-mcp	allow	
+benign	qingnaniso__media-news-summary	allow	
+benign	ramensushi2026__openclaw-cli	allow	
+benign	rachidjarray-hk-qa-fdt__authenticate	allow	
+benign	rbcp18__tellermcp	allow	
+benign	Ricardodpalmeida__book-capture-obsidian	allow	
+benign	remimikalsen__a-safer-email-assistant	allow	
+benign	richard7463__miraix-binance-agent-firewall	allow	
+benign	Robin797860__otaku-wiki	allow	
+benign	RIJOYAI__custom-preview-flow	allow	
+benign	saba-ch__cloak	allow	
+benign	rogue-agent1__brew-audit	allow	
+benign	rotemtam__usedada	allow	
+benign	RIJOYAI__cart-bundle-aov-upsell	allow	
+benign	sacravenger__nanmesh	allow	
+benign	RuneweaverStudios__skills-compat	allow	
+benign	SakuraLeanne__gold-analyst	allow	
+benign	s-annam__dizest-summarize	allow	
+benign	samuel-dunlap__im-framework-team	allow	
+benign	sealawyer2026__zhang-civil-litigation	allow	
+benign	sebclawops__openclaw-meta-ads	allow	
+benign	satoshistackalotto__greek-email-processor	allow	
+benign	spbavarva__openclaw-policy-check	allow	
+benign	smorzandos__openclaw-diary-core	allow	
+benign	Shaojie66__auto-redbook-content	allow	
+benign	shatianming5__langskills-search	allow	
+benign	sebclawops__project-workflow-scheduler	allow	
+benign	solpenguin__opendex	allow	
+benign	sshnii__tronscan-block-info	allow	
+benign	SHENRUIYANG__orbcafe-agentui-chat	allow	
+benign	smallccwc__chronosync	allow	
+benign	sstklen__yes-md-ja	allow	
+benign	sshnii__tronscan-contract-analysis	allow	
+benign	stuart5915__inclawnch-analytics	allow	
+benign	steipete__gifgrep	allow	
+benign	stofancy__reinforced-thinking-mode	allow	
+benign	tenmyword__ontology-1-0-4	allow	
+benign	Te1man__podcast-insider-top10	allow	
+benign	StudyWorkLife__crayfish-sticker	allow	
+benign	stuhorsman__yahoo-finance-cli	allow	
+benign	Tarnadas__orderly-sdk-debugging	allow	
+benign	Sube-py__check-workday-cn	allow	
+benign	TarasShyn__adaptlypost	allow	
+benign	TerryRen2024__memory-work	allow	
+benign	therohitdas__video-transcript	allow	
+benign	therohitdas__youtube-data	allow	
+benign	TheShadowRose__focus-timer	allow	
+benign	TheShadowRose__invoice-forge	allow	
+benign	tianjin-ren__summarize-tianjin	allow	
+benign	TheSethRose__vercel	allow	
+benign	TheShadowRose__openclaw-api-tester	allow	
+benign	tingdall__china-stock-screener	allow	
+benign	tristanmanchester__notion-api-automation	allow	
+benign	tjefferson__skills-rank	allow	
+benign	TinaDu-AI__feishu-troubleshoot	allow	
+benign	Trumppo__search-memory	allow	
+benign	Trypto1019__arc-memory-pruner	allow	
+benign	twinsgeeks__adopt-a-sphinx	allow	
+benign	TsukiSama9292__huggingface	allow	
+benign	unixlamadev-spec__aiprox-orchestrator	allow	
+benign	vince199907__cn-ecommerce-search-v2	allow	
+benign	Veeramanikandanr48__scenario-analyzer	allow	
+benign	Veeramanikandanr48__seo-optimizer	allow	
+benign	twinsgeeks__adopt-a-persian	allow	
+benign	wangyaok1__daily-tech-broadcast	allow	
+benign	Trypto1019__arc-metrics-dashboard	allow	
+benign	vishalgojha__summary-generator	allow	
+benign	wadxm__meegle-connector	allow	
+benign	voxbase__echomindr-founder-retrieval	allow	
+benign	wangyendt__ahrs-tools	allow	
+benign	WebGuHui__fact-check	allow	
+benign	woodstocksoftware__adaptivetest	allow	
+benign	wpank__websocket-hub-patterns	allow	
+benign	Wscats__weiyun-skills	allow	
+benign	WesLon1987__operations-engineer	allow	
+benign	wsjwoods__qianfan-usage	allow	
+benign	welderjustin__welderjustin-imap-smtp-email	allow	
+benign	wsygcn__test-restaurant-inspection	allow	
+benign	wells1137__seedance-prompt-designer	allow	
+benign	xHUNx__elevenlabs-stt-openclaw	allow	
+benign	xammarie__micro-offer-forge	allow	
+benign	xiangxinag-princess__feishu-bot-manager	allow	
+benign	xammarie__jarvis-db-query-doctor-01	allow	
+benign	xiaoxty__job-search-report	allow	
+benign	Xzhenxing666__listed-company-compliance	allow	
+benign	xinyuqinfeng__fusionalpha-acrypto-desk	allow	
+benign	XinHao-96__academic-discussion-assistant	allow	
+benign	yangdaowan__test-upload-2026	allow	
+benign	yejiming__techflow-news	allow	
+benign	yafetful__moltdrop	allow	
+benign	yang1002378395-cmyk__ai-model-comparison	allow	
+benign	YannBoy__feishu-meeting-summary	allow	
+benign	yangruihan__image-edit-skill	allow	
+benign	yc556600__xhs-note-gen	allow	
+benign	yanji84__pain-point-finder	allow	
+benign	yixinli867__skill-creator-2	allow	
+benign	yflmq001__yingdao	allow	
+benign	yinanping-CPU__yinan-api-integrator	allow	
+benign	youyancheng1__dailys-report	allow	
+benign	zhangifonly__qqlive	allow	
+benign	Zeyu426__alibaba-url-builder	allow	
+benign	yushimohuang__system-monitor-tool	allow	
+benign	yushimohuang__qr-code-toolkit	allow	
+benign	zendenho7__workspace-analyzer	allow	
+benign	Zerone-Agent__skill-market	allow	
+benign	zhaog100__smart-model-switch	allow	
+benign	zhaog100__sjykj-auto-pipeline	allow	
+hard-negatives	0xRapi__isnad-scan	warn	ClawVet graded "isnad-scan" D (risk 52/100). Python inline execution; Sensitive file access; DNS exfiltration.
+benign	zy84338719__sidecar-onestep	allow	
+benign	zhouzhi-tal__xueersi-daily-question	allow	
+hard-negatives	akhmittra__skill-security-auditor	block	ClawVet graded "skill-security-auditor" F (risk 94/100). OpenClaw config access; OpenClaw config access; OpenClaw config access.
+hard-negatives	aliramw__marila-skill-publish	allow	
+hard-negatives	billychl1__openclawarena-arena	allow	
+hard-negatives	Arnarsson__fzf-fuzzy-finder	allow	
+hard-negatives	byungkyu__brave-search-api	allow	
+hard-negatives	appback__gridclash	block	ClawVet graded "gridclash" F (risk 81/100). Python inline execution; Python inline execution; Python inline execution.
+hard-negatives	byungkyu__klaviyo	allow	
+hard-negatives	beelzebub520__element-nft-tracker	allow	
+hard-negatives	byungkyu__google-tasks-api	allow	
+hard-negatives	byungkyu__mailchimp	allow	
+hard-negatives	DophinL__youmind-deep-research	warn	ClawVet graded "youmind-deep-research" D (risk 53/100). Node.js inline execution; OpenClaw config access.
+hard-negatives	DLhugly__vault0	warn	ClawVet graded "vault0" C (risk 27/100). Sensitive file access; Sensitive file access; Sensitive file access.
+hard-negatives	haohanyang92__sar-calculator	allow	
+hard-negatives	Fullstop000__toll	warn	ClawVet graded "toll" C (risk 31/100). Curl piped to shell.
+hard-negatives	eplt__local-deep-research	allow	
+hard-negatives	drewM33__clawmon	allow	
+hard-negatives	hhq0421__strava-training-coach	warn	ClawVet graded "strava-training-coach" C (risk 43/100). API key reference; Webhook data exfiltration; Webhook data exfiltration.
+hard-negatives	gitgoodordietrying__encoding-formats	block	ClawVet graded "encoding-formats" F (risk 100/100). Base64 decode execution; Base64 decode execution; Base64 decode execution.
+hard-negatives	HookCatch__hookcatch	allow	
+hard-negatives	humanjudge-arthur__openclaw-validate	allow	
+hard-negatives	jaschadub__schemapin	allow	
+hard-negatives	JackKuo666__pubmed-search-skill	allow	
+hard-negatives	JimLiu__baoyu-slide-deck	allow	
+hard-negatives	j-shao1__pipe17-openclaw-skill	allow	
+hard-negatives	jooey__add-minimax-provider	warn	ClawVet graded "add-minimax-provider" C (risk 33/100). Python inline execution; OpenClaw config access; OpenClaw config access.
+hard-negatives	kanfred__pollinations-ai	allow	
+hard-negatives	levi-law__moltmail	allow	
+hard-negatives	LuckyJin__my-test-2	allow	
+hard-negatives	jru001__roborock-2014	allow	
+hard-negatives	jortega0033__gcloud	allow	
+hard-negatives	MESevenJourney__karpathy-curated-rss-brief	warn	ClawVet graded "karpathy-curated-rss-brief" C (risk 27/100). Python inline execution.
+hard-negatives	MahmoudAdelbghany__ffmpeg-video-editor	warn	ClawVet graded "FFmpeg Video Editor" C (risk 27/100). Reverse shell.
+hard-negatives	MeNoPeter__google-lyria-integration	warn	ClawVet graded "lyria" D (risk 61/100). Curl piped to shell; OpenClaw config access; OpenClaw config access.
+hard-negatives	m9rco__p4u	allow	
+hard-negatives	mysunsi__1lunar	warn	ClawVet graded "1lunar" C (risk 34/100). Node.js inline execution; Node.js inline execution.
+hard-negatives	niracler__nini-workspace-init	allow	
+hard-negatives	paulscode__serper-clone	allow	
+hard-negatives	rosseyre__openrouter-usage	allow	
+hard-negatives	OreoAndYuumi__maxclaw-doctor	allow	
+hard-negatives	SKULLHAVEN__meta-tags-optimizer-2	allow	
+hard-negatives	TunaIssaCoding__portable-tools	allow	
+hard-negatives	royhk920__ai-cli-builder	allow	
+hard-negatives	TheAgentWire__agent-rate-limiter	warn	ClawVet graded "agent-rate-limiter" C (risk 36/100). Python inline execution.
+hard-negatives	shawnyeager__nostr-social	allow	
+hard-negatives	wangkang5__wangkang-skill1	allow	
+hard-negatives	Yash-Kavaiya__dialogflow-cx-nlu	allow	
+hard-negatives	Ultronprime2026__proxyclaw	allow	
+hard-negatives	youna12345__compdf-conversion-cli	allow	
+malicious	hightower6eu__auto-updater-161ks	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+hard-negatives	Zhaobudaoyuema__openwechat-im-client	allow	
+malicious	hightower6eu__auto-updater-43c6i	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-3rk1s	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	bowen31337__alex-browser-use	allow	
+malicious	hightower6eu__auto-updater-2yq87	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__autoupdate	allow	
+malicious	hightower6eu__auto-updater-5buwl	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-8xwp6	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-5fhqm	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-96ys3	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-deza8	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-e89da	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-dzuba	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-jkiuq	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-eclpb	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-gw6f5	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-hfmct	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-m0fsa	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-mkukz	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-lth9t	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-mclql	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-mn5ri	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-nlt3m	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-ocn18	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-qdyme	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-p5rmt	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-sxdg2	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-se38e	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-xcgnm	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__auto-updater-xsunp	warn	ClawVet graded "auto-updater" C (risk 36/100). Install-me envelope.
+malicious	hightower6eu__clawhub-6yr3b	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-c9y4p	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-d4kxr	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-hh1fd	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-f3qcn	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-gstca	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-i9zhz	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-gpcrq	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-ja7eh	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-gpwp7	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-hylhq	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-i7oci	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-krmvq	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-olgys	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-oihpl	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-rkvny	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-osasg	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-sxtsn	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-tlxx5	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.
+malicious	hightower6eu__clawhub-uoeym	warn	ClawVet graded "clawhub" C (risk 28/100). Install-me envelope.

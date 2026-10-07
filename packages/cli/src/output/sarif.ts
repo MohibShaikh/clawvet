@@ -46,6 +46,15 @@ export function printSarifResult(result: ScanResult): void {
             })),
           },
         },
+        invocations: [{
+          executionSuccessful: result.status !== "failed",
+          ...(result.status === "failed" ? {
+            toolExecutionNotifications: [{
+              level: "error",
+              message: { text: result.summary || "Inspection incomplete" },
+            }],
+          } : {}),
+        }],
         results: result.findings.map((f) => {
           const ruleId = f.category + "/" + f.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
           return {

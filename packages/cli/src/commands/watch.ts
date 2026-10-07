@@ -1,8 +1,8 @@
-import { readFileSync, existsSync, watch } from "node:fs";
-import { join, dirname, basename } from "node:path";
+import { existsSync, watch } from "node:fs";
+import { join, dirname, basename, resolve } from "node:path";
 import { homedir } from "node:os";
 import chalk from "chalk";
-import { scanSkill } from "@clawvet/shared";
+import { scanLocalSkill } from "../local-scan.js";
 import { printScanResult } from "../output/terminal.js";
 
 const DEFAULT_SKILL_DIRS = [
@@ -51,16 +51,22 @@ export async function watchCommand(options: {
 
   for (const dir of watchDirs) {
     const watcher = watch(dir, { recursive: true }, async (event, filename) => {
-      if (!filename?.endsWith("SKILL.md")) return;
-
-      const skillFile = join(dir, filename);
+      if (!filename) return;
+      // A referenced helper changing matters even when SKILL.md is unchanged.
+      let skillDir = dirname(resolve(dir, filename));
+      const root = resolve(dir);
+      while (!existsSync(join(skillDir, "SKILL.md")) && skillDir !== root) {
+        const parent = dirname(skillDir);
+        if (parent === skillDir) return;
+        skillDir = parent;
+      }
+      const skillFile = join(skillDir, "SKILL.md");
       if (!existsSync(skillFile)) return;
 
       console.log(chalk.dim(`\nDetected change: ${filename}`));
 
       try {
-        const content = readFileSync(skillFile, "utf-8");
-        const result = await scanSkill(content, {
+        const result = await scanLocalSkill(skillFile, {
           skillName: basename(dirname(skillFile)),
         });
 
@@ -69,10 +75,10 @@ export async function watchCommand(options: {
         }
         printScanResult(result);
 
-        if (result.riskScore > threshold) {
+        if (result.status === "failed" || result.riskScore > threshold) {
           console.log(
             chalk.bgRed.white.bold(
-              ` BLOCKED — Risk score ${result.riskScore} exceeds threshold ${threshold} `
+              ` REVIEW REQUIRED — incomplete inspection or risk above ${threshold} `
             )
           );
           console.log(

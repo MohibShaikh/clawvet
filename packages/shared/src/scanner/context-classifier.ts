@@ -59,25 +59,41 @@ const ENVELOPE_TITLES = ["Prerequisite install trick", "Copy-paste command instr
 // was the single most common cause of a real clean skill being flagged. An
 // attacker cannot use this without first compromising the vendor, in which case
 // the install script is the least of anyone's problems.
-const TRUSTED_INSTALLER_HOSTS = [
-  "astral.sh",
-  "sh.rustup.rs",
-  "get.docker.com",
-  "install.python-poetry.org",
-  "get.pnpm.io",
-  "bun.sh",
-  "ollama.com",
-  "deb.nodesource.com",
-  "raw.githubusercontent.com/Homebrew",
-  "get.volta.sh",
+//
+// Matched as exact hosts, plus an exact path prefix where the host is shared,
+// on a parsed https URL. A substring match let "astral.sh.evil.example" and
+// "evil.example/?source=astral.sh" borrow the vendor's trust.
+const TRUSTED_INSTALLERS: Array<{ host: string; path?: string }> = [
+  { host: "astral.sh" },
+  { host: "sh.rustup.rs" },
+  { host: "get.docker.com" },
+  { host: "install.python-poetry.org" },
+  { host: "get.pnpm.io" },
+  { host: "bun.sh" },
+  { host: "ollama.com" },
+  { host: "deb.nodesource.com" },
+  { host: "raw.githubusercontent.com", path: "/Homebrew/" },
+  { host: "get.volta.sh" },
 ];
+
+export function isTrustedInstallerUrl(value: string): boolean {
+  let url: URL;
+  try { url = new URL(value); } catch { return false; }
+  if (url.protocol !== "https:") return false;
+  return TRUSTED_INSTALLERS.some(({ host, path }) =>
+    url.hostname.toLowerCase() === host && (!path || url.pathname.startsWith(path)));
+}
+
+/** True when a command fetches only from trusted installer URLs. */
+export function onlyTrustedInstallers(text: string): boolean {
+  const urls = text.match(/https?:\/\/[^\s'"`|;&)<>]+/g) ?? [];
+  return urls.length > 0 && urls.every(isTrustedInstallerUrl);
+}
 
 const PIPE_TO_SHELL = new Set(["Curl piped to shell", "Wget with shell execution"]);
 
 function fromTrustedInstaller(f: Finding): boolean {
-  if (!PIPE_TO_SHELL.has(f.title)) return false;
-  const ev = f.evidence ?? "";
-  return TRUSTED_INSTALLER_HOSTS.some((h) => ev.includes(h));
+  return PIPE_TO_SHELL.has(f.title) && onlyTrustedInstallers(f.evidence ?? "");
 }
 
 function isSink(f: Finding): boolean {

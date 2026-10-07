@@ -1,7 +1,7 @@
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { resolve, join, dirname, basename } from "node:path";
 import chalk from "chalk";
-import { scanSkill } from "@clawvet/shared";
+import { scanLocalSkill } from "../local-scan.js";
 import type { RiskGrade } from "@clawvet/shared";
 
 const GRADE_COLORS: Record<RiskGrade, string> = {
@@ -40,10 +40,15 @@ export async function badgeCommand(
     process.exit(1);
   }
 
-  const content = readFileSync(skillFile, "utf-8");
-  const result = await scanSkill(content, {
+  const result = await scanLocalSkill(skillFile, {
     skillName: basename(dirname(skillFile)),
   });
+
+  if (result.status === "failed") {
+    console.error(result.summary);
+    process.exitCode = 1;
+    return;
+  }
 
   const label = GRADE_LABELS[result.riskGrade];
   const color = GRADE_COLORS[result.riskGrade];
