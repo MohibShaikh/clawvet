@@ -74,6 +74,30 @@ export interface ParsedSkill {
   rawContent: string;
 }
 
+/** A file the CLI appended to the scanned content, by 1-based line range. */
+export interface BundledFile {
+  path: string;
+  startLine: number;
+  endLine: number;
+  /** Something in the bundle runs this file by path: it is code whatever its name. */
+  executed?: boolean;
+}
+
+export type SourceLanguage =
+  | "python" | "javascript" | "typescript" | "shell" | "powershell"
+  | "ruby" | "perl" | "php" | "lua" | "go" | "rust"
+  | "config" | "markdown" | "text" | "other";
+
+/** One unit of code to analyse: a bundled file or a fenced block in SKILL.md. */
+export interface SourceFile {
+  path: string;
+  language: SourceLanguage;
+  text: string;
+  /** Line of `text`'s first line in the scanned content, so findings map back. */
+  startLine: number;
+  endLine: number;
+}
+
 export interface CodeBlock {
   language: string;
   content: string;

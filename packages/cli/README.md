@@ -139,9 +139,22 @@ score: all 49 corpus500 ClawHavoc skills that ship their referenced files block.
 dual-use skills. A finding marked `disqualifying`, such as a known-malicious C2 address,
 blocks at any threshold.
 
-Static passes only. Runtime depends on the referenced files; the host enforces
-the configured timeout and fails closed if inspection takes too long. The semantic pass is never reached, so
-no API key and no network round trip.
+The gate is static by default, with no key and no network round trip. The host
+enforces the configured timeout and fails closed if inspection takes too long.
+Print the config with `--semantic` to add the LLM judge. The printed block then
+lists the judge's key variables under `passEnv`. OpenClaw starts the policy
+with an empty environment and copies in only the names listed there, so without
+them the judge never sees its key. The key itself stays in the gateway's
+environment. The judge can add findings and can turn an allow into a warn, but
+it never removes a static finding. If it times out, has no key, cites nothing
+in the skill, or sees only a truncated bundle, an allow becomes a warn. Set
+`--semantic-on-error ignore` to keep the static verdict instead.
+
+`--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
+bound to the hash of the file it came from, so editing that file brings the
+finding back. A baseline inside the skill is refused, and so are disqualifying
+findings and gaps that no hash can pin, such as code downloaded at run time.
+Write one with `clawvet scan <skill> --write-baseline <file> --reason "..."`.
 
 Anything the host cannot parse fails closed. A malformed payload, an unreadable
 staged path, or a scanner error returns `block` with a reason rather than a bare

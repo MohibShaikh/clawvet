@@ -35,13 +35,14 @@ clawvet scan ./my-skill/
 # JSON output for CI/CD
 clawvet scan ./my-skill/ --format json --fail-on high
 
-# Audit all installed skills
+# Audit every skill OpenClaw loads: <workspace>/skills, .agents/skills,
+# ~/.agents/skills, $OPENCLAW_STATE_DIR/skills and Skill Workshop skills
 clawvet audit
 ```
 
 Install it rather than running `npx clawvet`. A fresh `npx` fetch runs whatever version the registry serves at that moment, which is the wrong habit for a tool you use to vet other code. Updating is a deliberate `npm update -g clawvet`, and every release carries npm provenance you can check first with `npm view clawvet dist.attestations`.
 
-The CLI is static and offline, so it works in CI with no key and no network, and nothing is sent anywhere. It has no AI pass: semantic analysis runs only in the hosted API, and the CLI rejects `--semantic` rather than appearing to run it.
+By default the CLI is static and offline, so it works in CI with no key and no network, and nothing is sent anywhere. Two passes are opt-in and use the network. `--semantic` sends the skill to an LLM judge on your own key, either Anthropic or any OpenAI-compatible endpoint, which includes a local Ollama or vLLM. `--osv` looks pinned dependencies up on OSV.dev, where a `MAL-` advisory blocks the install. Without its key, `--semantic` refuses to scan rather than reporting a result the judge never saw.
 
 ## Install-time enforcement
 
@@ -115,9 +116,22 @@ score: all 49 corpus500 ClawHavoc skills that ship their referenced files block.
 dual-use skills. A finding marked `disqualifying`, such as a known-malicious C2 address,
 blocks at any threshold.
 
-Static passes only. Runtime depends on the referenced files; the host enforces
-the configured timeout and fails closed if inspection takes too long. The semantic pass is never reached, so
-no API key and no network round trip.
+The gate is static by default, with no key and no network round trip. The host
+enforces the configured timeout and fails closed if inspection takes too long.
+Print the config with `--semantic` to add the LLM judge. The printed block then
+lists the judge's key variables under `passEnv`. OpenClaw starts the policy
+with an empty environment and copies in only the names listed there, so without
+them the judge never sees its key. The key itself stays in the gateway's
+environment. The judge can add findings and can turn an allow into a warn, but
+it never removes a static finding. If it times out, has no key, cites nothing
+in the skill, or sees only a truncated bundle, an allow becomes a warn. Set
+`--semantic-on-error ignore` to keep the static verdict instead.
+
+`--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
+bound to the hash of the file it came from, so editing that file brings the
+finding back. A baseline inside the skill is refused, and so are disqualifying
+findings and gaps that no hash can pin, such as code downloaded at run time.
+Write one with `clawvet scan <skill> --write-baseline <file> --reason "..."`.
 
 Anything the host cannot parse fails closed. A malformed payload, an unreadable
 staged path, or a scanner error returns `block` with a reason rather than a bare
@@ -225,18 +239,19 @@ clawvet/
 
 ## Scanner engine
 
-Six analysis passes turn a SKILL.md into a list of findings.
+These passes turn a skill and its bundled files into a list of findings.
 
 | Pass | Module | What it catches |
 |------|--------|-----------------|
-| 1 | `skill-parser` | Parses YAML frontmatter, extracts code blocks, URLs, IPs, domains |
-| 2 | `static-analysis` | 57 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
-| 3 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
-| 4 | `semantic-analysis` | Hosted API only. Claude reads the instructions for social engineering and prompt injection |
-| 5 | `dependency-checker` | npx -y auto-install, global npm installs, risky packages |
+| 1 | `skill-parser`, `sources` | Parses frontmatter and code blocks, and marks which lines are code. Bundled scripts count as code whatever their extension; a shebang wins. |
+| 2 | `static-analysis` | 60 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
+| 3 | `dataflow` | AST taint analysis of Python, JavaScript/TypeScript and shell with tree-sitter, never executed. Credential or whole-environment data reaching a network send, downloaded or decoded data reaching execution, persistence writes, ransomware loops. |
+| 4 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
+| 5 | `dependency-checker`, `manifests` | npx -y auto-install, global npm installs, and pinned dependencies for `--osv` |
 | 6 | `typosquat-detector` | Levenshtein distance against top ClawHub skills |
+| 7 | `semantic` | Opt-in (`--semantic`), your own key. An LLM judge reads instructions and code for prompt injection and social engineering. A finding whose quote is not in the skill is dropped. |
 
-Pass 4 runs only in the hosted API. The CLI runs the other five, which are pure static work with no API and no cost.
+Passes 1 to 6 are static, need no key and cost nothing. Pass 7 and `--osv` use the network and run only when asked.
 
 ## Risk scoring
 
@@ -364,7 +379,7 @@ Copy `.env.example` to `.env`:
 ```
 DATABASE_URL=postgres://clawvet:clawvet@localhost:5432/clawvet
 REDIS_URL=redis://localhost:6379
-ANTHROPIC_API_KEY=sk-ant-...    # For the opt-in AI semantic stage
+ANTHROPIC_API_KEY=sk-ant-...    # For the hosted API's semantic stage
 GITHUB_CLIENT_ID=               # For OAuth
 GITHUB_CLIENT_SECRET=
 ```

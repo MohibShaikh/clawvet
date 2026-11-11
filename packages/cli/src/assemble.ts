@@ -19,6 +19,8 @@ export interface AssemblyIssue {
   rule: RuleId;
   reason: string;
   line?: number;
+  /** The bundled file the reference was found in, when `path` is its target. */
+  source?: string;
 }
 
 // The skill-root spellings real skills use in their commands. Each stands for
@@ -29,7 +31,9 @@ export interface AssemblyResult {
   content: string;
   coverage: {
     complete: boolean;
-    files: Array<{ path: string; startLine: number; endLine: number }>;
+    // executed: something in the bundle runs the file by path, so it is code
+    // whatever its extension says.
+    files: Array<{ path: string; startLine: number; endLine: number; executed?: boolean }>;
     issues: AssemblyIssue[];
     // Reviewable, not uninspectable: dependency installs. They raise an allow
     // to warn but do not make coverage incomplete.
@@ -125,6 +129,8 @@ function scriptRelative(text: string): string {
 const UNRESOLVED = new Set<RuleId>(["dynamic-loading", "dynamic-module", "dynamic-target", "computed-command"]);
 // Media and fonts cannot be loaded as code; inspecting them would only report
 // binary content.
+const RUNS_ON_INSTALL = /(?:^|\/)(?:package\.json|pyproject\.toml)$/i;
+const MANIFEST = /(?:^|\/)(?:(?:requirements|constraints)[^/]*\.txt|package(?:-lock)?\.json|pyproject\.toml|poetry\.lock|Pipfile(?:\.lock)?)$/i;
 const NOT_CODE = /\.(?:png|jpe?g|gif|webp|ico|bmp|svg|pdf|woff2?|ttf|otf|eot|mp3|wav|ogg|flac|m4a|mp4|webm|mov|mkv)$/i;
 const EXECUTABLE = /\.(?:sh|bash|zsh|ps1|psm1|bat|cmd|py|pyw|js|mjs|cjs|jsx|ts|mts|cts|tsx|rb|pl|lua|php|go|rs)$/i;
 
@@ -167,14 +173,14 @@ export function assembleSkill(
   };
   // issues are what strict blocks on, warnings what it asks about; the profile
   // decides what the gate does with each (see policy.ts).
-  const issue = (path: string, rule: RuleId, line?: number) => {
+  const issue = (path: string, rule: RuleId, line?: number, source?: string) => {
     const ask = RULES[rule].strict === "ask";
     const list = ask ? result.coverage.warnings : result.coverage.issues;
     if (!ask) result.coverage.complete = false;
     // Cap repeats of each rule, never the rule set.
     const same = list.filter((i) => i.rule === rule);
     if (same.length < 5 && !same.some((i) => i.path === path)) {
-      list.push({ path, rule, reason: RULES[rule].message, ...(line ? { line } : {}) });
+      list.push({ path, rule, reason: RULES[rule].message, ...(line ? { line } : {}), ...(source ? { source } : {}) });
     }
   };
   let root: string;
@@ -298,6 +304,16 @@ export function assembleSkill(
   // Git never runs its *.sample hooks; a live hook without the suffix stays in.
   const bundledCode = candidates.filter((file) => !/(?:^|\/)\.git\/hooks\/[^/]+\.sample$/.test(file) &&
     (EXECUTABLE.test(file) || shebang(file)));
+  // Dependency manifests say what installing the skill pulls in. Inspect them
+  // whether or not SKILL.md names them. package.json and pyproject.toml can run
+  // code on install (lifecycle scripts, build backends), so read() reports one
+  // it cannot inspect. A lockfile or requirements file only declares; one over
+  // the per-file limit is skipped, since real lockfiles exceed 256 KiB.
+  const executedPaths = new Set<string>();
+  const manifests = candidates.filter((file) => MANIFEST.test(file) && !/(?:^|\/)node_modules\//.test(file) &&
+    (RUNS_ON_INSTALL.test(file) || (() => {
+      try { return lstatSync(resolve(root, file)).size <= ASSEMBLY_LIMITS.fileBytes; } catch { return false; }
+    })()));
   for (let index = 0; index < queue.length; index++) {
     const source = queue[index];
     const text = scriptRelative(source.text.replace(SKILL_ROOT, ""));
@@ -347,7 +363,7 @@ export function assembleSkill(
       const runs = runtime.executedFiles.includes(ref);
       if (/\s/.test(ref) && !matches.length && !runs) continue;
       if (DOCUMENT.test(ref) && !runs && paths.every((path) => !inside(path))) {
-        issue(ref, "outside-document");
+        issue(ref, "outside-document", undefined, source.path);
         continue;
       }
       if (paths.some((path) => !inside(path))) {
@@ -355,7 +371,7 @@ export function assembleSkill(
         // the cwd, not the script's directory. A path is only covered if every
         // plausible interpretation stays inside the skill, so an in-bundle
         // decoy cannot hide an interpretation that escapes it.
-        issue(ref, matches.length ? "decoy-path" : "escape");
+        issue(ref, matches.length ? "decoy-path" : "escape", undefined, source.path);
       }
       // A path that is not bundled and that nothing runs, such as an output
       // folder or a dotfile, cannot hide code and needs no operator decision.
@@ -365,8 +381,9 @@ export function assembleSkill(
       // A file only mentioned, such as "Node.js" or "Three.js" in prose, cannot
       // hide code. Missing matters when something runs it.
       if (!matches.length && !downloaded && runs) {
-        issue(ref, "missing-file");
+        issue(ref, "missing-file", undefined, source.path);
       }
+      if (runs) for (const path of matches) executedPaths.add(relative(root, path).split(sep).join("/"));
       for (const path of matches) {
         if (directories.has(path)) {
           const prefix = relative(root, path).split(sep).join("/");
@@ -384,7 +401,7 @@ export function assembleSkill(
         selected.add(file);
       }
     }
-    if (index === 0) for (const file of bundledCode) selected.add(file);
+    if (index === 0) for (const file of [...bundledCode, ...manifests]) selected.add(file);
     for (const path of [...selected].sort()) {
       if (visited.has(path)) continue;
       visited.add(path);
@@ -399,6 +416,7 @@ export function assembleSkill(
       queue.push({ path, text });
     }
   }
+  for (const file of result.coverage.files) if (executedPaths.has(file.path)) file.executed = true;
   for (const download of downloads) {
     if (executedFiles.some((executed) => same(executed, download))) {
       issue(download.path, "download-executed", download.line);

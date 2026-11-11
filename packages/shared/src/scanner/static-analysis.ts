@@ -1,11 +1,7 @@
 import { THREAT_PATTERNS } from "../patterns.js";
-import type { Finding, ParsedSkill, Severity } from "../types.js";
+import type { BundledFile, Finding, ParsedSkill, Severity } from "../types.js";
+import { codeLines } from "./sources.js";
 
-function isInCodeBlock(lineNumber: number, skill: ParsedSkill): boolean {
-  return skill.codeBlocks.some(
-    (block) => lineNumber >= block.lineStart && lineNumber <= block.lineEnd
-  );
-}
 
 function isInHeading(lineNumber: number, rawContent: string): boolean {
   const lines = rawContent.split("\n");
@@ -20,8 +16,12 @@ const BASE_CONFIDENCE: Record<Severity, number> = {
   low: 0.5,
 };
 
-export function runStaticAnalysis(skill: ParsedSkill): Finding[] {
+// Bundled scripts count as code, not only fenced blocks: a payload in
+// scripts/run.sh is code whether or not SKILL.md quotes it.
+export function runStaticAnalysis(skill: ParsedSkill, files: BundledFile[] = []): Finding[] {
   const findings: Finding[] = [];
+  const code = codeLines(skill, files);
+  const isInCodeBlock = (line: number) => code.has(line);
 
   for (const threat of THREAT_PATTERNS) {
     const re = new RegExp(threat.pattern.source, threat.pattern.flags);
@@ -31,11 +31,11 @@ export function runStaticAnalysis(skill: ParsedSkill): Finding[] {
       const before = skill.rawContent.slice(0, match.index);
       const lineNumber = before.split("\n").length;
 
-      if (threat.codeOnly && !isInCodeBlock(lineNumber, skill)) {
+      if (threat.codeOnly && !isInCodeBlock(lineNumber)) {
         continue;
       }
 
-      const inCode = isInCodeBlock(lineNumber, skill);
+      const inCode = isInCodeBlock(lineNumber);
       const inHeading = isInHeading(lineNumber, skill.rawContent);
 
       let contextMultiplier: number;

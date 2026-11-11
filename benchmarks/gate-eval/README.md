@@ -70,6 +70,58 @@ For corpus500, `node prepare-corpus500.mjs /tmp/c500` writes skill folders and
 
 ## Results
 
+### 0.13.2, held-out test half
+
+The test half was run once on the published release
+(`results/msb-0.13.2.jsonl`, commit `b824c53`, clean worktree); 600 random
+skills through the npm binary gave the same decisions.
+
+Held-out, complete, decontaminated (`compare.mjs --decontaminated`): blocked
+45.7% of malicious skills (95% cluster-bootstrap interval 42.7 to 48.9) and
+9.5% of benign ones; findings alone, without coverage rules, 2.4% and 1.2%.
+By group: CI 66.5%, PI 12.5%, MIXED 72.3%, WILD 71.2%.
+
+Decontamination matters for WILD. The family key does not strip random
+suffixes without digits, so 239 of the 312 complete wild test skills have a
+byte-identical `SKILL.md` in the tune half (91 distinct bodies). Without
+decontamination WILD reads 93.3%. `compare.mjs` clusters by family and by
+`SKILL.md` hash for intervals, and `--decontaminated` drops test skills whose
+`SKILL.md` occurs in the tune half. The split itself is unchanged, since it is
+the one the profile was tuned against.
+
+Cohort membership depends on the build: resolver changes between the
+`97bdc38ee6d5` run and 0.13.2 moved 351 tune-half benign skills into the
+complete cohort without any of them going from allowed to stopped, which is
+why the benign rates in the older table below are lower. `compare.mjs` fixes
+membership from one build and applies it to every tool.
+
+Baselines: `baselines.py` loads MalSkillBench's own accuracy scripts
+(`Experiment/RQ3`, `Experiment/RQ4`) unchanged and records the per-skill
+verdict each produces from the published per-skill outputs
+(`Experiment/Results`). Its aggregate counts equal the tables those scripts
+print. Fetch the results with `git sparse-checkout add Experiment` in a
+MalSkillBench checkout, then
+
+```bash
+python3 -I benchmarks/gate-eval/baselines.py <MalSkillBench> > benchmarks/gate-eval/results/msb-baselines.tsv
+node benchmarks/gate-eval/compare.mjs benchmarks/gate-eval/results/msb-0.13.2.jsonl \
+  benchmarks/gate-eval/results/msb-baselines.tsv <MalSkillBench>/Dataset/Skills test complete --decontaminated
+```
+
+Other datasets, through `run-gate.sh` and the npm binary:
+
+- SkillsBench-1650 (`prepare-skillsbench.py`, Hugging Face revision
+  `68c0d4b`): `results/skillsbench-0.13.2.tsv`.
+- MaliciousSkillBench, frozen Source-Disjoint test split
+  (`prepare-maliciousskillbench.py`, revision `d4b42ce`):
+  `results/maliciousskillbench-sd-0.13.2.tsv`.
+- corpus500: `results/corpus500-0.13.2.tsv`.
+
+The `*-fix.tsv` files are the unreleased exfiltration fix (see CHANGELOG),
+measured after the fact; they are not held-out on those two datasets.
+
+### Earlier builds
+
 Default profile, complete skills, blocked / stopped, where stopped includes
 `warn`, which in OpenClaw also halts the install.
 

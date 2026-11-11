@@ -1,0 +1,18 @@
+packed	sh-pipe-base64	warn	ClawVet graded "a" C (risk 27/100). Base64 decode execution.
+packed	sh-decode-to-file	block	ClawVet inspection incomplete: /tmp/run.sh: Reference escapes the skill root or is unresolved; /tmp/run.sh: Referenced file is missing or unsupported
+packed	py-exec-base64	block	ClawVet inspection incomplete: scripts/setup.py:3: Process or loader arguments require runtime resolution outside inspection coverage
+packed	py-exec-zlib	block	ClawVet inspection incomplete: scripts/setup.py:2: Runtime evaluation cannot establish coverage of generated or downloaded code
+packed	py-write-then-run	block	ClawVet inspection incomplete: scripts/setup.py:4: Process or loader arguments require runtime resolution outside inspection coverage
+packed	py-xor-loop	block	ClawVet inspection incomplete: scripts/setup.py:4: Process or loader arguments require runtime resolution outside inspection coverage
+packed	node-eval-buffer	block	ClawVet inspection incomplete: scripts/setup.js:2: Runtime evaluation cannot establish coverage of generated or downloaded code
+packed	node-new-function	block	ClawVet inspection incomplete: scripts/setup.js:2: Runtime evaluation cannot establish coverage of generated or downloaded code
+packed	node-string-concat	allow	
+packed	tar-archive-install	block	ClawVet inspection incomplete: bundle/install.sh: Referenced file is missing or unsupported; bundle.tgz: Binary content is not inspected
+packed	instructions-from-extracted	allow	
+packed	py-dynamic-import	block	ClawVet inspection incomplete: scripts/setup.py:5: Process or loader arguments require runtime resolution outside inspection coverage
+control	py-decode-image	allow	
+control	py-decode-config	allow	
+control	node-decode-jwt	allow	
+control	sh-gzip-logs	allow	
+control	py-zlib-roundtrip	allow	
+control	tar-extract-templates	block	ClawVet inspection incomplete: templates.tgz: Binary content is not inspected

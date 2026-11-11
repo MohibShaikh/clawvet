@@ -27,6 +27,6 @@ export async function scanLocalSkill(
   profile: Profile = "default",
 ): Promise<LocalScanResult> {
   const assembly = assembleSkill(dirname(skillFile), undefined, basename(skillFile));
-  const result = await scanSkill(assembly.content, options);
+  const result = await scanSkill(assembly.content, { ...options, files: assembly.coverage.files });
   return applyCoverage(result, assembly, profile);
 }

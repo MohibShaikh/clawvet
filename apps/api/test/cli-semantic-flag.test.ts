@@ -22,7 +22,10 @@ describe("CLI semantic flag wiring", () => {
     scanSkillMock.mockClear();
   });
 
-  it("refuses --semantic without calling scanSkill (semantic analysis is API-only)", async () => {
+  it("refuses --semantic without calling scanSkill when no judge key is configured", async () => {
+    for (const name of ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "CLAWVET_LLM_API_KEY", "CLAWVET_LLM_PROVIDER", "CLAWVET_LLM_BASE_URL", "CLAWVET_LLM_MODEL"]) {
+      vi.stubEnv(name, "");
+    }
     const { scanCommand } = await import("../../../packages/cli/src/commands/scan.ts");
 
     const dir = mkdtempSync(join(tmpdir(), "clawvet-semantic-"));
@@ -36,6 +39,7 @@ describe("CLI semantic flag wiring", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
       process.exitCode = 0;
+      vi.unstubAllEnvs();
     }
   });
 

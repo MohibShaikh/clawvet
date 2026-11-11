@@ -59,6 +59,18 @@ Measured 2026-10-07 with `run.mjs`, published `clawvet@0.6.3` and
 0.13.1 had one error: a 173 KB report truncated by the piped-output bug fixed
 after 0.13.1 (see CHANGELOG). `results.json` holds every per-skill result.
 
+Rerun 2026-10-09 with `clawvet@0.13.2`, which fixed that bug, on the same 139
+skills (`results-0.13.2.json`); 0.6.3 reproduces exactly:
+
+| Version, rule | Precision | Recall | F1 | False-positive rate |
+|---|---|---|---|---|
+| 0.13.2, SkillSieve rule | 0.667 | 0.96 | 0.787 | 0.27 |
+| 0.13.2, ClawVet block | 0.645 | 0.98 | 0.778 | 0.303 |
+
+No errors. Most of the 27 benign blocks are files the snapshot does not
+include, or files the skill expects the user to provide (`.env`,
+`~/.bashrc`, a workspace path), which the gate asks to be bundled.
+
 ## Running
 
 ```bash

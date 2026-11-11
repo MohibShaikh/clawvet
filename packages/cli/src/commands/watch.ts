@@ -1,21 +1,17 @@
 import { existsSync, watch } from "node:fs";
 import { join, dirname, basename, resolve } from "node:path";
-import { homedir } from "node:os";
+import { skillDirs } from "../skill-dirs.js";
 import chalk from "chalk";
 import { scanLocalSkill } from "../local-scan.js";
 import { printScanResult } from "../output/terminal.js";
 
-const DEFAULT_SKILL_DIRS = [
-  join(homedir(), ".openclaw", "skills"),
-  join(homedir(), ".openclaw", "workspace", "skills"),
-];
 
 export async function watchCommand(options: {
   threshold?: number;
   dir?: string;
 }): Promise<void> {
   const threshold = options.threshold || 50;
-  const SKILL_DIRS = options.dir ? [options.dir] : DEFAULT_SKILL_DIRS;
+  const SKILL_DIRS = options.dir ? [options.dir] : skillDirs();
   console.log(
     chalk.bold(
       `\nClawVet Watch — monitoring skill directories (threshold: ${threshold})\n`

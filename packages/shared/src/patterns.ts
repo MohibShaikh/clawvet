@@ -5,13 +5,30 @@ function re(parts: string[], flags: string): RegExp {
   return new RegExp(parts.join(""), flags);
 }
 
+// The text of an inline program: an opening quote (escaped when the command is
+// itself inside a string), then anything up to the same quote. Bounded so one
+// unclosed quote cannot make every later match rescan the file.
+const INLINE_QUOTE = "\\s*\\\\?([\"'])";
+const INLINE_CHAR = "(?:\\\\.|(?!\\1)[^\\\\])";
+const INLINE_LIMIT = 4000;
+// Critical when the program is not a literal a reviewer can read in place (a
+// substitution, a bare variable, more than INLINE_LIMIT characters), or when it
+// contains one of `tokens`.
+function inlinePayload(command: string[], tokens: string[]): RegExp {
+  return re([...command,
+    "(?:\\s+\\$[\\w{(]|", INLINE_QUOTE, "(?:\\$[\\w{(][^\"']{0,200}\\1|", INLINE_CHAR, `{0,${INLINE_LIMIT}}?(?:`, ...tokens, ")|", INLINE_CHAR, `{${INLINE_LIMIT}}))`], "g");
+}
+
 export const THREAT_PATTERNS: ThreatPattern[] = [
   // ═══════════════════════════════════════════════════════
   // CRITICAL: Remote code execution
   // ═══════════════════════════════════════════════════════
   {
     name: "CURL_PIPE_BASH",
-    pattern: re(["curl\\s+.*\\|\\s*(ba)?", "sh"], "gi"),
+    // Only the first `curl` on a line is tried, made atomic by the lookahead
+    // and backreference. Any later one matches only if the first does, and
+    // retrying each repeat of `curl` made a long line quadratic.
+    pattern: re(["^(?=([^\\n]*?curl\\s))\\1[^\\n]*\\|\\s*(ba)?", "sh"], "gim"),
     severity: "critical",
     category: "remote_code_execution",
     title: "Curl piped to shell",
@@ -21,7 +38,8 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "WGET_EXECUTE",
-    pattern: re(["wget\\s+.*&&\\s*(ba)?", "sh"], "gi"),
+    // First `wget` on a line only, as in CURL_PIPE_BASH.
+    pattern: re(["^(?=([^\\n]*?wget\\s))\\1[^\\n]*&&\\s*(ba)?", "sh"], "gim"),
     severity: "critical",
     category: "remote_code_execution",
     title: "Wget with shell execution",
@@ -49,19 +67,38 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     codeOnly: true,
     fix: "Decode and include the command directly so users can review it.",
   },
+  // `python -c "import json,sys; ..."` is how shell scripts parse JSON, and the
+  // program is right there to read, so on its own it is a note. The payload rule
+  // below is the critical one.
   {
     name: "PYTHON_EXEC",
     pattern: re(["pyth", "on[3]?\\s+-c"], "gi"),
-    severity: "critical",
+    severity: "low",
     category: "remote_code_execution",
     title: "Python inline execution",
-    description: "Executes inline Python code which may contain hidden payloads.",
+    description: "Executes an inline Python program. Review what it does.",
     codeOnly: true,
     fix: "Move inline code to a separate .py file so users can review it before execution.",
   },
   {
+    name: "PYTHON_EXEC_PAYLOAD",
+    // Runs a shell, opens a socket or evaluates text: what a one-line dropper
+    // or reverse shell does and a JSON filter never does.
+    pattern: inlinePayload(["pyth", "on[3]?\\s+-c"], [
+      "ex", "ec\\s*\\(|ev", "al\\s*\\(|compile\\s*\\(|__import__|",
+      "os\\.(?:sys", "tem|popen|dup2|setuid|exec[lv]p?e?)\\s*\\(|pty\\.spawn|socket\\.socket|shell\\s*=\\s*True|",
+      "\\/bin\\/(?:ba|z|da)?sh|\\$\\(",
+    ]),
+    severity: "critical",
+    category: "remote_code_execution",
+    title: "Python inline payload",
+    description: "Runs an inline Python program that starts a shell, opens a socket or evaluates code, or whose text is not visible in the command.",
+    codeOnly: true,
+    fix: "Ship the program as a .py file and remove shell, socket and exec/eval calls from one-liners.",
+  },
+  {
     name: "REVERSE_SHELL",
-    pattern: re(["\\/dev\\/tc", "p\\/|nc\\s+-[elp]|nca", "t\\s+-|mkfi", "fo\\s+.*\\/tmp"], "gi"),
+    pattern: re(["\\/dev\\/tc", "p\\/|nc\\s+-[elp]|nca", "t\\s+-|mkfi", "fo\\s+.{0,200}\\/tmp"], "gi"),
     severity: "critical",
     category: "remote_code_execution",
     title: "Reverse shell",
@@ -89,15 +126,29 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     codeOnly: true,
     fix: "Move inline code to a separate .pl file so users can review it before execution.",
   },
+  // Same split as Python above: a readable one-liner is a note.
   {
     name: "NODE_EVAL",
     pattern: re(["no", "de\\s+-e\\s"], "gi"),
-    severity: "critical",
+    severity: "low",
     category: "remote_code_execution",
     title: "Node.js inline execution",
-    description: "Executes inline Node.js code, often used to hide malicious logic.",
+    description: "Executes an inline Node.js program. Review what it does.",
     codeOnly: true,
     fix: "Move inline code to a separate .js file so users can review it before execution.",
+  },
+  {
+    name: "NODE_EVAL_PAYLOAD",
+    pattern: inlinePayload(["no", "de\\s+(?:-e|--eval|-p|--print)"], [
+      "ev", "al\\s*\\(|new\\s+Function|child_", "process|net\\.(?:connect|createConnection|Socket)|vm\\.run|",
+      "at", "ob\\s*\\(|base", "64|\\/bin\\/(?:ba|z|da)?sh|\\$\\(",
+    ]),
+    severity: "critical",
+    category: "remote_code_execution",
+    title: "Node.js inline payload",
+    description: "Runs an inline Node.js program that starts a process, opens a socket, decodes or evaluates code, or whose text is not visible in the command.",
+    codeOnly: true,
+    fix: "Ship the program as a .js file and remove process, socket and eval calls from one-liners.",
   },
   {
     name: "RUBY_EXEC",
@@ -127,8 +178,12 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     fix: "Declare required env vars in frontmatter under `metadata.openclaw.requires.env`.",
   },
   {
+    // Gaps written `.{0,200}`, here and in the prose rules below, rather than
+    // `.*`: an unbounded gap retried from every repeat of the first word made
+    // one long line quadratic, and 200 characters is far wider than any
+    // instruction these describe.
     name: "API_KEY_EXFIL",
-    pattern: /(ANTHROPIC|OPENAI|SLACK|DISCORD|TELEGRAM|STRIPE|GITHUB|GITLAB|AWS_SECRET|GROQ|OPENROUTER).*(_KEY|_TOKEN|_SECRET)/gi,
+    pattern: /(ANTHROPIC|OPENAI|SLACK|DISCORD|TELEGRAM|STRIPE|GITHUB|GITLAB|AWS_SECRET|GROQ|OPENROUTER).{0,200}(_KEY|_TOKEN|_SECRET)/gi,
     severity: "high",
     category: "credential_theft",
     title: "API key reference",
@@ -173,7 +228,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "GIT_CREDENTIALS",
-    pattern: /\.git-credentials|\.gitconfig|git\s+config.*credential/gi,
+    pattern: /\.git-credentials|\.gitconfig|git\s+config.{0,200}credential/gi,
     severity: "high",
     category: "credential_theft",
     title: "Git credential access",
@@ -243,12 +298,49 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "DNS_EXFIL",
-    pattern: /dig\s+.*TXT|nslookup\s+.*\$|dns.*exfil|\.burpcollaborator\.|\.oastify\./gi,
+    // First occurrence on a line only, as in CURL_PIPE_BASH.
+    pattern: /^(?=([^\n]*?dig\s))\1[^\n]*TXT|^(?=([^\n]*?nslookup\s))\2[^\n]*\$|^(?=([^\n]*?dns))\3[^\n]*exfil|\.burpcollaborator\.|\.oastify\./gim,
     severity: "high",
     category: "data_exfiltration",
     title: "DNS exfiltration",
     description: "Uses DNS queries to exfiltrate data — bypasses most firewalls.",
     fix: "Remove DNS exfiltration patterns — use standard HTTP APIs for data transfer.",
+  },
+  // Uploads whose payload is local data being read, to any host. Each is
+  // medium on its own: what makes it theft is a credential read in the same
+  // skill, which the context pass joins into a critical finding. A literal or
+  // jq-built request body, or a token sent as an auth header, is not matched.
+  // Every gap is bounded: an unbounded one rescans the rest of a long line from
+  // each command name on it, which is quadratic on a line of repeated names.
+  {
+    name: "PIPED_UPLOAD",
+    pattern: /\b(?:cat|env|printenv|tar|zip|base64|gzip|find)\b[^\n|]{0,300}\|\s{0,20}(?:[^\n|]{0,300}\|\s{0,20}){0,3}curl\b[^\n]{0,400}?\s(?:-d|--data(?:-binary|-raw|-urlencode)?|-F|--form|-T|--upload-file)\s{1,20}["']?(?:\w{1,100}=)?@-/gi,
+    severity: "medium",
+    category: "data_exfiltration",
+    title: "Local data piped into an upload",
+    codeOnly: true,
+    description: "Reads files or the environment and sends them as a request body.",
+    fix: "Send only the fields the API needs, and say in the description what leaves the machine.",
+  },
+  {
+    name: "SUBSTITUTED_UPLOAD",
+    pattern: /curl\b[^\n]{0,400}?\s(?:-d|--data(?:-binary|-raw|-urlencode)?|-F|--form)\s{0,20}["']?[^"'\s]{0,300}\$\((?:\s{0,20}(?:cat|env|printenv|base64)\b|[A-Z_]{0,100}(?:TOKEN|KEY|SECRET|PASS)[A-Z_]{0,100}\))/g,
+    severity: "medium",
+    category: "data_exfiltration",
+    title: "Secret or file substituted into an upload",
+    codeOnly: true,
+    description: "Builds a request body from a file read or a secret-named variable.",
+    fix: "Send only the fields the API needs, and say in the description what leaves the machine.",
+  },
+  {
+    name: "DNS_DATA_LABEL",
+    pattern: /\b(?:dig|nslookup|host)\b[^\n]{0,400}?(?:\$\((?:(?!\$\()[^)\n]){0,200}\)|\$\{?\w{1,100}\}?|\{\w{1,100}\})\.[\w-]{1,255}\.[\w.-]+/g,
+    severity: "medium",
+    category: "data_exfiltration",
+    title: "Data carried in a DNS name",
+    codeOnly: true,
+    description: "Puts a variable or command output into a hostname it looks up, which sends that value to whoever runs the domain's name server.",
+    fix: "Look up fixed hostnames only.",
   },
   {
     name: "PASTEBIN_FETCH",
@@ -261,7 +353,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "SUSPICIOUS_TLD",
-    pattern: /https?:\/\/[^\s"']*\.(tk|ml|ga|cf|gq|top|xyz|pw|cc|ws|buzz)\b/gi,
+    pattern: /https?:\/\/[^\s"']{0,500}\.(tk|ml|ga|cf|gq|top|xyz|pw|cc|ws|buzz)\b/gi,
     severity: "high",
     category: "data_exfiltration",
     title: "Suspicious TLD",
@@ -293,7 +385,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   // ═══════════════════════════════════════════════════════
   {
     name: "PREREQUISITE_INSTALL",
-    pattern: /prerequisite|install.*first|run.*before|required.*dependency/gi,
+    pattern: /prerequisite|install.{0,200}first|run.{0,200}before|required.{0,200}dependency/gi,
     severity: "medium",
     category: "social_engineering",
     title: "Prerequisite install trick",
@@ -302,7 +394,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "COPY_PASTE_COMMAND",
-    pattern: /copy.*paste.*terminal|run.*this.*command/gi,
+    pattern: /copy.{0,80}paste.{0,80}terminal|run.{0,80}this.{0,80}command/gi,
     severity: "medium",
     category: "social_engineering",
     title: "Copy-paste command instruction",
@@ -329,7 +421,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "URGENCY_MANIPULATION",
-    pattern: /critical\s+update|security\s+patch|must\s+install\s+immediately|urgent.*update/gi,
+    pattern: /critical\s+update|security\s+patch|must\s+install\s+immediately|urgent.{0,200}update/gi,
     severity: "medium",
     category: "social_engineering",
     title: "Urgency manipulation",
@@ -369,7 +461,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "JAILBREAK_ATTEMPT",
-    pattern: /\bDAN\b|do\s+anything\s+now|developer\s+mode|evil\s+mode|bypass.*safety/gi,
+    pattern: /\bDAN\b|do\s+anything\s+now|developer\s+mode|evil\s+mode|bypass.{0,200}safety/gi,
     severity: "medium",
     category: "prompt_injection",
     title: "Jailbreak attempt",
@@ -457,7 +549,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "BUFFER_BASE64_DECODE",
-    pattern: re(["Buf", "fer\\.from\\s*\\(.*['\"]base", "64['\"]\\)|at", "ob\\s*\\("], "gi"),
+    pattern: re(["Buf", "fer\\.from\\s*\\(.{0,200}['\"]base", "64['\"]\\)|at", "ob\\s*\\("], "gi"),
     severity: "critical",
     category: "obfuscation",
     title: "Buffer/atob encoded payload",
@@ -508,6 +600,80 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     description: "Sets overly permissive file permissions (777) or setuid/setgid bits.",
     codeOnly: true,
     fix: "Use least-privilege permissions (e.g., `chmod 755` or `chmod 644`) instead of 777.",
+  },
+  // The next three are not in the context pass's dual-use categories on
+  // purpose. Sudo and chmod 777 are ordinary and only count next to a sink; a
+  // setuid bit, a new administrator account and a miner configuration are not
+  // things an ordinary skill does, with or without one. They match in prose
+  // too, because an instruction to run the command is the attack. Gaps are
+  // bounded: an unbounded one rescans a long line from every `curl` on it.
+  {
+    name: "SETUID_BIT",
+    pattern: re(["chm", "od\\s+(?:-[A-Za-z]+\\s+)*(?:[46][0-7]{3}|(?:[goa]{0,8}u[ugoa]{0,8})?\\+[rwxX]{0,8}s)\\b"], "g"),
+    severity: "critical",
+    category: "system_tampering",
+    title: "Setuid bit set on a file",
+    description: "Sets the setuid bit, so the file runs with its owner's privileges whoever starts it. This is how a local privilege escalation is left behind.",
+    fix: "Remove the setuid bit. A skill that needs elevated rights should ask for them when it runs.",
+  },
+  {
+    name: "WINDOWS_ACCOUNT_ADD",
+    pattern: re(["net\\s+us", "er\\s+[^\\n|;&]{0,200}\\/add\\b|net\\s+local", "group\\s+\"?(?:administrators|remote desktop users)\"?\\s+[^\\n|;&]{0,200}\\/add\\b"], "gi"),
+    severity: "critical",
+    category: "system_tampering",
+    title: "Windows account or administrator group change",
+    description: "Creates a local Windows account or adds one to a privileged group, which leaves a way back into the machine.",
+    fix: "Remove the account commands. A skill has no reason to create users or grant administrator rights.",
+  },
+  {
+    name: "CRYPTO_MINER_CONFIG",
+    // A configuration, a pool URL or a miner binary; a scanner's own signature
+    // list (`xmrig|stratum\+tcp`) names these without being one.
+    pattern: re(["[\"']nice", "hash[\"']\\s*:|strat", "um\\+(?:tcp|ssl):\\/\\/|[\"']?donate", "-level[\"']?\\s*[:=]|(?:\\.\\/|\\/)xm", "rig\\b"], "gi"),
+    severity: "critical",
+    category: "resource_abuse",
+    title: "Cryptocurrency miner configuration",
+    description: "Contains a mining pool URL, a miner configuration or a miner binary. A skill that mines uses the machine for someone else.",
+    fix: "Remove the miner and its configuration.",
+  },
+  {
+    name: "POWERSHELL_ENCODED",
+    pattern: re(["power", "shell(?:\\.exe)?\\b[^\\n]{0,300}\\s-(?:e|ec|enc|encodedcommand)\\s+\\S"], "gi"),
+    severity: "critical",
+    category: "obfuscation",
+    title: "Encoded PowerShell command",
+    description: "Runs a base64-encoded PowerShell command, which hides what is executed from anyone reading the skill.",
+    fix: "Write the command in plain text so it can be reviewed.",
+  },
+  {
+    name: "SYSTEM_ACCOUNTS_UPLOAD",
+    // The file has to be what is sent: an upload option, a redirect into a
+    // socket client, a substituted read, or a local scp source. The path inside
+    // a URL (`curl https://host/etc/passwd`) is a download and is not matched.
+    pattern: re([
+      "\\b(?:(?:curl\\b[^\\n|;&]{0,300}?(?:\\s(?:-[A-Za-z]{0,8}d|--data(?:-binary|-urlencode|-ascii)?)(?:\\s{1,20}|=)?[\"']?(?:\\w{1,100}=?)?@",
+      "|\\s(?:-[A-Za-z]{0,8}F|--form)(?:\\s{1,20}|=)?[\"']?[^\\s\"'=]{1,100}=[@<]",
+      "|\\s(?:-[A-Za-z]{0,8}T|--upload-file)(?:\\s{1,20}|=)?[\"']?)",
+      "|wget\\b[^\\n|;&]{0,300}?\\s--post-file(?:\\s{1,20}|=)[\"']?",
+      "|(?:curl|wget|nc|ncat)\\b[^\\n|;&]{0,300}?(?:\\$\\(|`)\\s{0,20}(?:(?:cat|base64|head|tail)\\s[^)`$\\n]{0,40}?|<\\s{0,20})",
+      "|(?:nc|ncat)\\b[^\\n|;&]{0,300}?<\\s{0,20}[\"']?)\\/etc\\/(?:pass", "wd|sha", "dow)\\b",
+      "|scp\\b[^\\n|;&]{0,300}?\\s[\"']?\\/etc\\/(?:pass", "wd|sha", "dow)[\"']?\\s{1,20}[^\\s|;&]{0,200}:)"], "g"),
+    severity: "critical",
+    category: "data_exfiltration",
+    title: "System account file sent over the network",
+    description: "Passes the system account database to a network client.",
+    codeOnly: true,
+    fix: "Remove the upload. Nothing a skill does needs the machine's account list on a remote host.",
+  },
+  {
+    name: "CLOUD_METADATA_CREDENTIALS",
+    pattern: re(["169\\.254\\.169\\.254\\/latest\\/meta-data\\/iam\\/security-cred", "entials|metadata\\.google\\.internal\\/computeMetadata\\/v1\\/instance\\/service-accounts\\/[^\\s\"'\\/]+\\/token"], "g"),
+    severity: "critical",
+    category: "credential_theft",
+    title: "Cloud instance credentials read from the metadata service",
+    description: "Requests the instance's temporary cloud credentials from the metadata endpoint.",
+    codeOnly: true,
+    fix: "Use the cloud SDK's default credential chain instead of reading the metadata endpoint directly.",
   },
   {
     name: "PATH_TRAVERSAL",
@@ -574,7 +740,9 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "LARGE_BASE64_LITERAL",
-    pattern: /[A-Za-z0-9+/=]{100,}/g,
+    // The lookbehind starts a match only at the head of a run: without it every
+    // position inside a shorter run is retried, which is quadratic in run length.
+    pattern: /(?<![A-Za-z0-9+/=])[A-Za-z0-9+/=]{100,}/g,
     severity: "low",
     category: "obfuscation",
     title: "Large base64-like string",

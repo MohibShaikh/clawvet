@@ -58,7 +58,7 @@ for (const tier of ["malware", "benign"]) {
     // to findings, and other policies can be simulated from this file.
     let score: "block" | "warn" | "allow" | undefined;
     if (content) {
-      const scan = await scanSkill(content, { skillName: name });
+      const scan = await scanSkill(content, { skillName: name, files: coverage?.files });
       score = scan.findings.some((f) => f.disqualifying) || scan.riskScore >= 76
         ? "block" : scan.recommendation === "approve" ? "allow" : "warn";
     }

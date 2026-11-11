@@ -39,7 +39,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       severity: "low",
       title: "Vague description",
       description: "Skill description is suspiciously short.",
-      evidence: fm.description,
+      evidence: String(fm.description),
       analysisPass: pass,
       fix: "Write a more detailed description (at least 10 characters).",
     });
@@ -51,7 +51,7 @@ export function validateMetadata(skill: ParsedSkill): Finding[] {
       severity: "low",
       title: "Invalid version format",
       description: "Version does not follow semver format.",
-      evidence: fm.version,
+      evidence: String(fm.version),
       analysisPass: pass,
       fix: "Use semver format: `version: X.Y.Z` (e.g., `1.0.0`).",
     });

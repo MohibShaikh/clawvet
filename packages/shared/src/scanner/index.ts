@@ -1,23 +1,14 @@
-import type { Finding, ParsedSkill, ScanResult } from "../types.js";
+import type { BundledFile, Finding, Recommendation, ScanResult } from "../types.js";
 import { parseSkill } from "./skill-parser.js";
 import { runStaticAnalysis } from "./static-analysis.js";
 import { validateMetadata } from "./metadata-validator.js";
 import { checkDependencies } from "./dependency-checker.js";
 import { detectTyposquats } from "./typosquat-detector.js";
-import { applyContext } from "./context-classifier.js";
+import { applyContext, onlyTrustedInstallers } from "./context-classifier.js";
 import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.js";
 import { getCached, setCached } from "./cache.js";
-
-// Line numbers that fall inside a fenced code block. The context pass uses this
-// to tell a real use of a credential or exfil channel from a mention of one in
-// prose or frontmatter.
-function codeLinesOf(skill: ParsedSkill): Set<number> {
-  const lines = new Set<number>();
-  for (const cb of skill.codeBlocks) {
-    for (let l = cb.lineStart; l <= cb.lineEnd; l++) lines.add(l);
-  }
-  return lines;
-}
+import { codeLines, collectSources } from "./sources.js";
+import { analyzeDataflow } from "./dataflow/index.js";
 
 export interface ScanOptions {
   semantic?: boolean;
@@ -26,6 +17,28 @@ export interface ScanOptions {
   skipCache?: boolean;
   /** Fallback name when SKILL.md frontmatter is missing `name`. Typically the folder basename. */
   skillName?: string;
+  /**
+   * Files the CLI appended to `content` (AssemblyResult.coverage.files). Their
+   * lines are code to the code-only rules and the context pass. Without it only
+   * fenced blocks are code, which is right for a bare SKILL.md.
+   */
+  files?: BundledFile[];
+}
+
+// The report's thresholds. A gate may block lower via --block-at.
+export function recommend(riskScore: number): Recommendation {
+  return riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
+}
+
+/**
+ * The same result over a different finding set, for passes that run after the
+ * scan: network lookups that add findings, baselines that remove them. The
+ * context pass is not re-run; added findings are not dual-use capabilities.
+ */
+export function rescore(result: ScanResult, findings: Finding[]): ScanResult {
+  const riskScore = calculateRiskScore(findings);
+  return { ...result, findings, riskScore, riskGrade: getRiskGrade(riskScore),
+    findingsCount: countFindings(findings), recommendation: recommend(riskScore) };
 }
 
 export async function scanSkill(
@@ -37,7 +50,7 @@ export async function scanSkill(
   }
   // Provider identity/configuration may change: semantic results are never cached.
   const cacheable = !options.skipCache && !options.semantic;
-  const cacheKey = JSON.stringify([content, options.ignorePatterns ?? [], options.skillName ?? null]);
+  const cacheKey = JSON.stringify([content, options.ignorePatterns ?? [], options.skillName ?? null, options.files ?? []]);
   if (cacheable) {
     const cached = getCached(cacheKey);
     if (cached) {
@@ -48,7 +61,8 @@ export async function scanSkill(
   const skill = parseSkill(content);
   const allFindings: Finding[] = [];
 
-  allFindings.push(...runStaticAnalysis(skill));
+  const files = options.files ?? [];
+  allFindings.push(...runStaticAnalysis(skill, files));
   allFindings.push(...validateMetadata(skill));
 
   if (options.semantic && options.semanticAnalyzer) {
@@ -70,7 +84,17 @@ export async function scanSkill(
     : allFindings;
 
   // Context pass: downweight dual-use capabilities that have no exfil/exec sink.
-  const contextFindings = applyContext(filteredFindings, codeLinesOf(skill));
+  // It uses code lines to tell a real use of a credential or exfil channel from
+  // a mention of one in prose or frontmatter.
+  // Dataflow findings join after it: each one is already a proven flow from a
+  // source to a sink, which is what that pass looks for between regex hits.
+  const ignored = (f: Finding) => options.ignorePatterns?.some((ig) => f.title === ig || f.category === ig) ?? false;
+  // A vendor's documented one-line installer is exempt here as it is in the
+  // regex and coverage layers, so the three never disagree about `curl | sh`.
+  const lines = content.split("\n");
+  const vendorInstaller = (f: Finding) => f.category === "remote_code_execution" && f.lineNumber != null && onlyTrustedInstallers(lines[f.lineNumber - 1] ?? "");
+  const dataflow = (await analyzeDataflow(collectSources(skill, files))).filter((f) => !ignored(f) && !vendorInstaller(f));
+  const contextFindings = [...applyContext(filteredFindings, codeLines(skill, files)), ...dataflow];
 
   const riskScore = calculateRiskScore(contextFindings);
   const riskGrade = getRiskGrade(riskScore);
@@ -79,8 +103,7 @@ export async function scanSkill(
   // score only a high can produce.
   const findingsCount = countFindings(contextFindings);
 
-  const recommendation =
-    riskScore >= 76 ? "block" : riskScore >= 26 ? "warn" : "approve";
+  const recommendation = recommend(riskScore);
 
   const result: ScanResult = {
     skillName: skill.frontmatter.name || options.skillName || "unknown",
@@ -102,6 +125,8 @@ export async function scanSkill(
 }
 
 export { parseSkill } from "./skill-parser.js";
+export { collectSources, codeLines, languageOf, isCode } from "./sources.js";
+export { extractPinnedDependencies, type PinnedDependency } from "./manifests.js";
 export { isTrustedInstallerUrl, onlyTrustedInstallers } from "./context-classifier.js";
 export { runStaticAnalysis } from "./static-analysis.js";
 export { validateMetadata } from "./metadata-validator.js";

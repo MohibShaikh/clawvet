@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.13.2
+version: 0.14.0
 description: Use before installing, trusting, or running any third-party OpenClaw skill, and when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet". Also use when reviewing a SKILL.md pulled from ClawHub or an untrusted source.
 author: MohibShaikh
 license: MIT
@@ -80,6 +80,15 @@ those paths by hand either. OpenClaw rejects symlinked executables and
 `npm audit signatures` rejects global installs, so check the registry
 attestation with `npm view clawvet dist.attestations` before installing. The
 install itself stays unpinned so the gate keeps current detection rules.
+
+**Adding the LLM judge.** `clawvet gate --print-config --semantic` adds a judge
+that reads instructions for prompt injection, on the user's own key. Set
+`ANTHROPIC_API_KEY`, or `CLAWVET_LLM_PROVIDER=openai` with `CLAWVET_LLM_MODEL`
+and `CLAWVET_LLM_BASE_URL` for an OpenAI-compatible or local model, in the
+gateway's environment. Keep the printed `passEnv` list: OpenClaw starts the
+policy with an empty environment and copies in only those names, so without it
+the judge never sees the key. If the judge cannot answer, the install waits for
+the user instead of going through.
 
 **Turning it off.** The gate is persistent. Once that block is in the user's
 OpenClaw config it scans every skill install from then on and fails closed on

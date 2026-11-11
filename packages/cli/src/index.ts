@@ -47,6 +47,23 @@ function parseBlockAt(value: string): number {
   return score;
 }
 
+function parseRuns(value: string): number {
+  const runs = Number(value);
+  if (!Number.isInteger(runs) || runs < 1 || runs > 5) throw new InvalidArgumentError("--semantic-runs must be an integer from 1 to 5");
+  return runs;
+}
+
+function parseMs(value: string): number {
+  const ms = Number(value);
+  if (!Number.isInteger(ms) || ms < 100 || ms > 600_000) throw new InvalidArgumentError("--semantic-timeout must be milliseconds from 100 to 600000");
+  return ms;
+}
+
+function parseOnError(value: string): "warn" | "ignore" {
+  if (value !== "warn" && value !== "ignore") throw new InvalidArgumentError("--semantic-on-error must be warn or ignore");
+  return value;
+}
+
 const program = new Command();
 
 program
@@ -60,7 +77,16 @@ program
   .argument("<target>", "Path to skill folder or SKILL.md file")
   .option("--format <format>", "Output format: terminal, json, or sarif", "terminal")
   .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
-  .option("--semantic", "Unsupported in CLI; exits with an error (semantic analysis is API-only)")
+  .option("--semantic", "Add an LLM judge with your own key (ANTHROPIC_API_KEY, or CLAWVET_LLM_* for OpenAI-compatible and local models)")
+  .option("--semantic-runs <n>", "Judge runs to majority-vote (1-5)", parseRuns)
+  .option("--semantic-timeout <ms>", "Total judge deadline in milliseconds", parseMs)
+  .option("--semantic-cache", "Cache judge verdicts by content under ~/.cache/clawvet")
+  .option("--baseline <path>", "Accept findings recorded in a baseline file or directory (kept outside the skill)")
+  .option("--write-baseline <file>", "Write a baseline accepting every current finding and coverage gap")
+  .option("--reason <text>", "Why the findings in --write-baseline are accepted (required with it)")
+  .option("--expires <iso>", "Expiry for --write-baseline entries, e.g. 2027-01-01T00:00:00Z")
+  .option("--osv", "Look up pinned dependencies on OSV.dev (network)")
+  .option("--osv-cache", "Cache OSV results under ~/.cache/clawvet")
   .option("--remote", "Fetch skill from ClawHub by name instead of local path")
   .option("-q, --quiet", "Suppress all output, exit code only (0=pass, 1=fail)")
   .option("--strict", "Fail on every gap in inspection coverage, not only clear evidence")
@@ -74,6 +100,15 @@ program
       format: opts.format,
       failOn: opts.failOn,
       semantic: opts.semantic,
+      semanticRuns: opts.semanticRuns,
+      semanticTimeoutMs: opts.semanticTimeout,
+      semanticCache: opts.semanticCache,
+      baseline: opts.baseline,
+      writeBaseline: opts.writeBaseline,
+      reason: opts.reason,
+      expires: opts.expires,
+      osv: opts.osv,
+      osvCache: opts.osvCache,
       remote: opts.remote,
       quiet: opts.quiet,
       strict: opts.strict,
@@ -105,6 +140,14 @@ program
   .option("--approval <file>", "Require a matching operator-owned approval receipt")
   .option("--print-config", "Print a ready-to-paste OpenClaw installPolicy config with resolved paths")
   .option("--strict", "Block every gap in inspection coverage and ask about reviewable ones")
+  .option("--semantic", "Add an LLM judge with your own key, read from the gateway's environment")
+  .option("--semantic-runs <n>", "Judge runs to majority-vote (1-5)", parseRuns)
+  .option("--semantic-timeout <ms>", "Judge deadline in milliseconds (default 8000)", parseMs)
+  .option("--semantic-cache", "Cache judge verdicts by content under ~/.cache/clawvet")
+  .option("--semantic-on-error <policy>", "When the judge is unavailable: warn (default) or ignore", parseOnError)
+  .option("--baseline <path>", "Operator baseline file, or a directory of them, accepting known findings")
+  .option("--osv", "Look up pinned dependencies on OSV.dev (network; off by default)")
+  .option("--osv-cache", "Cache OSV results under ~/.cache/clawvet")
   .action(async (opts) => {
     // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
     // which lints workspace config rather than gating installs. Kept as an
@@ -115,7 +158,12 @@ program
         "clawvet: 'policy' is deprecated, use 'gate'. Update args to [\"gate\"] in your installPolicy config.\n"
       );
     }
-    await gateCommand({ blockAt: opts.blockAt, printConfig: opts.printConfig, approval: opts.approval, strict: opts.strict });
+    await gateCommand({
+      blockAt: opts.blockAt, printConfig: opts.printConfig, approval: opts.approval, strict: opts.strict,
+      semantic: opts.semantic, semanticRuns: opts.semanticRuns, semanticTimeoutMs: opts.semanticTimeout,
+      semanticCache: opts.semanticCache, semanticOnError: opts.semanticOnError,
+      baseline: opts.baseline, osv: opts.osv, osvCache: opts.osvCache,
+    });
   });
 
 program

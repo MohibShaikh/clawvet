@@ -1,0 +1,23 @@
+{
+  "measurement": "measured",
+  "runtime": "v22.17.1",
+  "date": "2026-11-10T08:30:01.756Z",
+  "latency": {
+    "skills": 500,
+    "pythonFiles": 630,
+    "coldMs": 42.609081999999944,
+    "medianMs": 6.465630000000601,
+    "p95Ms": 40.23748400000022,
+    "maxMs": 265.0360550000005,
+    "truncatedSkills": 3,
+    "sampleSeed": "0xc1a047",
+    "cohortSha256": "83b032cc26179c9c9bfd19c741bc3bf22e2d839d44862001e9dd956707040e5e"
+  },
+  "benign": {
+    "skills": 500,
+    "withPython": 52,
+    "highOrCritical": 2,
+    "sampleSeed": "0xb3616e",
+    "cohortSha256": "ec80691e3cbf226b4b50b37b64642b64d3605d2defe471b7b748d056bec4e04f"
+  }
+}
