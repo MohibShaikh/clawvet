@@ -33,3 +33,11 @@ paper/
 # Kept locally; regenerate with benchmarks/gate-eval/evaluate.mts.
 benchmarks/gate-eval/results/msb-*
 benchmarks/gate-eval/.codex-*.log
+
+# IDE
+.idea/
+
+# MalSkillBench-derived results under any name (license is research-only).
+benchmarks/gate-eval/results/maliciousskillbench-*
+# Install-gate paper sources stay local until submission.
+research/
