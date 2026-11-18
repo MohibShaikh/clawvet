@@ -7,6 +7,7 @@ import type { Finding, Recommendation } from "@clawvet/shared";
 import { assembleSkill, coverageReason, coverageWarning, type AssemblyResult } from "../assemble.js";
 import { applyProfile, type Profile } from "../policy.js";
 import { createSemanticJudge, judgmentGap, resolveSemanticConfig, SemanticUnavailableError, type SemanticJudgment } from "../semantic/judge.js";
+import { buildEvidence, classifyV2, createJudgeV2, type EvidenceItem, type JudgedV2 } from "../semantic/judge2.js";
 import { acceptCoverage, finishScan, startOsv, type PassOptions } from "../passes.js";
 import { loadBaselines } from "../suppress.js";
 
@@ -182,6 +183,8 @@ export const DEFAULT_SEMANTIC_TIMEOUT_MS = 8000;
  */
 export interface SemanticGate {
   judge?: (content: string, timeoutMs?: number) => Promise<SemanticJudgment>;
+  /** The v2 judge, which decides the class from the skill and ClawVet's evidence. */
+  judgeV2?: (content: string, evidence: EvidenceItem[], timeoutMs?: number) => Promise<JudgedV2>;
   /** Milliseconds left for the judge, from the gate's absolute deadline. */
   timeoutMs?: number;
   unavailable?: string;
@@ -199,7 +202,7 @@ export function semanticGate(
       runs: options.semanticRuns ?? 1,
       cache: options.semanticCache ?? false,
     });
-    return { judge: createSemanticJudge(config), timeoutMs, onError };
+    return { judge: createSemanticJudge(config), judgeV2: createJudgeV2(config), timeoutMs, onError };
   } catch (err) {
     return { unavailable: err instanceof Error ? err.message : "semantic judge unavailable", onError };
   }
@@ -429,6 +432,11 @@ export async function evaluateSkill(
     const passes = options.passes ?? {};
     assembly = acceptCoverage(assembly, passes).assembly;
     const coverage = applyProfile(assembly.coverage, options.profile);
+    // With the v2 judge, coverage gaps are evidence it weighs, not an early
+    // block; what ClawVet could not read at all still blocks inside classifyV2.
+    if (options.semantic?.judgeV2 && options.profile !== "strict") {
+      return await evaluateWithJudge(skillDir, assembly, coverage, options, blockAt);
+    }
     if (coverage.block.length) return block(coverageReason(coverage.block), assembly);
     ask = coverage.ask;
     // Coverage has already blocked what cannot be read, so the judge only sees
@@ -472,20 +480,7 @@ export async function evaluateSkill(
   // a skill put in a finding.
   // Lines are positions in the assembled bundle; the operator needs the file and
   // the line inside it. Most severe first, so the notice budget keeps those.
-  const rank = { critical: 0, high: 1, medium: 2, low: 3 };
-  const locate = (line: number) => assembly.coverage.files.find((f) => line >= f.startLine && line <= f.endLine);
-  const findings: PolicyFinding[] = [...result.findings].sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 20).map((f) => {
-    const file = f.lineNumber ? locate(f.lineNumber) : undefined;
-    return {
-      ruleId: f.id ?? f.category,
-      // String(): a finding built from parsed YAML can carry a non-string value.
-      message: String(f.description || f.title).slice(0, 200),
-      severity: SEVERITY[f.severity],
-      ...(file ? { file: file.path } : {}),
-      ...(f.evidence ? { evidence: String(f.evidence).slice(0, 120) } : {}),
-      ...(f.lineNumber ? { line: file ? f.lineNumber - file.startLine + 1 : f.lineNumber } : {}),
-    };
-  });
+  const findings = policyFindings(result.findings, assembly);
 
   if (decision === "allow") {
     // The operator asked for a semantic check and did not get one. Under "warn"
@@ -513,4 +508,73 @@ export async function evaluateSkill(
       findings,
     },
   };
+}
+
+// Lines are positions in the assembled bundle; the operator needs the file and
+// the line inside it. Most severe first, so the notice budget keeps those.
+function policyFindings(all: Finding[], assembly: AssemblyResult): PolicyFinding[] {
+  const rank = { critical: 0, high: 1, medium: 2, low: 3 };
+  const locate = (line: number) => assembly.coverage.files.find((f) => line >= f.startLine && line <= f.endLine);
+  return [...all].sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 20).map((f) => {
+    const file = f.lineNumber ? locate(f.lineNumber) : undefined;
+    return {
+      ruleId: f.id ?? f.category,
+      // String(): a finding built from parsed YAML can carry a non-string value.
+      message: String(f.description || f.title).slice(0, 200),
+      severity: SEVERITY[f.severity],
+      ...(file ? { file: file.path } : {}),
+      ...(f.evidence ? { evidence: String(f.evidence).slice(0, 120) } : {}),
+      ...(f.lineNumber ? { line: file ? f.lineNumber - file.startLine + 1 : f.lineNumber } : {}),
+    };
+  });
+}
+
+/**
+ * The gate with the v2 judge: the static passes produce evidence, the judge
+ * decides the class, and classifyV2 maps it to an action with the floors that
+ * no judgment can lower (unreadable content blocks; code fetched at run time
+ * asks). If the judge is unavailable the static decision stands, and under
+ * --semantic-on-error warn an allow becomes a warn.
+ */
+async function evaluateWithJudge(
+  skillDir: string, assembly: AssemblyResult, coverage: ReturnType<typeof applyProfile>,
+  options: { blockAt?: number; skillName?: string; semantic?: SemanticGate; passes?: PassOptions }, blockAt: number,
+): Promise<Evaluation> {
+  const semantic = options.semantic!;
+  const passes = options.passes ?? {};
+  const evaluated = { coverage: assembly.coverage, content: assembly.content };
+  const osv = startOsv(assembly.content, assembly.coverage.files, passes.osv);
+  let result = await scanSkill(assembly.content, { skillName: options.skillName ?? basename(skillDir), files: assembly.coverage.files });
+  const gaps = [...assembly.coverage.issues, ...assembly.coverage.warnings];
+  const evidence = buildEvidence(result, gaps);
+  // The judge starts before the network passes finish, so their waits overlap.
+  const judging = semantic.judgeV2!(assembly.content, evidence, semantic.timeoutMs);
+  judging.catch(() => {});
+  const finished = await finishScan(result, assembly, osv, passes);
+  result = finished.result;
+  if (finished.osvErrors.length) process.stderr.write(`clawvet: OSV lookup incomplete: ${finished.osvErrors.join("; ")}\n`);
+  const disqualified = result.findings.some((f) => f.disqualifying);
+  const staticAction: Decision = coverage.block.length || disqualified || result.riskScore >= blockAt ? "block"
+    : DECISION[result.recommendation ?? "warn"] === "allow" && !coverage.ask.length ? "allow" : "warn";
+  let judged: JudgedV2 | undefined, failure: string | undefined;
+  try { judged = await judging; }
+  catch (err) {
+    if (!(err instanceof SemanticUnavailableError)) throw err;
+    failure = err.message;
+  }
+  const findingsBlock = result.riskScore >= blockAt || result.findings.some((f) => f.severity === "critical");
+  const c = classifyV2({ judgment: judged?.judgment, truncated: judged?.truncated ?? false, staticAction, disqualified, gaps, evidence, findingsBlock });
+  const findings = policyFindings([...result.findings, ...(judged?.judgment.findings ?? [])], assembly);
+  if (failure) {
+    process.stderr.write(`clawvet: semantic check unavailable, using static verdict: ${failure}\n`);
+    if (c.action === "allow" && semantic.onError === "warn") {
+      return { ...evaluated, response: { protocolVersion: PROTOCOL_VERSION, decision: "warn", reason: `Semantic check unavailable: ${failure} Static checks found nothing to block.`.slice(0, REASON_MAX), findings } };
+    }
+  }
+  if (c.action === "allow") return { ...evaluated, response: { protocolVersion: PROTOCOL_VERSION, decision: "allow", findings } };
+  const lead = judged?.judgment.findings.find((f) => f.severity !== "low") ?? judged?.judgment.findings[0];
+  const reason = judged
+    ? `ClawVet: ${c.verdict} (${c.why}).${lead ? ` ${lead.description}` : ""}`
+    : coverage.block.length ? coverageReason(coverage.block) : summarize(result.skillName, result.riskGrade, result.riskScore, result.findings);
+  return { ...evaluated, response: { protocolVersion: PROTOCOL_VERSION, decision: c.action, reason: reason.slice(0, REASON_MAX), findings } };
 }

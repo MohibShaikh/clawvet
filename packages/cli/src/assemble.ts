@@ -25,7 +25,7 @@ export interface AssemblyIssue {
 
 // The skill-root spellings real skills use in their commands. Each stands for
 // the bundle itself, so the path after it is a bundled file to inspect.
-const SKILL_ROOT = /(?:\{\{\s*(?:baseDir|SKILL_DIR)\s*\}\}|\{(?:baseDir|SKILL_DIR)\}|\$\{(?:CLAUDE_SKILL_DIR|SKILL_DIR)\}|\$SKILL_DIR\b|<skill[_-](?:dir|path)>)\//gi;
+const SKILL_ROOT = /(?:\{\{\s*(?:baseDir|SKILL_DIR|SKILL_BASE)\s*\}\}|\{(?:baseDir|SKILL_DIR|SKILL_BASE)\}|\$\{(?:CLAUDE_SKILL_DIR|SKILL_DIR)\}|\$SKILL_DIR\b|<skill[_-](?:dir|path)>)\//gi;
 
 export interface AssemblyResult {
   content: string;
@@ -104,8 +104,16 @@ function references(text: string): string[] {
 
 // An agent's skill directory under ~ (see skill-dirs.ts): <name>, then the file.
 // ~/.clawdbot, ~/clawd and ~/workspace are older OpenClaw (Clawdbot) layouts
-// that published skills still name.
-const HOME_SKILL_PATH = /^~\/(?:\.claude|\.agents|\.clawdbot|clawd|workspace|\.openclaw(?:\/workspace(?:\/\.agents)?)?)\/skills\/([^/]+)\/(.+)$/;
+// that published skills still name; anything under ~/.openclaw, such as an
+// extension's skills/, is OpenClaw's own state.
+const HOME_SKILL_PATH = /^~\/(?:\.claude|\.agents|\.clawdbot|clawd|workspace|\.openclaw(?:\/[\w.-]+)*?)\/skills\/([^/]+)\/(.+)$/;
+// The same from a workspace root: skills/<name>/..., or an agent's dot folder
+// (.claude/skills, .openclaw/workspace/skills, .kiro/skills, ...).
+const WORKSPACE_SKILL_PATH = /^(?:\.\/)?(?:\{workspace\}\/)?(?:\.[\w-]+\/(?:workspace\/)?)?skills\/([^/]+)\/(.+)$/;
+// Sourcing a virtualenv's activate script sets up the shell; it runs no code
+// the skill ships. A shell profile is not exempt: a skill can append to
+// ~/.zshrc and then source it.
+const SHELL_SETUP = /(?:^|\/)bin\/activate(?:\.(?:fish|csh|ps1))?$/;
 
 // "/path/to/script.py" is a documentation placeholder, not a location.
 const PLACEHOLDER_PATH = /^\/(?:path\/to|your|absolute\/path)\//i;
@@ -314,7 +322,10 @@ export function assembleSkill(
   // the skill downloads it, so the bundle need not have it. Every side of a
   // download comparison must map the same way, or the paths never match.
   const ownCopy = (ref: string, created = false) => {
-    const installed = isAbsolute(ref) ? ref.match(/\/skills\/([^/]+)\/(.+)$/) : ref.match(HOME_SKILL_PATH);
+    // A bundled file by that exact path is itself, not an installed copy.
+    const installed = isAbsolute(ref) ? ref.match(/\/skills\/([^/]+)\/(.+)$/)
+      : ref.startsWith("~/") ? ref.match(HOME_SKILL_PATH)
+      : files.has(ref) ? null : ref.match(WORKSPACE_SKILL_PATH);
     return installed && skillNames.has(installed[1].toLowerCase()) && (created || files.has(installed[2])) ? installed[2] : ref;
   };
   // An agent can find and run any script installed with the skill, so bundled
@@ -395,7 +406,9 @@ export function assembleSkill(
       const downloaded = downloads.some((download) => same(download, { path: source.path, target: ownCopy(original, true) }));
       // A file only mentioned, such as "Node.js" or "Three.js" in prose, cannot
       // hide code. Missing matters when something runs it.
-      if (!matches.length && !downloaded && runs) {
+      // A word with no "/" or "." ("node after recovery") is prose, not a path,
+      // and nothing in the bundle can hide behind it.
+      if (!matches.length && !downloaded && runs && /[/.]/.test(ref) && !SHELL_SETUP.test(ref)) {
         issue(ref, "missing-file", undefined, source.path);
       }
       if (runs) for (const path of matches) executedPaths.add(relative(root, path).split(sep).join("/"));

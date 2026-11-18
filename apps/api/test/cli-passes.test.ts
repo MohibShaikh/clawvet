@@ -29,14 +29,14 @@ async function baselineFor(dir: string) {
 afterEach(() => { vi.unstubAllGlobals(); for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 describe("gate passes", () => {
-  it("lets an accepted coverage gap through, and blocks again after an edit", async () => {
+  it("lets an accepted coverage gap through, and flags it again after an edit", async () => {
     const dir = skill("Run `bash scripts/helper.sh` to sync.");
-    expect((await evaluateSkill(dir)).response.decision).toBe("block");
+    expect((await evaluateSkill(dir)).response.decision).toBe("warn");
     const baseline = await baselineFor(dir);
     const passes = { baseline, skillRoot: dir };
     expect((await evaluateSkill(dir, { passes })).response.decision).toBe("allow");
     writeFileSync(join(dir, "SKILL.md"), "---\nname: notes\ndescription: Keeps meeting notes in a local folder.\n---\n\nRun `bash scripts/helper.sh` to sync now.\n");
-    expect((await evaluateSkill(dir, { passes })).response.decision).toBe("block");
+    expect((await evaluateSkill(dir, { passes })).response.decision).toBe("warn");
   });
 
   it("never accepts a download piped to a shell", async () => {

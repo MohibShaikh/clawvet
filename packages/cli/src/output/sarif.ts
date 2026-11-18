@@ -53,7 +53,10 @@ export function printSarifResult(result: ScanResult & { coverage?: AssemblyResul
   // that made the reference, or on the entry file.
   const gaps = result.coverage ? applyProfile(result.coverage, options.profile) : { block: [], ask: [] };
   const known = new Set(files.map((f) => f.path));
-  const gapResults = [...gaps.block.map((i) => ({ i, severity: "high" as const })), ...gaps.ask.map((i) => ({ i, severity: "medium" as const }))]
+  // A gap that leaves code uninspected (coverage.issues) fails the scan whatever
+  // the gate does with it, so it is an error; a reviewable one is a warning.
+  const incomplete = new Set(result.coverage?.issues ?? []);
+  const gapResults = [...gaps.block, ...gaps.ask].map((i) => ({ i, severity: incomplete.has(i) ? "high" as const : "medium" as const }))
     .map(({ i, severity }) => {
       const id = `coverage/${i.rule}`;
       if (!rules.has(id)) rules.set(id, { id, title: `Inspection gap: ${i.rule}`, description: i.reason, severity });

@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.15.0
+version: 0.16.0
 description: Scan a third-party OpenClaw skill with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
 author: MohibShaikh
 license: MIT
@@ -115,8 +115,12 @@ OpenClaw rejects symlinked executables, and `npm i -g` installs a symlink.
 
 `clawvet gate --print-config --semantic` adds the LLM judge. Keep the printed
 `passEnv` list: OpenClaw starts the policy with an empty environment and copies
-in only those names, so without it the judge never sees the key. If the judge
-cannot answer, the install waits for the user instead of going through.
+in only those names, so without it the judge never sees the key. With it, the
+judge decides each install from the skill and ClawVet's evidence; content
+ClawVet cannot read still blocks, and code fetched at run time or anything the
+static findings would block still asks. If
+the judge cannot answer, the install waits for the user instead of going
+through.
 
 The gate is persistent. Once the block is in the user's OpenClaw config it
 scans every skill install and fails closed on anything it cannot parse, so say

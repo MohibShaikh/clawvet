@@ -14,11 +14,16 @@ export function applyCoverage(result: ScanResult, assembly: AssemblyResult, prof
     // ignore policies, and cache storage.
     return { ...result, status: "failed", recommendation: "block", summary: coverageReason(block), coverage: assembly.coverage };
   }
+  // Some gaps the default profile only asks about (a missing script, a path
+  // outside the skill) still leave code uninspected. The install gate asks the
+  // operator; a scan has no one to ask, so CI, audit and badges still treat the
+  // inspection as failed. A baseline accepts a known gap.
+  const status = ask.some((gap) => assembly.coverage.issues.includes(gap)) ? "failed" : result.status;
   // A reviewable gap lowers a clean verdict to warn and leaves a worse one alone.
   if (ask.length && result.recommendation === "approve") {
-    return { ...result, recommendation: "warn", summary: coverageWarning(ask), coverage: assembly.coverage };
+    return { ...result, status, recommendation: "warn", summary: coverageWarning(ask), coverage: assembly.coverage };
   }
-  return { ...result, coverage: assembly.coverage };
+  return { ...result, status, coverage: assembly.coverage };
 }
 
 export async function scanLocalSkill(

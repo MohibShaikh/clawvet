@@ -7,6 +7,11 @@
 // approved without reading, which protects no one. Chosen on the tune half of
 // MalSkillBench: the quiet rules caught few attacks the blocking rules missed,
 // and benchmarks/gate-eval/simulate.mjs replays the comparison.
+// A referenced script that is not shipped, or a path that leads outside the
+// skill, asks rather than blocks: on SkillTrustBench (tuned on the cases outside
+// its 556-case leaderboard subset) those two were the main reason benign skills
+// were blocked, and a third of the skills they alone stopped were malicious, too
+// many to let through quietly. Each message says what to check.
 
 import type { AssemblyIssue, AssemblyResult } from "./assemble.js";
 
@@ -35,10 +40,10 @@ export const RULES = {
   "nesting-limit": { message: "Nested inline execution exceeds the static inspection depth limit", strict: "block", default: "block" },
   "missing-skill": { message: "Cannot read skill directory", strict: "block", default: "block" },
   "remote-manifest": { message: "Remote scan fetched only the manifest; stage the full skill locally before approving installation", strict: "block", default: "block" },
-  "missing-file": { message: "Referenced file is missing or unsupported", strict: "block", default: "block" },
+  "missing-file": { message: "Referenced script is not in the skill; find out where it comes from before approving", strict: "block", default: "ask" },
   // Code outside the skill, or a bundled file swapped at run time.
   "symlink-escape": { message: "Reference escapes the skill root or traverses a symlink", strict: "block", default: "block" },
-  "escape": { message: "Reference escapes the skill root or is unresolved", strict: "block", default: "block" },
+  "escape": { message: "Path leads outside the skill or cannot be resolved; check what it points to before approving", strict: "block", default: "ask" },
   "decoy-path": { message: "Path resolves inside the skill from its script's directory but outside it from the skill root; make it relative to the skill root, or cd to the script's directory first", strict: "block", default: "block" },
   "download-executed": { message: "Downloaded file is executed; the staged copy cannot establish coverage of its runtime replacement", strict: "block", default: "block" },
   "download-followed": { message: "Downloaded file is used as instructions; the staged copy cannot establish coverage of its runtime replacement", strict: "block", default: "block" },

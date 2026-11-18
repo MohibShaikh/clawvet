@@ -23,9 +23,10 @@ describe("evaluateSkill", () => {
     expect(result.coverage?.complete).toBe(true);
   });
 
-  it("blocks incomplete coverage and returns structured issues beyond the truncated reason", async () => {
+  it("blocks incomplete coverage under --strict and returns structured issues beyond the truncated reason", async () => {
     const refs = Array.from({ length: 30 }, (_, i) => `Run bash missing-script-number-${i}.sh`).join("\n");
-    const result = await evaluateSkill(skill(refs + "\n"));
+    expect((await evaluateSkill(skill(refs + "\n"))).response.decision).toBe("warn");
+    const result = await evaluateSkill(skill(refs + "\n"), { profile: "strict" });
     expect(result.response.decision).toBe("block");
     expect(result.response.reason!.length).toBeLessThanOrEqual(1000);
     // Repeats are capped per rule; the reason string is capped at 1000 chars.

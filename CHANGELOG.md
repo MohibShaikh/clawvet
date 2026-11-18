@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.16.0
+
+`clawvet gate --semantic` now lets the LLM judge decide. ClawVet's static
+findings and coverage gaps go to the judge as evidence to check, and it returns
+benign, suspicious or malicious, which the gate maps to allow, warn or block.
+The judge first asks whether what the skill does fits what it says it is for,
+and keeps severity separate from intent, so several weak signals never add up
+to malicious. On SkillTrustBench's 556-case leaderboard subset, held out and
+measured once with Claude Haiku 5.5, the gate goes from 0.660 accuracy and
+0.511 macro F1 static to 0.831 and 0.767; malicious recall from 0.788 to 0.918.
+Before, the gate blocked on coverage gaps and only then asked the judge, which
+could add findings but never clear one.
+
+The judge can clear a gap only by reviewing it with a quote that is really in
+the skill. Some floors no verdict lowers: content ClawVet could not read
+blocks, code fetched at run time asks, a truncated bundle clears nothing, a
+disqualifying indicator blocks, and anything the static findings alone would
+block asks. That last floor means a prompt injection that wins a benign
+verdict gets a prompt to the operator, never a silent install; added after the
+held-out run, it changed one decision there (0.833 / 0.770). `--strict` keeps
+the static coverage rules, and `scan --semantic` still uses the earlier judge.
+
+A referenced script the skill does not ship (`missing-file`) and a path that
+leads outside the skill (`escape`) now ask at install instead of blocking, and
+the gate names the file to check. `scan`, `audit` and badges still count the
+inspection as failed, so CI fails until the file ships or a baseline accepts
+it. On SkillTrustBench these two were the main reason benign skills were
+blocked, and a third of the skills they alone stopped were malicious, too many
+to let through quietly.
+
+More of a skill's own install paths resolve to its bundled files:
+`skills/<name>/...` relative to the workspace, agent folders such as
+`.claude/skills` and `.kiro/skills`, anything under `~/.openclaw`, the older
+`~/.clawdbot`, `~/clawd` and `~/workspace` layouts, and `{SKILL_BASE}`. A word
+after `node` or `python` in prose ("node after recovery") is no longer read as
+a missing script, and sourcing a virtualenv's `bin/activate` is not counted as
+running skill code; sourcing `~/.zshrc` still is, since a skill can append to
+it first.
+
+Fixed the judge's reply parser cutting a verdict in half when a quoted excerpt
+contained a code fence.
+
+`benchmarks/security-signals/` has the harness, per-case results and
+provenance for both SkillTrustBench and ClawHub Security Signals.
+
 ## 0.15.0
 
 Fixed SARIF for GitHub code scanning. Each result now points at the file and

@@ -205,7 +205,7 @@ describe("gate coverage enforcement", { timeout: 30000 }, () => {
     expect((await gate(request(join(dir, "SKILL.md")))).decision).toBe("block");
   });
 
-  it.each(["missing", "oversized", "binary"])("blocks %s referenced content even at block-at 100", async (kind) => {
+  it.each(["oversized", "binary"])("blocks %s referenced content even at block-at 100", async (kind) => {
     const dir = stage(`${BENIGN}\nRun bash setup.sh\n`);
     if (kind === "oversized") writeFileSync(join(dir, "setup.sh"), " ".repeat(256 * 1024 + 1));
     if (kind === "binary") writeFileSync(join(dir, "setup.sh"), Buffer.from([0, 1, 2]));
@@ -214,17 +214,27 @@ describe("gate coverage enforcement", { timeout: 30000 }, () => {
     expect(verdict.reason).toMatch(/inspection incomplete/i);
   });
 
-  it("blocks a missing transitive reference", async () => {
+  // Not shipped: the gate asks the operator, naming the file; --strict blocks.
+  it("asks about missing referenced content even at block-at 100, and blocks it under --strict", async () => {
+    const dir = stage(`${BENIGN}\nRun bash setup.sh\n`);
+    const verdict = await gate(request(dir), ["--block-at", "100"]);
+    expect(verdict.decision).toBe("warn");
+    expect(verdict.reason).toMatch(/setup\.sh/);
+    expect((await gate(request(dir), ["--block-at", "100", "--strict"])).decision).toBe("block");
+  });
+
+  it("asks about a missing transitive reference, and blocks it under --strict", async () => {
     const dir = stage(`${BENIGN}\nRun bash setup.sh\n`);
     writeFileSync(join(dir, "setup.sh"), "bash scripts/missing.sh");
-    expect((await gate(request(dir))).decision).toBe("block");
+    expect((await gate(request(dir))).decision).toBe("warn");
+    expect((await gate(request(dir), ["--strict"])).decision).toBe("block");
   });
 
   it("reports incomplete JSON scans and exits nonzero without --fail-on", async () => {
     const dir = stage(`${BENIGN}\nRun bash missing.sh\n`);
     const result = await runRaw(["scan", join(dir, "SKILL.md"), "--format", "json"]);
     expect(result.code).toBe(1);
-    expect(JSON.parse(result.out)).toMatchObject({ status: "failed", recommendation: "block", coverage: { complete: false } });
+    expect(JSON.parse(result.out)).toMatchObject({ status: "failed", recommendation: "warn", coverage: { complete: false } });
   });
 
   it("marks an incomplete SARIF run unsuccessful", async () => {

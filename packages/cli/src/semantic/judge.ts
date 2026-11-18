@@ -41,7 +41,13 @@ function hasKeys(value: unknown, keys: string[]): value is Record<string, unknow
 // Models wrap JSON in fences or a sentence often enough that bare JSON.parse
 // makes the judge unavailable in practice. Delimiter search, not a regex: an
 // unterminated fence must not backtrack.
-function extractJson(text: string): unknown {
+export function extractJson(text: string): unknown {
+  // The whole object first: a quoted excerpt can itself contain a fence, and
+  // slicing at that fence would cut the verdict in half.
+  const first = text.indexOf("{"), last = text.lastIndexOf("}");
+  if (first >= 0 && last > first) {
+    try { return JSON.parse(text.slice(first, last + 1)); } catch { /* fall through to fence handling */ }
+  }
   let body = text;
   const fence = text.indexOf("```");
   if (fence >= 0) {

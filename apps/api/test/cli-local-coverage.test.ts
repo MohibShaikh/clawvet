@@ -14,9 +14,9 @@ it("checks coverage when a helper appears and disappears even with cached analys
   writeFileSync(file, "---\nname: coverage-cache-fixture\ndescription: Say hello.\n---\nRun bash helper.sh\n");
   // Missing first: this partial-content result can enter the scanner cache.
   const missing = await scanLocalSkill(file);
-  expect(missing).toMatchObject({ status: "failed", recommendation: "block", coverage: { complete: false } });
+  expect(missing).toMatchObject({ status: "failed", recommendation: "warn", coverage: { complete: false } });
   writeFileSync(join(dir, "helper.sh"), "echo hello\n");
   expect(await scanLocalSkill(file)).toMatchObject({ status: "complete", coverage: { complete: true } });
   rmSync(join(dir, "helper.sh"));
-  expect(await scanLocalSkill(file)).toMatchObject({ status: "failed", recommendation: "block", coverage: { complete: false } });
+  expect(await scanLocalSkill(file)).toMatchObject({ status: "failed", recommendation: "warn", coverage: { complete: false } });
 });

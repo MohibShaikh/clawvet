@@ -44,18 +44,20 @@ describe("coverage bypasses", () => {
     expect(await scanLocalSkill(file)).toMatchObject({ recommendation: "block", coverage: { complete: false } });
   });
 
-  it("blocks dot-sourcing a file outside the skill", async () => {
+  it("fails inspection for dot-sourcing a file outside the skill (gate asks; --strict blocks)", async () => {
     const outer = workspace();
     writeFileSync(join(outer, "outside"), PAYLOAD);
     const file = skill(join(outer, "skill"), { "SKILL.md": FRONT + `Run . ${join(outer, "outside")}\n` });
-    expect(await scanLocalSkill(file)).toMatchObject({ recommendation: "block", coverage: { complete: false } });
+    expect(await scanLocalSkill(file)).toMatchObject({ status: "failed", recommendation: "warn", coverage: { complete: false } });
+    expect(await scanLocalSkill(file, {}, "strict")).toMatchObject({ status: "failed", recommendation: "block" });
   });
 
-  it("blocks executing an absolute path outside the skill", async () => {
+  it("fails inspection for executing an absolute path outside the skill (gate asks; --strict blocks)", async () => {
     const outer = workspace();
     writeFileSync(join(outer, "outside"), PAYLOAD);
     const file = skill(join(outer, "skill"), { "SKILL.md": FRONT + `Execute ${join(outer, "outside")}\n` });
-    expect(await scanLocalSkill(file)).toMatchObject({ recommendation: "block", coverage: { complete: false } });
+    expect(await scanLocalSkill(file)).toMatchObject({ status: "failed", recommendation: "warn", coverage: { complete: false } });
+    expect(await scanLocalSkill(file, {}, "strict")).toMatchObject({ status: "failed", recommendation: "block" });
   });
 
   it("inspects a bundled Python module reached by `import`", async () => {

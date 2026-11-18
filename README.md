@@ -167,10 +167,23 @@ Print the config with `--semantic` to add the LLM judge. The printed block then
 lists the judge's key variables under `passEnv`. OpenClaw starts the policy
 with an empty environment and copies in only the names listed there, so without
 them the judge never sees its key. The key itself stays in the gateway's
-environment. The judge can add findings and can turn an allow into a warn, but
-it never removes a static finding. If it times out, has no key, cites nothing
-in the skill, or sees only a truncated bundle, an allow becomes a warn. Set
-`--semantic-on-error ignore` to keep the static verdict instead.
+environment.
+
+With `--semantic`, the gate's judge decides the verdict. ClawVet's static
+findings and coverage gaps go to it as evidence to check, and it returns
+benign, suspicious or malicious: allow, warn or block. It can clear a gap such
+as `eval` or a missing script only by reviewing it with a quote that is really
+in the skill, so a skill that tells the judge to approve it clears nothing.
+Some floors no verdict lowers: content ClawVet could not read blocks, code
+fetched at run time always asks, a truncated bundle clears nothing, a
+disqualifying indicator blocks, and anything the static findings alone would
+block at least asks. The skill's author writes the text the judge reads, so a
+prompt injection can win a benign verdict; these floors mean the most it wins
+is a prompt to you, never a silent install. If the judge times out or has no key, the
+static verdict stands and an allow becomes a warn; set
+`--semantic-on-error ignore` to keep the static verdict instead. `--strict`
+keeps the static coverage rules. `scan --semantic` still uses the earlier
+judge, which adds findings to the static scan.
 
 `--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
 bound to the hash of the file it came from, so editing that file brings the
@@ -208,14 +221,17 @@ is a table row, not a command.
 does. The default profile blocks on clear evidence that code is hidden, swapped,
 or fetched and run: a downloaded file that is later run or followed,
 instructions to download and run code, `curl | sh` from any host other than an
-exact trusted vendor installer such as `astral.sh` or `sh.rustup.rs`, a path
-outside the skill, encoded or remote execution, process calls and `eval` on
-unresolved arguments, and anything ClawVet could not read. Other gaps, such as
-a package fetched at install time with `npx`, a computed command, an unused
-download, or a document linked from outside the skill, pass quietly and stay
-listed in `coverage`. The gate then asks the operator only when the scan's own
-findings are borderline. A gate that asks too often gets switched off or
-approved without reading, which protects no one.
+exact trusted vendor installer such as `astral.sh` or `sh.rustup.rs`, encoded or
+remote execution, process calls and `eval` on unresolved arguments, and anything
+ClawVet could not read. A referenced script that the skill does not ship, or a
+path that leads outside the skill, asks instead: the gate stops the install and
+names the file to check, and `scan`, `audit` and badges still count the
+inspection as failed, so CI fails until you ship the file or accept it in a
+baseline. Other gaps, such as a package fetched at install time with `npx`, a
+computed command, an unused download, or a document linked from outside the
+skill, pass quietly and stay listed in `coverage`. The gate then asks the
+operator only when the scan's own findings are borderline. A gate that asks too
+often gets switched off or approved without reading, which protects no one.
 
 `--strict` on `gate` and `scan` blocks every gap in inspection and asks about
 the reviewable ones. Registry installs such as `pip install requests` are not a
@@ -294,7 +310,7 @@ These passes turn a skill and its bundled files into a list of findings.
 | 4 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
 | 5 | `dependency-checker`, `manifests` | npx -y auto-install, global npm installs, and pinned dependencies for `--osv` |
 | 6 | `typosquat-detector` | Levenshtein distance against top ClawHub skills |
-| 7 | `semantic` | Opt-in (`--semantic`), your own key. An LLM judge reads instructions and code for prompt injection and social engineering. A finding whose quote is not in the skill is dropped. |
+| 7 | `semantic` | Opt-in (`--semantic`), your own key. In the gate, an LLM judge weighs the static evidence and decides benign, suspicious or malicious; every quote it relies on must appear in the skill. |
 
 Passes 1 to 6 are static, need no key and cost nothing. Pass 7 and `--osv` use the network and run only when asked.
 
@@ -316,6 +332,19 @@ A disqualifying finding, such as a known C2 IP, pins the score to the F band on 
 Grades: A (0-10), B (11-25), C (26-50), D (51-75), F (76-100). The CLI recommends approve below 26, warn at 26-75, block at 76+.
 
 ## Benchmarks
+
+### SkillTrustBench, held out
+
+[SkillTrustBench](https://huggingface.co/datasets/cuhk-zhuque/SkillTrustBench) v1.1 has a fixed 556-case leaderboard subset: 316 malicious, 74 suspicious and 166 normal skills, with full bundles. Measured once on that subset, with the design frozen beforehand and the judge tuned only on the benchmark's other cases:
+
+| | Accuracy | Macro F1 | Malicious F1 | Malicious recall |
+|---|---|---|---|---|
+| `clawvet gate`, static | 0.660 | 0.511 | 0.815 | 0.788 |
+| `clawvet gate --semantic`, Claude Haiku 5.5 | 0.833 | 0.770 | 0.934 | 0.918 |
+
+The second row is the gate's action (allow / warn / block read as normal / suspicious / malicious) with the floors above. The last floor, that static findings which would block always ask, was added after the run and applied to the saved verdicts without new model calls; it changed one decision, and the design as frozen scored 0.831 / 0.767. The judge ran through the Claude Code CLI with the same prompt and parser as the API client. For comparison, the published leaderboard has Cisco Skill Scanner at 0.775 / 0.614, NVIDIA SkillSpector at 0.712 / 0.511, and Tencent A.I.G at 0.874 / 0.832 with the same Haiku model. How to reproduce it is in [benchmarks/security-signals](benchmarks/security-signals/README.md).
+
+### Earlier corpora
 
 This section scores `scanSkill()` on corpora assembled for 0.11.x. For the install gate as it ships, see [benchmarks/gate-eval](benchmarks/gate-eval/README.md). Its one held-out run, on 0.13.2 and the MalSkillBench test half, blocked 45.7% of malicious skills and 9.5% of benign ones, and only 12.5% of the prompt-injection group. 0.14.0 and 0.15.0 were measured on the tune half only. 0.14.0 stops 63.1% of malicious skills and 12.0% of benign ones; 0.15.0 changes no malicious decision there and moves four benign skills from block to allow. These numbers are not held out.
 

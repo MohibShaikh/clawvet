@@ -16,10 +16,12 @@ const rows = readFileSync(evalFile, "utf8").trim().split("\n").map((line) => JSO
 const { provenance } = rows.shift();
 const skills = rows.filter((row) => row.half === half);
 
-const missing = (issue) => /missing or unsupported/.test(issue.reason);
+// missing-file by rule ID (older result files carry only the old message text).
+// Under the default profile it is a warning since 0.15.1, so check both lists.
+const missing = (issue) => issue.rule === "missing-file" || /missing or unsupported/.test(issue.reason);
 // Assembly reports at most 20 issues, so a capped list cannot prove that every
 // referenced file was present.
-const complete = (row) => row.issues.length < 20 && !row.issues.some(missing);
+const complete = (row) => row.issues.length < 20 && ![...row.issues, ...(row.warnings ?? [])].some(missing);
 
 const columns = [["this build", Object.fromEntries(skills.map((row) => [`${row.tier}/${row.name}`, row.decision]))]];
 for (const arg of baselines) {

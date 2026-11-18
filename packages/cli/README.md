@@ -159,10 +159,23 @@ Print the config with `--semantic` to add the LLM judge. The printed block then
 lists the judge's key variables under `passEnv`. OpenClaw starts the policy
 with an empty environment and copies in only the names listed there, so without
 them the judge never sees its key. The key itself stays in the gateway's
-environment. The judge can add findings and can turn an allow into a warn, but
-it never removes a static finding. If it times out, has no key, cites nothing
-in the skill, or sees only a truncated bundle, an allow becomes a warn. Set
-`--semantic-on-error ignore` to keep the static verdict instead.
+environment.
+
+With `--semantic`, the gate's judge decides the verdict. ClawVet's static
+findings and coverage gaps go to it as evidence to check, and it returns
+benign, suspicious or malicious: allow, warn or block. It can clear a gap such
+as `eval` or a missing script only by reviewing it with a quote that is really
+in the skill, so a skill that tells the judge to approve it clears nothing.
+Some floors no verdict lowers: content ClawVet could not read blocks, code
+fetched at run time always asks, a truncated bundle clears nothing, a
+disqualifying indicator blocks, and anything the static findings alone would
+block at least asks. The skill's author writes the text the judge reads, so a
+prompt injection can win a benign verdict; these floors mean the most it wins
+is a prompt to you, never a silent install. If the judge times out or has no key, the
+static verdict stands and an allow becomes a warn; set
+`--semantic-on-error ignore` to keep the static verdict instead. `--strict`
+keeps the static coverage rules. `scan --semantic` still uses the earlier
+judge, which adds findings to the static scan.
 
 `--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
 bound to the hash of the file it came from, so editing that file brings the
@@ -200,14 +213,17 @@ is a table row, not a command.
 does. The default profile blocks on clear evidence that code is hidden, swapped,
 or fetched and run: a downloaded file that is later run or followed,
 instructions to download and run code, `curl | sh` from any host other than an
-exact trusted vendor installer such as `astral.sh` or `sh.rustup.rs`, a path
-outside the skill, encoded or remote execution, process calls and `eval` on
-unresolved arguments, and anything ClawVet could not read. Other gaps, such as
-a package fetched at install time with `npx`, a computed command, an unused
-download, or a document linked from outside the skill, pass quietly and stay
-listed in `coverage`. The gate then asks the operator only when the scan's own
-findings are borderline. A gate that asks too often gets switched off or
-approved without reading, which protects no one.
+exact trusted vendor installer such as `astral.sh` or `sh.rustup.rs`, encoded or
+remote execution, process calls and `eval` on unresolved arguments, and anything
+ClawVet could not read. A referenced script that the skill does not ship, or a
+path that leads outside the skill, asks instead: the gate stops the install and
+names the file to check, and `scan`, `audit` and badges still count the
+inspection as failed, so CI fails until you ship the file or accept it in a
+baseline. Other gaps, such as a package fetched at install time with `npx`, a
+computed command, an unused download, or a document linked from outside the
+skill, pass quietly and stay listed in `coverage`. The gate then asks the
+operator only when the scan's own findings are borderline. A gate that asks too
+often gets switched off or approved without reading, which protects no one.
 
 `--strict` on `gate` and `scan` blocks every gap in inspection and asks about
 the reviewable ones. Registry installs such as `pip install requests` are not a

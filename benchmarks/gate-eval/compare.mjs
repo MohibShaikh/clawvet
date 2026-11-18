@@ -21,8 +21,10 @@ import { join } from "node:path";
 const [evalFile, baselineFile, skillsDir, half, cohort, ...flags] = process.argv.slice(2);
 const json = flags.includes("--json");
 const decontaminated = flags.includes("--decontaminated");
-const missing = (issue) => /missing or unsupported/.test(issue.reason);
-const complete = (row) => row.issues.length < 20 && !row.issues.some(missing);
+// missing-file by rule ID (older result files carry only the old message text).
+// Under the default profile it is a warning since 0.15.1, so check both lists.
+const missing = (issue) => issue.rule === "missing-file" || /missing or unsupported/.test(issue.reason);
+const complete = (row) => row.issues.length < 20 && ![...row.issues, ...(row.warnings ?? [])].some(missing);
 
 const lines = readFileSync(evalFile, "utf8").trim().split("\n").map((line) => JSON.parse(line));
 const { provenance } = lines.shift();

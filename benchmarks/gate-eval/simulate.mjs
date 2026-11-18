@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 
 const [evalFile, half] = process.argv.slice(2);
 const rows = readFileSync(evalFile, "utf8").trim().split("\n").slice(1).map((line) => JSON.parse(line))
-  .filter((row) => row.half === half && row.issues.length < 20 && !row.issues.some((i) => /missing or unsupported/.test(i.reason)));
+  .filter((row) => row.half === half && row.issues.length < 20 && ![...row.issues, ...(row.warnings ?? [])].some((i) => i.rule === "missing-file" || /missing or unsupported/.test(i.reason)));
 
 // Failures that mean the gate could not see the code at all, or saw it being
 // swapped. These block in every policy.
