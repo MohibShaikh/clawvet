@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.16.0
+version: 0.16.1
 description: Scan a third-party OpenClaw skill with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
 author: MohibShaikh
 license: MIT
@@ -83,8 +83,9 @@ inspection.
 ## Choices that stay with the user
 
 - **The LLM judge.** Static rules catch little prompt injection.
-  `clawvet scan <path> --semantic` adds a judge that reads the instructions,
-  on the user's own key: `ANTHROPIC_API_KEY`, or `CLAWVET_LLM_PROVIDER=openai`
+  `clawvet scan <path> --semantic` adds a judge that reads the skill and the
+  scanner's evidence and decides the recommendation, on the user's own key:
+  `ANTHROPIC_API_KEY`, or `CLAWVET_LLM_PROVIDER=openai`
   with `CLAWVET_LLM_MODEL` and `CLAWVET_LLM_BASE_URL` for an OpenAI-compatible
   or local model. It sends the skill's text to that provider, so ask first.
   Without a key it exits 1 and scans nothing; scan again without the flag

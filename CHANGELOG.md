@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.1
+
+`clawvet scan --semantic` now uses the same judge as `gate --semantic`: the
+static findings and coverage gaps go to it as evidence, it decides the
+recommendation, and the same floors apply. The JSON report gains a `semantic`
+field with the verdict and the reason. A scan whose inspection was incomplete
+still fails with exit 1, so CI behaves as before. If the judge cannot be
+reached or returns no verdict, the scan reports nothing and exits 1, as it did
+with the earlier judge. `--strict` keeps the earlier judge.
+
 ## 0.16.0
 
 `clawvet gate --semantic` now lets the LLM judge decide. ClawVet's static

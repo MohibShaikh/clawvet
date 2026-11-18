@@ -174,8 +174,9 @@ prompt injection can win a benign verdict; these floors mean the most it wins
 is a prompt to you, never a silent install. If the judge times out or has no key, the
 static verdict stands and an allow becomes a warn; set
 `--semantic-on-error ignore` to keep the static verdict instead. `--strict`
-keeps the static coverage rules. `scan --semantic` still uses the earlier
-judge, which adds findings to the static scan.
+keeps the static coverage rules. `scan --semantic` uses the same judge and
+floors: its JSON gains a `semantic` field with the verdict and the reason, and
+a scan whose inspection was incomplete still exits 1.
 
 `--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
 bound to the hash of the file it came from, so editing that file brings the

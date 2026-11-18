@@ -11,6 +11,7 @@ import { applyCoverage, failsAt, type FailOn } from "../local-scan.js";
 import { RULES } from "../policy.js";
 import { FEEDBACK_DISPLAY_URL } from "../feedback.js";
 import { createSemanticJudge, judgmentGap, resolveSemanticConfig } from "../semantic/judge.js";
+import { buildEvidence, classifyV2, createJudgeV2, type JudgedV2 } from "../semantic/judge2.js";
 import { acceptCoverage, finishScan, startOsv, type PassOptions } from "../passes.js";
 import { createBaseline, loadBaselines, type SuppressedItem } from "../suppress.js";
 import { writeDocument } from "../review.js";
@@ -108,14 +109,19 @@ export async function scanCommand(
 ): Promise<void> {
   // Resolve the judge before reading anything, so a missing key fails fast and
   // no scan is reported as if it had included a semantic check.
+  // Under the default profile the v2 judge decides, as in the gate; --strict
+  // keeps the earlier judge, which only adds findings.
   let judge: ReturnType<typeof createSemanticJudge> | undefined;
+  let judgeV2: ReturnType<typeof createJudgeV2> | undefined;
   if (options.semantic) {
     try {
-      judge = createSemanticJudge(resolveSemanticConfig(process.env, {
+      const config = resolveSemanticConfig(process.env, {
         timeoutMs: options.semanticTimeoutMs ?? 60_000,
         runs: options.semanticRuns ?? 1,
         cache: options.semanticCache ?? false,
-      }));
+      });
+      if (options.strict) judge = createSemanticJudge(config);
+      else judgeV2 = createJudgeV2(config);
     } catch (err) {
       console.error(`Semantic analysis unavailable: ${err instanceof Error ? err.message : "invalid configuration"} No scan was performed.`);
       console.error("Set ANTHROPIC_API_KEY, or CLAWVET_LLM_PROVIDER=openai with CLAWVET_LLM_MODEL and CLAWVET_LLM_BASE_URL for an OpenAI-compatible or local model.");
@@ -289,7 +295,29 @@ export async function scanCommand(
     }
   }
 
-  const covered = assembly ? applyCoverage(finished.result, assembly, options.strict ? "strict" : "default") : finished.result;
+  let covered = assembly ? applyCoverage(finished.result, assembly, options.strict ? "strict" : "default") : finished.result;
+  if (judgeV2) {
+    // The judge weighs the static evidence and decides the recommendation, with
+    // the gate's floors. Inspection that was incomplete still fails the scan.
+    const gaps = assembly ? [...assembly.coverage.issues, ...assembly.coverage.warnings] : [];
+    const evidence = buildEvidence(finished.result, gaps);
+    let judged: JudgedV2;
+    try { judged = await judgeV2(content, evidence); }
+    catch (err) {
+      console.error(`Semantic analysis failed: ${err instanceof Error ? err.message : "unknown error"} No result was reported.`);
+      process.exitCode = 1;
+      return;
+    }
+    const toAction = { approve: "allow", warn: "warn", block: "block" } as const;
+    const staticAction = toAction[covered.recommendation ?? "warn"];
+    const disqualified = finished.result.findings.some((f) => f.disqualifying);
+    const findingsBlock = finished.result.riskScore >= 76 || finished.result.findings.some((f) => f.severity === "critical");
+    const c = classifyV2({ judgment: judged.judgment, truncated: judged.truncated, staticAction, disqualified, gaps, evidence, findingsBlock });
+    console.error(`Semantic judge: ${c.verdict} (${c.why}).`);
+    const withFindings = judged.judgment.findings.length ? rescore(covered, [...covered.findings, ...judged.judgment.findings]) : covered;
+    covered = { ...withFindings, status: covered.status, recommendation: ({ allow: "approve", warn: "warn", block: "block" } as const)[c.action],
+      semantic: { verdict: c.verdict, why: c.why } } as typeof covered;
+  }
   // Accepted items stay visible in machine output, so a baseline never hides
   // what it accepted.
   const result = suppressed.length ? { ...covered, suppressed } : covered;
