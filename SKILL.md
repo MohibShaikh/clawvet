@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.14.0
+version: 0.15.0
 description: Scan a third-party OpenClaw skill with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
 author: MohibShaikh
 license: MIT
@@ -107,9 +107,9 @@ npm install -g clawvet
 clawvet gate --print-config
 ```
 
-Use a global install, never `npx clawvet gate --print-config`: npx paths live
-in the npm cache, and a later cleanup removes the executable the config points
-at, so every install fails closed. Do not write the paths by hand either.
+Print the config from the global install, not from an npx copy. An npx copy
+lives in the npm cache, and a later cleanup removes the executable the config
+points at, so every install fails closed. Do not write the paths by hand either.
 OpenClaw rejects symlinked executables, and `npm i -g` installs a symlink.
 
 `clawvet gate --print-config --semantic` adds the LLM judge. Keep the printed

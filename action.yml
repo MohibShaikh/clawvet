@@ -1,21 +1,41 @@
 name: "ClawVet Skill Scanner"
-description: "Scan OpenClaw skills for security threats"
+description: "Scan agent skills (OpenClaw, Claude Code) for security threats"
 branding:
   icon: "shield"
   color: "red"
 
 inputs:
   path:
-    description: "Path to skill folder or SKILL.md file"
+    description: "Path to a skill folder or SKILL.md file"
     required: true
   fail-on:
     description: "Minimum severity to fail on (critical, high, medium, low)"
     required: false
     default: "high"
   format:
-    description: "Output format (terminal, json, sarif)"
+    description: "Output format (terminal, json, sarif). sarif is written to sarif-file"
     required: false
     default: "terminal"
+  sarif-file:
+    description: "Where to write SARIF when format is sarif"
+    required: false
+    default: "clawvet.sarif"
+  upload-sarif:
+    description: "Upload SARIF to GitHub code scanning (needs security-events: write). Implies format sarif"
+    required: false
+    default: "false"
+  version:
+    description: "clawvet version from npm. Defaults to the version this action was released with"
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: "The scan's exit code: 0 pass, 1 findings at fail-on or incomplete inspection"
+    value: ${{ steps.scan.outputs.exit-code }}
+  sarif-file:
+    description: "Path of the SARIF file, when one was written"
+    value: ${{ steps.scan.outputs.sarif-file }}
 
 runs:
   using: "composite"
@@ -25,17 +45,51 @@ runs:
       with:
         node-version: "22"
 
+    # Installs the published package (npm provenance) instead of building this
+    # repository: seconds rather than a full monorepo install per run.
     - name: Run ClawVet scan
+      id: scan
       shell: bash
       env:
         CLAWVET_ACTION_PATH: ${{ github.action_path }}
         CLAWVET_INPUT_PATH: ${{ inputs.path }}
         CLAWVET_FAIL_ON: ${{ inputs.fail-on }}
         CLAWVET_FORMAT: ${{ inputs.format }}
+        CLAWVET_SARIF_FILE: ${{ inputs.sarif-file }}
+        CLAWVET_UPLOAD: ${{ inputs.upload-sarif }}
+        CLAWVET_VERSION: ${{ inputs.version }}
         CLAWVET_TELEMETRY: "off"
       run: |
         case "$CLAWVET_FAIL_ON" in critical|high|medium|low) ;; *) echo "Invalid fail-on" >&2; exit 1 ;; esac
         case "$CLAWVET_FORMAT" in terminal|json|sarif) ;; *) echo "Invalid format" >&2; exit 1 ;; esac
-        npm ci --prefix "$CLAWVET_ACTION_PATH" --ignore-scripts --no-audit --no-fund
-        npm run build --prefix "$CLAWVET_ACTION_PATH" --workspace=clawvet
-        node "$CLAWVET_ACTION_PATH/packages/cli/dist/index.js" scan --fail-on "$CLAWVET_FAIL_ON" --format "$CLAWVET_FORMAT" -- "$CLAWVET_INPUT_PATH"
+        case "$CLAWVET_UPLOAD" in true|false) ;; *) echo "Invalid upload-sarif" >&2; exit 1 ;; esac
+        if [ "$CLAWVET_UPLOAD" = true ]; then CLAWVET_FORMAT=sarif; fi
+        version="${CLAWVET_VERSION:-$(node -p 'require(process.argv[1]).version' "$CLAWVET_ACTION_PATH/packages/cli/package.json")}"
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Invalid version: $version" >&2; exit 1; }
+        prefix="$RUNNER_TEMP/clawvet-cli"
+        npm install --prefix "$prefix" --no-save --ignore-scripts --no-audit --no-fund "clawvet@$version" >&2
+        cli="$prefix/node_modules/clawvet/dist/index.js"
+        set +e
+        if [ "$CLAWVET_FORMAT" = sarif ]; then
+          node "$cli" scan --fail-on "$CLAWVET_FAIL_ON" --format sarif -- "$CLAWVET_INPUT_PATH" > "$CLAWVET_SARIF_FILE"
+          code=$?
+          echo "sarif-file=$CLAWVET_SARIF_FILE" >> "$GITHUB_OUTPUT"
+        else
+          node "$cli" scan --fail-on "$CLAWVET_FAIL_ON" --format "$CLAWVET_FORMAT" -- "$CLAWVET_INPUT_PATH"
+          code=$?
+        fi
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF
+      if: inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: clawvet
+
+    # Fail after the upload, so findings reach code scanning either way.
+    - name: Apply fail-on
+      shell: bash
+      env:
+        CLAWVET_EXIT: ${{ steps.scan.outputs.exit-code }}
+      run: exit "$CLAWVET_EXIT"

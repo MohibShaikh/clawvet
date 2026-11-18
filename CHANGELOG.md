@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.15.0
+
+Fixed SARIF for GitHub code scanning. Each result now points at the file and
+line it came from, `scripts/setup.sh:3` rather than a line number in the
+assembled bundle reported against `SKILL.md`, and paths are relative to the
+repository root. The severity property is `security-severity`, the name
+GitHub reads, and the tool link goes to this repository. A coverage gap that
+blocks the scan is reported as a result too, so a blocked skill shows up as an
+alert. A skill outside the working directory keeps skill-relative paths.
+
+The GitHub Action installs the npm release it was tagged with instead of
+installing and building the whole repository on every run. It can upload
+SARIF to code scanning (`upload-sarif: true`), writes SARIF to `sarif-file`,
+exposes `exit-code`, and fails only after the upload.
+
+`audit` takes `--format json`, which prints one document with a summary and
+every skill, and `--fail-on <severity>`. It also finds Claude Code skills in
+`.claude/skills` and `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills`).
+
+Added a pre-commit hook, `id: clawvet`, that scans each skill folder a commit
+touches. It always applies a threshold, `--fail-on high` unless `args` set
+another. A committed file named like an option, such as `--help`, is read as
+a file. It installs clawvet from its own checkout, so an `.npmrc` in the
+repository being scanned cannot choose the registry, and runs the scan in the
+repository, where `.clawvetban`, `.clawvetignore` and relative `--baseline`
+paths live. `scan --fail-on` now rejects an unknown severity; `--fail-on bogus`
+used to fail on every finding.
+
+Fixed a skill being blocked for referencing its own script by its installed
+path under `~`, such as `~/.claude/skills/<name>/scripts/run.py`. Only an
+agent's skill directory counts (`~/.claude`, `~/.agents`, `~/.openclaw`);
+`~/Downloads/skills/<name>/...` still blocks. Absolute paths already resolved
+to the bundled file.
+
+Fixed a skill that downloads a file over its own bundled script and runs it by
+its installed path, `/home/u/skills/<name>/scripts/run.sh`, being approved. The
+download check compared the installed path with the bundle path and never
+matched. 0.14.0 had this for absolute paths. Downloads, runs and followed files
+now all use the bundle path, whichever side names the installed copy.
+
+`audit` scans a symlinked skill folder instead of skipping it. Fixed "Prerequisite install trick"
+matching "rerun ... before". On the MalSkillBench tune half, no malicious
+decision changed and four benign skills went from block to allow.
+
 ## 0.14.0
 
 Added dataflow analysis for bundled Python, JavaScript, TypeScript and shell

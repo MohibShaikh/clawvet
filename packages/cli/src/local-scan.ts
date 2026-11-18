@@ -30,3 +30,12 @@ export async function scanLocalSkill(
   const result = await scanSkill(assembly.content, { ...options, files: assembly.coverage.files });
   return applyCoverage(result, assembly, profile);
 }
+
+export type FailOn = "critical" | "high" | "medium" | "low";
+const SEVERITY_ORDER = ["low", "medium", "high", "critical"];
+
+/** Whether any finding is at or above the --fail-on severity. */
+export function failsAt(result: ScanResult, failOn: FailOn): boolean {
+  const threshold = SEVERITY_ORDER.indexOf(failOn);
+  return result.findings.some((f) => SEVERITY_ORDER.indexOf(f.severity) >= threshold);
+}

@@ -385,7 +385,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   // ═══════════════════════════════════════════════════════
   {
     name: "PREREQUISITE_INSTALL",
-    pattern: /prerequisite|install.{0,200}first|run.{0,200}before|required.{0,200}dependency/gi,
+    pattern: /prerequisite|install.{0,200}first|\brun.{0,200}before|required.{0,200}dependency/gi,
     severity: "medium",
     category: "social_engineering",
     title: "Prerequisite install trick",

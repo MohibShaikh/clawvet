@@ -40,6 +40,13 @@ describe("CLI integration", { timeout: 30000 }, () => {
     expect(stdout.trim()).toBe(CLI_VERSION);
   });
 
+  it.each(["scan . --fail-on bogus", "audit --fail-on HIGH", "audit --format sarif"])("rejects an unknown value: clawvet %s", async (args) => {
+    // Rejected while parsing options: nothing is scanned, so stdout stays empty.
+    const { stdout, exitCode } = await run(args);
+    expect(exitCode).not.toBe(0);
+    expect(stdout).toBe("");
+  });
+
   it("clawvet --help shows usage", async () => {
     const { stdout, exitCode } = await run("--help");
     expect(exitCode).toBe(0);

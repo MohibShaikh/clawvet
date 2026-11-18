@@ -4,7 +4,7 @@
 [![npm](https://img.shields.io/npm/v/clawvet)](https://www.npmjs.com/package/clawvet)
 [![npm downloads](https://img.shields.io/npm/dw/clawvet)](https://www.npmjs.com/package/clawvet)
 
-Skill vetting and supply chain security for the OpenClaw ecosystem. ClawVet scans SKILL.md files for prompt injection, credential theft, remote code execution, typosquatting, and social engineering, catching threats that VirusTotal misses. It runs fully offline by default, with an optional AI stage you turn on when you want it.
+Skill vetting and supply chain security for agent skills, built for OpenClaw and usable on Claude Code skills. ClawVet scans a SKILL.md and the scripts it bundles for prompt injection, credential theft, remote code execution, typosquatting, and social engineering. It runs fully offline by default, with an optional AI stage you turn on when you want it.
 
 ## Demo
 
@@ -35,14 +35,49 @@ clawvet scan ./my-skill/
 # JSON output for CI/CD
 clawvet scan ./my-skill/ --format json --fail-on high
 
-# Audit every skill OpenClaw loads: <workspace>/skills, .agents/skills,
-# ~/.agents/skills, $OPENCLAW_STATE_DIR/skills and Skill Workshop skills
+# Audit every skill OpenClaw loads (<workspace>/skills, .agents/skills,
+# ~/.agents/skills, $OPENCLAW_STATE_DIR/skills, Skill Workshop skills)
+# and Claude Code's .claude/skills and ~/.claude/skills
 clawvet audit
+
+# One JSON report for a whole folder of skills, failing on high or worse
+clawvet audit --dir ./skills --format json --fail-on high
 ```
 
 Install it rather than running `npx clawvet`. A fresh `npx` fetch runs whatever version the registry serves at that moment, which is the wrong habit for a tool you use to vet other code. Updating is a deliberate `npm update -g clawvet`, and every release carries npm provenance you can check first with `npm view clawvet dist.attestations`.
 
 By default the CLI is static and offline, so it works in CI with no key and no network, and nothing is sent anywhere. Two passes are opt-in and use the network. `--semantic` sends the skill to an LLM judge on your own key, either Anthropic or any OpenAI-compatible endpoint, which includes a local Ollama or vLLM. `--osv` looks pinned dependencies up on OSV.dev, where a `MAL-` advisory blocks the install. Without its key, `--semantic` refuses to scan rather than reporting a result the judge never saw.
+
+## CI
+
+The GitHub Action installs the npm release it was tagged with, scans one skill, and can upload SARIF to code scanning so findings show up on the pull request at the file and line they came from.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write   # only for upload-sarif
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: MohibShaikh/clawvet@v0.15.0
+    with:
+      path: skills/my-skill
+      fail-on: high
+      upload-sarif: true
+```
+
+The step fails after the upload, so a blocked skill still gets its annotations. Pin the action to a commit SHA if your policy requires it. For a repository full of skills, run `clawvet audit --dir skills --format json --fail-on high` in a plain `run:` step.
+
+For pre-commit, add this to `.pre-commit-config.yaml`. It scans each skill folder that a commit touches, once, with the pinned npm release. Pre-commit never passes deleted files to a hook, so a commit that only deletes a bundled script is not rescanned. Keep the `audit` step in CI as the check of record.
+
+```yaml
+repos:
+  - repo: https://github.com/MohibShaikh/clawvet
+    rev: v0.15.0
+    hooks:
+      - id: clawvet
+        # args: [--fail-on, medium]   # default is --fail-on high
+```
 
 ## Install-time enforcement
 
@@ -84,6 +119,15 @@ installation and the npm global prefix. A launcher-managed node such as
 group-writable and needs the same treatment. The failure message names the
 offending directory; start there.
 
+Run this for the directory the error names, then retry the install. Repeat if
+it names another one.
+
+```bash
+chmod g-w,o-w "/path/from/the/error"
+# For example, an fnm-managed node:
+chmod g-w,o-w ~/.local/share/fnm/node-versions/v22.17.1
+```
+
 `targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
 so a plugin that ships no `SKILL.md` is allowed through, and `"plugin"` is not
 listed because it would claim a protection that does not exist yet. A skill
@@ -91,9 +135,10 @@ target that stages no `SKILL.md` is blocked: with the policy aimed only at
 skills, an instruction-less "skill" is either not a skill or installs its
 payload without saying so.
 
-OpenClaw itself runs `clawvet` through whatever `node` launched it, so install
-`clawvet` with the same node that runs OpenClaw. OpenClaw 2026.8.2 requires
-Node 22.22.3+ (or 24.15.0+, or 25.9.0+); `clawvet` engine is `>=22.0.0`.
+OpenClaw runs `clawvet` with the absolute `node` path in the printed block,
+which is the node that ran `--print-config`. That node can differ from the one
+running OpenClaw. OpenClaw 2026.11.5 refuses to start on Node 22 and asks for
+24.16 or later; `clawvet` itself needs `>=22.0.0`.
 
 Verdicts map onto ClawVet's own vocabulary:
 
@@ -231,7 +276,7 @@ clawvet/
 │   └── web/          # Next.js 14 dashboard
 ├── packages/
 │   ├── cli/          # `clawvet` CLI tool
-│   └── shared/       # Types + scanner engine + 57 threat detection patterns
+│   └── shared/       # Types, scanner engine, threat patterns
 ├── benchmarks/       # Labeled corpus + eval harness (see benchmarks/README.md)
 ├── docker-compose.yml
 └── turbo.json
@@ -244,7 +289,7 @@ These passes turn a skill and its bundled files into a list of findings.
 | Pass | Module | What it catches |
 |------|--------|-----------------|
 | 1 | `skill-parser`, `sources` | Parses frontmatter and code blocks, and marks which lines are code. Bundled scripts count as code whatever their extension; a shebang wins. |
-| 2 | `static-analysis` | 60 regex patterns: RCE, reverse shells, credential theft, obfuscation, exfiltration |
+| 2 | `static-analysis` | Regex patterns for RCE, reverse shells, credential theft, obfuscation, exfiltration |
 | 3 | `dataflow` | AST taint analysis of Python, JavaScript/TypeScript and shell with tree-sitter, never executed. Credential or whole-environment data reaching a network send, downloaded or decoded data reaching execution, persistence writes, ransomware loops. |
 | 4 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
 | 5 | `dependency-checker`, `manifests` | npx -y auto-install, global npm installs, and pinned dependencies for `--osv` |
@@ -271,6 +316,8 @@ A disqualifying finding, such as a known C2 IP, pins the score to the F band on 
 Grades: A (0-10), B (11-25), C (26-50), D (51-75), F (76-100). The CLI recommends approve below 26, warn at 26-75, block at 76+.
 
 ## Benchmarks
+
+This section scores `scanSkill()` on corpora assembled for 0.11.x. For the install gate as it ships, see [benchmarks/gate-eval](benchmarks/gate-eval/README.md). Its one held-out run, on 0.13.2 and the MalSkillBench test half, blocked 45.7% of malicious skills and 9.5% of benign ones, and only 12.5% of the prompt-injection group. 0.14.0 was measured on the tune half only, where it stops 63.1% of malicious skills and 12.0% of benign ones. Those two numbers are not held out.
 
 `benchmarks/` holds two labeled corpora and `eval.py`, a stdlib-only harness that reports precision, recall, F1, MCC, ROC-AUC and bootstrap confidence intervals.
 
@@ -356,7 +403,7 @@ GET    /api/v1/auth/github     # GitHub OAuth flow
 # Install deps
 npm install
 
-# Run tests (89 API tests across 11 suites, 46 shared)
+# Run tests
 npx turbo test
 
 # Start API server
@@ -391,7 +438,7 @@ This repo is a monorepo with two separate concerns.
 | Package | Published | Description |
 |---------|-----------|-------------|
 | `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner. No databases, no auth, offline by default |
-| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, and 57 threat patterns |
+| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, threat patterns |
 | `apps/api` | No (self-hosted) | Optional Fastify backend with Postgres, Redis, GitHub OAuth |
 | `apps/web` | No (self-hosted) | Optional Next.js dashboard |
 
@@ -427,17 +474,18 @@ Never sent: raw skill names, file contents, source code, file paths, environment
 
 ## Tests
 
-89 API tests plus 46 shared tests, covering:
+The API and shared suites cover:
 - The benchmark corpus (101 fixtures) and the six built-in fixture skills
 - Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
 - Regex catastrophic backtracking safety
-- 57 threat patterns across 13 categories
+- Every threat pattern, including worst-case inputs for backtracking
 - Risk scoring: diminishing-returns repeats, context downweighting, disqualifying floor
 - API route validation (auth, webhooks, scans, incl. authenticated scan listing)
 - SSRF guard (scheme allowlist plus private/metadata IP-range blocking)
 - Semantic-pass prompt injection defense (unguessable boundary, untrusted-data framing)
 - Cross-file payload assembly (split payloads, precision guard, binary skip)
 - CLI end-to-end integration (--format json, --fail-on, exit codes)
+- CI output: SARIF file and line locations, audit JSON and --fail-on
 
 ## License
 

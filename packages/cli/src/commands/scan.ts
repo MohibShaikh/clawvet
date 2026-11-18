@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { resolve, join, basename, dirname } from "node:path";
+import { resolve, join, basename, dirname, isAbsolute, relative, sep } from "node:path";
 import chalk from "chalk";
 import { rescore, scanSkill } from "@clawvet/shared";
 import { printScanResult } from "../output/terminal.js";
@@ -7,7 +7,7 @@ import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
 import { assembleSkill, ASSEMBLY_LIMITS, type AssemblyResult } from "../assemble.js";
-import { applyCoverage } from "../local-scan.js";
+import { applyCoverage, failsAt, type FailOn } from "../local-scan.js";
 import { RULES } from "../policy.js";
 import { FEEDBACK_DISPLAY_URL } from "../feedback.js";
 import { createSemanticJudge, judgmentGap, resolveSemanticConfig } from "../semantic/judge.js";
@@ -17,7 +17,7 @@ import { writeDocument } from "../review.js";
 
 export interface ScanOptions {
   format?: "terminal" | "json" | "sarif";
-  failOn?: "critical" | "high" | "medium" | "low";
+  failOn?: FailOn;
   semantic?: boolean;
   semanticRuns?: number;
   semanticTimeoutMs?: number;
@@ -296,7 +296,10 @@ export async function scanCommand(
 
   if (!options.quiet) {
     if (options.format === "sarif") {
-      printSarifResult(result);
+      // Code scanning resolves artifact paths from the repository root, which
+      // in CI is the working directory. A skill outside it keeps skill-relative paths.
+      const root = skillRoot ? relative(process.cwd(), skillRoot).split(sep).join("/") || "." : undefined;
+      printSarifResult(result, { root: root === ".." || root?.startsWith("../") || (root && isAbsolute(root)) ? undefined : root, profile: options.strict ? "strict" : "default" });
     } else if (options.format === "json") {
       printJsonResult(result);
     } else {
@@ -342,12 +345,5 @@ export async function scanCommand(
   }
 
   const failOn = options.failOn || (options.quiet ? "high" : undefined);
-  if (failOn) {
-    const severityOrder = ["low", "medium", "high", "critical"];
-    const threshold = severityOrder.indexOf(failOn);
-    const hasFailure = result.findings.some(
-      (f) => severityOrder.indexOf(f.severity) >= threshold
-    );
-    if (hasFailure) process.exitCode = 1;
-  }
+  if (failOn && failsAt(result, failOn)) process.exitCode = 1;
 }

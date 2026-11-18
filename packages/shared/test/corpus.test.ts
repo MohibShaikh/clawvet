@@ -155,3 +155,17 @@ describe("credential exfiltration", () => {
     });
   }
 });
+
+describe("prerequisite install wording", () => {
+  const titles = async (body: string) =>
+    (await scanSkill(["---", "name: t", "description: t", "---", "", body].join("\n"), { skipCache: true })).findings.map((f) => f.title);
+
+  it("does not read 'rerun' as 'run'", async () => {
+    expect(await titles("After a fix, rerun after a week of sessions and report the before and after.")).not.toContain("Prerequisite install trick");
+  });
+
+  it("still flags run-this-before wording", async () => {
+    expect(await titles("Run this command before using the skill.")).toContain("Prerequisite install trick");
+    expect(await titles("Running the setup before anything else is required.")).toContain("Prerequisite install trick");
+  });
+});

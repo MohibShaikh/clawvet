@@ -52,7 +52,8 @@ clawvet scan weather-forecast --remote
 ### Audit all installed skills
 
 ```bash
-clawvet audit
+clawvet audit                      # OpenClaw skill folders, plus .claude/skills and ~/.claude/skills
+clawvet audit --dir ./skills --format json --fail-on high
 ```
 
 ### Watch for new skill installs
@@ -110,6 +111,19 @@ installation and the npm global prefix. A launcher-managed node such as
 `~/.local/share/fnm/node-versions/<version>` is commonly installed
 group-writable and needs the same treatment. The failure message names the
 offending directory; start there.
+
+Run this for the directory the error names, then retry the install. Repeat if
+it names another one.
+
+```bash
+chmod g-w,o-w "/path/from/the/error"
+# For example, an fnm-managed node:
+chmod g-w,o-w ~/.local/share/fnm/node-versions/v22.17.1
+```
+
+OpenClaw runs `clawvet` with the absolute `node` path in the printed block.
+OpenClaw 2026.11.5 itself refuses to start on Node 22 and asks for 24.16 or
+later; `clawvet` needs `>=22.0.0`.
 
 `targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
 so a plugin that ships no `SKILL.md` is allowed through, and `"plugin"` is not
@@ -253,7 +267,7 @@ ClawVet runs a 6-pass analysis on every skill:
 | Pass | What it checks |
 |------|---------------|
 | **Skill Parser** | Extracts YAML frontmatter, code blocks, URLs, IPs, domains |
-| **Static Analysis** | 57 regex patterns: RCE, reverse shells, credential theft, obfuscation, DNS exfil, privilege escalation |
+| **Static Analysis** | Regex patterns for RCE, reverse shells, credential theft, obfuscation, DNS exfil, privilege escalation |
 | **Metadata Validator** | Undeclared binaries, env vars, missing descriptions, invalid semver |
 | **Dependency Checker** | `npx -y` auto-install, global `npm install`, risky packages |
 | **Typosquat Detector** | Levenshtein distance against popular skills, suspicious naming patterns |
@@ -271,13 +285,24 @@ ClawVet runs a 6-pass analysis on every skill:
 
 ## CI/CD Integration
 
+The GitHub Action scans a skill and can upload SARIF to code scanning:
+
 ```yaml
-# GitHub Actions example. Add clawvet as a dev dependency first
-# (`npm install --save-dev clawvet`) so the lockfile pins the exact
-# version; --no-install then refuses to fetch anything else.
-- name: Vet skill
-  run: npx --no-install clawvet scan ./my-skill --format json --fail-on high
+- uses: MohibShaikh/clawvet@v0.15.0
+  with:
+    path: skills/my-skill
+    fail-on: high
+    upload-sarif: true   # needs security-events: write
 ```
+
+Or run the CLI yourself. Add clawvet as a dev dependency first (`npm install --save-dev clawvet`) so the lockfile pins the exact version; `--no-install` then refuses to fetch anything else.
+
+```yaml
+- name: Vet skills
+  run: npx --no-install clawvet audit --dir skills --format json --fail-on high
+```
+
+A pre-commit hook (`id: clawvet`) scans each skill folder a commit touches. See the [repository README](https://github.com/MohibShaikh/clawvet#ci).
 
 ## License
 

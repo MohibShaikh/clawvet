@@ -1,0 +1,6 @@
+- id: clawvet
+  name: clawvet
+  description: Scan each agent skill (a folder with SKILL.md) that a commit touches
+  entry: scripts/pre-commit.sh
+  language: script
+  require_serial: true

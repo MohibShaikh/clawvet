@@ -102,6 +102,11 @@ function references(text: string): string[] {
   return [...refs];
 }
 
+// An agent's skill directory under ~ (see skill-dirs.ts): <name>, then the file.
+// ~/.clawdbot, ~/clawd and ~/workspace are older OpenClaw (Clawdbot) layouts
+// that published skills still name.
+const HOME_SKILL_PATH = /^~\/(?:\.claude|\.agents|\.clawdbot|clawd|workspace|\.openclaw(?:\/workspace(?:\/\.agents)?)?)\/skills\/([^/]+)\/(.+)$/;
+
 // "/path/to/script.py" is a documentation placeholder, not a location.
 const PLACEHOLDER_PATH = /^\/(?:path\/to|your|absolute\/path)\//i;
 
@@ -299,6 +304,19 @@ export function assembleSkill(
   // Only a path into an installed copy of this skill maps back to the bundle.
   const skillNames = new Set([basename(root), manifest.match(/^name:\s*["']?([\w.-]+)/m)?.[1] ?? ""]
     .filter(Boolean).map((name) => name.toLowerCase()));
+  // A path into an installed copy of this skill, such as
+  // /home/u/skills/<name>/scripts/run.py or ~/.claude/skills/<name>/run.py,
+  // names the bundled file. Under ~ only an agent's skill directory counts:
+  // ~/Downloads/skills/<name>/run.py is wherever the user saved something.
+  // Every comparison uses the mapped path, so a download written over the
+  // bundled file and run by its installed path is still caught.
+  // Download checks compare with `created`: the file may exist only because
+  // the skill downloads it, so the bundle need not have it. Every side of a
+  // download comparison must map the same way, or the paths never match.
+  const ownCopy = (ref: string, created = false) => {
+    const installed = isAbsolute(ref) ? ref.match(/\/skills\/([^/]+)\/(.+)$/) : ref.match(HOME_SKILL_PATH);
+    return installed && skillNames.has(installed[1].toLowerCase()) && (created || files.has(installed[2])) ? installed[2] : ref;
+  };
   // An agent can find and run any script installed with the skill, so bundled
   // code is inspected whether or not the manifest names it.
   // Git never runs its *.sample hooks; a live hook without the suffix stays in.
@@ -320,9 +338,9 @@ export function assembleSkill(
     const runtime = inspectRuntimeCoverage(text, /\.md$/i.test(source.path), 0, CODE_FILE.test(source.path));
     for (const problem of runtime.issues) issue(source.path, problem.rule, problem.line);
     unresolved ||= runtime.issues.some((problem) => UNRESOLVED.has(problem.rule));
-    for (const download of runtime.downloads) downloads.push({ path: source.path, ...download });
-    executedFiles.push(...runtime.executedFiles.map((target) => ({ path: source.path, target })));
-    instructionFiles.push(...runtime.instructionFiles.map(target => ({ path: source.path, target })));
+    for (const download of runtime.downloads) downloads.push({ path: source.path, ...download, target: ownCopy(download.target, true) });
+    executedFiles.push(...runtime.executedFiles.map((target) => ({ path: source.path, target: ownCopy(target, true) })));
+    instructionFiles.push(...runtime.instructionFiles.map(target => ({ path: source.path, target: ownCopy(target, true) })));
     const selected = new Set<string>();
     for (const candidate of candidates) {
       if (mentions(text, candidate) || mentions(text, basename(candidate))) {
@@ -337,12 +355,9 @@ export function assembleSkill(
       : [];
     // An imported module runs, so a download written over it is executed code.
     executedFiles.push(...modules.map((target) => ({ path: entryFile, target })));
-    for (let ref of new Set([...references(text), ...runtime.executedFiles, ...modules])) {
-      if (PLACEHOLDER_PATH.test(ref)) continue;
-      // An absolute path into an installed copy of this skill, such as
-      // /home/u/skills/<name>/scripts/run.py, names the bundled file.
-      const installed = isAbsolute(ref) ? ref.match(/\/skills\/([^/]+)\/(.+)$/) : undefined;
-      if (installed && skillNames.has(installed[1].toLowerCase()) && files.has(installed[2])) ref = installed[2];
+    for (const original of new Set([...references(text), ...runtime.executedFiles, ...modules])) {
+      if (PLACEHOLDER_PATH.test(original)) continue;
+      const ref = ownCopy(original);
       // Code resolves its imports from its own file. Shell and the manifest
       // resolve from a working directory ClawVet cannot know, so a reference
       // there may be relative to the helper or to the skill root: check both.
@@ -360,7 +375,7 @@ export function assembleSkill(
       });
       // A quoted sentence that happens to end in a filename is prose, unless a
       // file by that whole name exists.
-      const runs = runtime.executedFiles.includes(ref);
+      const runs = runtime.executedFiles.includes(original);
       if (/\s/.test(ref) && !matches.length && !runs) continue;
       if (DOCUMENT.test(ref) && !runs && paths.every((path) => !inside(path))) {
         issue(ref, "outside-document", undefined, source.path);
@@ -377,7 +392,7 @@ export function assembleSkill(
       // folder or a dotfile, cannot hide code and needs no operator decision.
       // A file the skill downloads is not missing from the bundle; whether it
       // is run or followed is checked against the download below.
-      const downloaded = downloads.some((download) => same(download, { path: source.path, target: ref }));
+      const downloaded = downloads.some((download) => same(download, { path: source.path, target: ownCopy(original, true) }));
       // A file only mentioned, such as "Node.js" or "Three.js" in prose, cannot
       // hide code. Missing matters when something runs it.
       if (!matches.length && !downloaded && runs) {

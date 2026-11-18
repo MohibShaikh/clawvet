@@ -1,15 +1,27 @@
-import { readdirSync, existsSync } from "node:fs";
+import { readdirSync, existsSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
 import { skillDirs } from "../skill-dirs.js";
-import { scanLocalSkill } from "../local-scan.js";
+import { failsAt, scanLocalSkill, type FailOn, type LocalScanResult } from "../local-scan.js";
 import { printScanResult } from "../output/terminal.js";
 import { sendAuditTelemetry } from "../telemetry.js";
 import chalk from "chalk";
 
 
-export async function auditCommand(options: { dir?: string } = {}): Promise<void> {
+const isDirectory = (path: string) => { try { return statSync(path).isDirectory(); } catch { return false; } };
+
+export interface AuditOptions {
+  dir?: string;
+  format?: "terminal" | "json";
+  failOn?: FailOn;
+}
+
+export async function auditCommand(options: AuditOptions = {}): Promise<void> {
   const SKILL_DIRS = options.dir ? [options.dir] : skillDirs();
-  console.log(chalk.bold("\nClawVet Audit — Scanning all installed skills\n"));
+  // JSON keeps stdout to one document, so CI can parse it.
+  const json = options.format === "json";
+  const log = json ? () => {} : (...args: unknown[]) => console.log(...args);
+  const skills: Array<{ path: string } & LocalScanResult> = [];
+  log(chalk.bold("\nClawVet Audit — Scanning all installed skills\n"));
 
   const startedAt = Date.now();
   let totalScanned = 0;
@@ -30,23 +42,26 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     const directSkillFile = join(dir, "SKILL.md");
     if (existsSync(directSkillFile)) {
       const result = await scanLocalSkill(directSkillFile, { skillName: basename(dir) });
+      skills.push({ path: dir, ...result });
       if (result.status === "failed") incomplete++;
       totalScanned++;
       totalThreats += result.findings.length;
       if (result.status !== "failed") {
         grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
       }
-      printScanResult(result);
+      if (!json) printScanResult(result);
       continue;
     }
 
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
+      // A symlinked skill folder is still a skill; skipping it would pass CI unscanned.
+      if (!entry.isDirectory() && !(entry.isSymbolicLink() && isDirectory(join(dir, entry.name)))) continue;
       const skillFile = join(dir, entry.name, "SKILL.md");
       if (!existsSync(skillFile)) continue;
 
       const result = await scanLocalSkill(skillFile, { skillName: entry.name });
+      skills.push({ path: join(dir, entry.name), ...result });
       if (result.status === "failed") incomplete++;
       totalScanned++;
       totalThreats += result.findings.length;
@@ -54,7 +69,7 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
         grades[result.riskGrade] = (grades[result.riskGrade] ?? 0) + 1;
       }
 
-      printScanResult(result);
+      if (!json) printScanResult(result);
     }
   }
 
@@ -70,22 +85,25 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     .map((g) => `${gradeColors[g](g)} ${grades[g]}`)
     .join("  ");
 
-  console.log(
+  log(
     chalk.bold(
       `\nAudit complete: ${totalScanned} skills scanned, ${totalThreats} findings`
     )
   );
   if (totalScanned > 0) {
-    console.log(`  Grades: ${gradeSummary}`);
+    log(`  Grades: ${gradeSummary}`);
   }
   const blocked = grades.D + grades.F;
   if (blocked > 0) {
-    console.log(
+    log(
       chalk.red(`  ${blocked} skill${blocked > 1 ? "s" : ""} graded D or F — review before use`)
     );
   }
   if (incomplete) console.error(`${incomplete} skill(s) could not be fully inspected; review required.`);
-  console.log();
+  log();
+  if (json) {
+    console.log(JSON.stringify({ summary: { scanned: totalScanned, findings: totalThreats, incomplete, grades }, skills }, null, 2));
+  }
 
   // One session-level telemetry event for the whole audit (best-effort).
   await sendAuditTelemetry({
@@ -94,5 +112,6 @@ export async function auditCommand(options: { dir?: string } = {}): Promise<void
     grades,
     durationMs: Date.now() - startedAt,
   });
-  if (incomplete) process.exitCode = 1;
+  const failOn = options.failOn;
+  if (incomplete || (failOn && skills.some((result) => failsAt(result, failOn)))) process.exitCode = 1;
 }

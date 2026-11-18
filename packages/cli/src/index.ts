@@ -1,4 +1,4 @@
-import { Command, InvalidArgumentError } from "commander";
+import { Command, InvalidArgumentError, Option } from "commander";
 import { readFileSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -76,7 +76,7 @@ program
   .description("Scan a skill for security threats")
   .argument("<target>", "Path to skill folder or SKILL.md file")
   .option("--format <format>", "Output format: terminal, json, or sarif", "terminal")
-  .option("--fail-on <severity>", "Exit 1 if findings at this severity or above")
+  .addOption(new Option("--fail-on <severity>", "Exit 1 if findings at this severity or above").choices(["critical", "high", "medium", "low"]))
   .option("--semantic", "Add an LLM judge with your own key (ANTHROPIC_API_KEY, or CLAWVET_LLM_* for OpenAI-compatible and local models)")
   .option("--semantic-runs <n>", "Judge runs to majority-vote (1-5)", parseRuns)
   .option("--semantic-timeout <ms>", "Total judge deadline in milliseconds", parseMs)
@@ -168,10 +168,12 @@ program
 
 program
   .command("audit")
-  .description("Scan all installed OpenClaw skills")
+  .description("Scan every installed skill (OpenClaw and Claude Code), or each skill in --dir")
   .option("--dir <path>", "Custom skills directory to scan")
+  .addOption(new Option("--format <format>", "Output format").choices(["terminal", "json"]).default("terminal"))
+  .addOption(new Option("--fail-on <severity>", "Exit 1 if any skill has findings at this severity or above").choices(["critical", "high", "medium", "low"]))
   .action(async (opts) => {
-    await auditCommand({ dir: opts.dir });
+    await auditCommand({ dir: opts.dir, format: opts.format, failOn: opts.failOn });
   });
 
 program

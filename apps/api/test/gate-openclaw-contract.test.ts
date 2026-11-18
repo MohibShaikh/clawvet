@@ -49,6 +49,12 @@ describe("OpenClaw installPolicy contract", () => {
     const found = skillDirs({ OPENCLAW_STATE_DIR: state }, cwd);
     expect(found).toEqual(expect.arrayContaining([join(cwd, ".agents", "skills"), join(state, "skills"), join(state, "agents", "writer", "agent", "workshop-skills")]));
   });
+
+  it("finds Claude Code project and personal skills", () => {
+    const config = temp(), cwd = temp();
+    for (const dir of [join(cwd, ".claude", "skills"), join(config, "skills")]) mkdirSync(dir, { recursive: true });
+    expect(skillDirs({ OPENCLAW_STATE_DIR: temp(), CLAUDE_CONFIG_DIR: config }, cwd)).toEqual(expect.arrayContaining([join(cwd, ".claude", "skills"), join(config, "skills")]));
+  });
 });
 
 describe("dependency installs (skill.installSpec)", async () => {

@@ -17,6 +17,9 @@ export function skillDirs(env: NodeJS.ProcessEnv = process.env, cwd = process.cw
     join(state, "skills"),
     join(state, "workspace", "skills"),
     join(state, "workspace", ".agents", "skills"),
+    // Claude Code: project and personal skills (CLAUDE_CONFIG_DIR moves the latter).
+    join(cwd, ".claude", "skills"),
+    join(env.CLAUDE_CONFIG_DIR ? resolve(env.CLAUDE_CONFIG_DIR) : join(home, ".claude"), "skills"),
   ];
   // Skill Workshop keeps each agent's own skills at <state>/agents/<id>/agent/workshop-skills.
   try {
