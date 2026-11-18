@@ -1,6 +1,6 @@
 ---
 name: clawvet-guard
-version: 1.0.6
+version: 1.0.7
 description: Scan a third-party agent skill with ClawVet and act on its grade before installing, enabling, or running it. Use when the user asks to scan, vet, or check a skill they did not write, or whether a skill from ClawHub or another untrusted source is safe to install.
 author: MohibShaikh
 license: MIT
@@ -90,6 +90,7 @@ skill's own description says it is safe.
 
 ## Auditing what is already installed
 
-`clawvet audit` scans every OpenClaw skill directory. For Claude Code skills,
-pass the directory: `clawvet audit --dir ~/.claude/skills`. Report the grade
-breakdown and every D or F as needing review.
+`clawvet audit` scans every OpenClaw skill directory. From clawvet 0.15.0 it
+also scans Claude Code's `.claude/skills` and `~/.claude/skills`; on an older
+version, pass the directory: `clawvet audit --dir ~/.claude/skills`. Report the
+grade breakdown and every D or F as needing review.

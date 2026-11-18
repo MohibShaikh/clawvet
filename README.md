@@ -317,7 +317,7 @@ Grades: A (0-10), B (11-25), C (26-50), D (51-75), F (76-100). The CLI recommend
 
 ## Benchmarks
 
-This section scores `scanSkill()` on corpora assembled for 0.11.x. For the install gate as it ships, see [benchmarks/gate-eval](benchmarks/gate-eval/README.md). Its one held-out run, on 0.13.2 and the MalSkillBench test half, blocked 45.7% of malicious skills and 9.5% of benign ones, and only 12.5% of the prompt-injection group. 0.14.0 was measured on the tune half only, where it stops 63.1% of malicious skills and 12.0% of benign ones. Those two numbers are not held out.
+This section scores `scanSkill()` on corpora assembled for 0.11.x. For the install gate as it ships, see [benchmarks/gate-eval](benchmarks/gate-eval/README.md). Its one held-out run, on 0.13.2 and the MalSkillBench test half, blocked 45.7% of malicious skills and 9.5% of benign ones, and only 12.5% of the prompt-injection group. 0.14.0 and 0.15.0 were measured on the tune half only. 0.14.0 stops 63.1% of malicious skills and 12.0% of benign ones; 0.15.0 changes no malicious decision there and moves four benign skills from block to allow. These numbers are not held out.
 
 `benchmarks/` holds two labeled corpora and `eval.py`, a stdlib-only harness that reports precision, recall, F1, MCC, ROC-AUC and bootstrap confidence intervals.
 

@@ -87,7 +87,7 @@ export default function HomePage() {
     {
       icon: <Terminal size={20} />,
       title: "Static Pattern Detection",
-      desc: "54 regex rules detect RCE, reverse shells, credential theft, DNS exfil, obfuscation, and C2 infrastructure.",
+      desc: "Regex rules detect RCE, reverse shells, credential theft, DNS exfil, obfuscation, and C2 infrastructure.",
       tag: "PASS 01",
     },
     {
@@ -189,9 +189,9 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-muted">
-                6-pass deep analysis catches what VirusTotal misses — prompt injection,
-                credential theft, supply chain attacks, and social engineering
-                hidden in OpenClaw skills.
+                Static analysis of each skill and the scripts it bundles finds prompt
+                injection, credential theft, supply chain attacks, and social engineering
+                hidden in agent skills.
               </p>
 
               <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -208,7 +208,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-surface-1 px-4 py-3">
                   <span className="font-body text-xs text-ink-faint">$</span>
                   <code className="font-body text-sm text-ink-muted">
-                    npx clawvet scan ./my-skill
+                    clawvet scan ./my-skill
                   </code>
                 </div>
               </div>

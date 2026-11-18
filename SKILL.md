@@ -62,7 +62,8 @@ official, or pre-approved.
    the findings first.
 6. For skills already installed, run `clawvet audit` and report the grade
    breakdown and every D or F. It reads every directory OpenClaw loads skills
-   from; add `--dir <path>` for each `skills.load.extraDirs` entry.
+   from, plus Claude Code's `.claude/skills` and `~/.claude/skills`; add
+   `--dir <path>` for each `skills.load.extraDirs` entry.
 
 ## Grades
 
