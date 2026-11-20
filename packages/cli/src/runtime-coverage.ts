@@ -39,7 +39,16 @@ const INTERPRETER_COMMAND_SUBSTITUTION = new RegExp(`(?:^|[\\s;&|(/])(?:${PIPED_
 // Fence languages read with shell rules, and with prose rules. Any other
 // labelled fence is code: only the code API rules apply.
 const SHELL_FENCE = /^(?:bash|sh|shell|zsh|console|shellsession|powershell|ps1|pwsh|cmd|bat|batch|fish|ksh)$/i;
+const SLASH_COMMENT_FENCE = /^(?:js|javascript|jsx|ts|typescript|tsx|mjs|cjs|c|cc|cpp|cxx|h|hpp|cs|csharp|java|go|golang|rust|rs|swift|kt|kotlin|scala|php|dart|zig|groovy|jsonc|json5)$/i;
 const TEXT_FENCE = /^(?:|text|txt|plain|plaintext|markdown|md|json|jsonc|json5|ya?ml|toml|ini|env|xml|html?|css|csv|mermaid|diff|log|output|gitignore|dockerignore)$/i;
+// Cobra/clap PowerShell completion idiom: `<cli> completion -s powershell | Out-String | Invoke-Expression`.
+// Only a bare binary name (not a downloader, shell, interpreter, path, or variable)
+// with no metacharacters or URLs is exempt from the `eval` block rule.
+const COMPLETION_EXCLUDED = /^(?:curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod|sh|bash|zsh|dash|ksh|fish|cmd|pwsh|powershell|python\d*|node|nodejs|deno|bun|ruby|perl|php|echo|printf|cat|head|tail|base64|xxd|env|sudo|doas|exec|eval|command|xargs|find|tar|zip|gzip|openssl|gpg|nc|ncat|netcat|socat|ssh|scp|rsync)$/i;
+function isPowerShellCompletion(text: string): boolean {
+  const m = text.match(/^\s*([a-z][a-z0-9_-]{0,63})\s+completions?\s+(?:(?:-s|--shell)\s+)?powershell(?:\s+--?[a-z0-9_-]+)*\s*\|\s*(?:Out-String\s*\|\s*)?(?:Invoke-Expression|iex)\s*$/i);
+  return !!m && !COMPLETION_EXCLUDED.test(m[1]);
+}
 const REMOTE = /^(?:https?|ftp|data):/i;
 // Commands that make a prose fragment worth reading as shell. Lowercase only:
 // "Python 3 is required" and "Node version 18" are sentences, not commands.
@@ -365,12 +374,14 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       if (commandPosition && !lenient && /^\.\.?\//.test(token.value) && !token.dynamic) result.executedFiles.push(token.value);
       // An absolute command runs a file outside the bundle, except the system
       // binary directories, which need root to change. A single segment such as
-      // /deploy is an agent slash command, not a path.
-      if (commandPosition && !prose && !lenient && /^\/[^/\s]+\/[^/\s]/.test(token.value) && !token.dynamic &&
-          !/^\/(?:usr\/(?:local\/)?)?s?bin\/|^\/opt\/homebrew\/bin\//.test(token.value)) {
-        result.executedFiles.push(token.value);
+      // /deploy is an agent slash command, not a path. Normalize leading slashes
+      // because POSIX shells treat `///tmp/x` the same as `/tmp/x`.
+      const normalizedPath = token.value.replace(/^\/+/, "/");
+      if (commandPosition && !prose && !lenient && /^\/[^/\s]+\/[^/\s]/.test(normalizedPath) && !token.dynamic &&
+          !/^\/(?:usr\/(?:local\/)?)?s?bin\/|^\/opt\/homebrew\/bin\//.test(normalizedPath)) {
+        result.executedFiles.push(normalizedPath);
       }
-      if (commandPosition && /^(?:eval|iex|invoke-expression)$/i.test(command)) {
+      if (commandPosition && /^(?:eval|iex|invoke-expression)$/i.test(command) && !isPowerShellCompletion(text)) {
         add(lineNumber, "eval");
       }
     }
@@ -437,8 +448,10 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
     // A continuation never swallows a fence line: that would desync the fences.
     while (/\\$/.test(line) && index + 1 < lines.length && !fenceLines.has(index + 1)) line = line.slice(0, -1) + join + lines[++index];
     // A leading # is a comment in code, but a heading in markdown prose, and a
-    // heading can still tell the agent to run something.
-    if ((!markdown || fence) && /^\s*(?:#|\/\/)/.test(line)) continue;
+    // heading can still tell the agent to run something. Leading // is a comment
+    // only in slash-comment languages, never in shell (where //usr/bin/curl is a path).
+    const allowSlashComment = code || (markdown && !!fence && SLASH_COMMENT_FENCE.test(fenceLanguage));
+    if ((!markdown || fence) && (/^\s*#/.test(line) || (allowSlashComment && /^\s*\/\//.test(line)))) continue;
     if (heredoc) {
       if (line.trim() === heredoc) { heredoc = undefined; continue; }
       // A heredoc body is the interpreter's input: code, not shell commands.

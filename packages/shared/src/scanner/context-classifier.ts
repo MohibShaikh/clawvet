@@ -136,16 +136,12 @@ function promoteEnvelope(findings: Finding[]): Finding[] {
 // downweight below, and the reason it can be stated with confidence 1.0 is the
 // same: the co-occurrence is exact, not a guess about any single line.
 function taintExfiltration(findings: Finding[], codeLines: Set<number>): Finding[] {
-  const source = findings.find((f) => f.category === "credential_theft");
-  const sink = findings.find((f) => f.category === "data_exfiltration");
-  if (!source || !sink) return findings;
   // Both halves must be actual uses: a declaration in frontmatter or a prose
-  // threat-table mention is documenting, not doing. An OAuth client declaring
-  // its API key and posting to the user's own webhook, or a security scanner
-  // listing exfiltration patterns, is not the exfiltration pattern.
-  if (!inCode(source.lineNumber, codeLines) || !inCode(sink.lineNumber, codeLines)) {
-    return findings;
-  }
+  // threat-table mention is documenting, not doing. Check every match rather
+  // than only the first, so an earlier prose mention cannot hide an in-code use.
+  const source = findings.find((f) => f.category === "credential_theft" && inCode(f.lineNumber, codeLines));
+  const sink = findings.find((f) => f.category === "data_exfiltration" && inCode(f.lineNumber, codeLines));
+  if (!source || !sink) return findings;
 
   return [
     ...findings,

@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, existsSync, statSync, realpathSync } from "node:fs";
 import { resolve, join, basename, dirname, isAbsolute, relative, sep } from "node:path";
 import chalk from "chalk";
 import { rescore, scanSkill } from "@clawvet/shared";
@@ -181,7 +181,7 @@ export async function scanCommand(
     fallbackName = basename(dirname(skillFile));
   }
 
-  // Load .clawvetban — block skills by name, author, or slug
+  // Load .clawvetban — block skills by name, author, or slug (even without frontmatter)
   const banFile = join(process.cwd(), ".clawvetban");
   if (existsSync(banFile)) {
     const banEntries = readFileSync(banFile, "utf-8")
@@ -189,25 +189,26 @@ export async function scanCommand(
       .map((l) => l.trim().toLowerCase())
       .filter((l) => l && !l.startsWith("#"));
 
-    // Quick parse frontmatter to check name/author before full scan
     const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (fmMatch) {
-      const fmText = fmMatch[1].toLowerCase();
-      for (const ban of banEntries) {
-        const targetLower = target.toLowerCase();
-        if (
-          targetLower.includes(ban) ||
+    const fmText = fmMatch ? fmMatch[1].toLowerCase() : "";
+    const targetLower = target.toLowerCase();
+    const fallbackLower = (fallbackName ?? "").toLowerCase();
+    for (const ban of banEntries) {
+      if (
+        targetLower.includes(ban) ||
+        (fallbackLower && fallbackLower.includes(ban)) ||
+        (fmText && (
           fmText.includes(`name: ${ban}`) ||
           fmText.includes(`author: ${ban}`) ||
           fmText.includes(`slug: ${ban}`)
-        ) {
-          console.error(
-            chalk.bgRed.white.bold(` BANNED `) +
-            chalk.red(` Skill matches ban list entry: ${ban}`)
-          );
-          console.error(chalk.dim(`  Source: ${banFile}`));
-          process.exit(1);
-        }
+        ))
+      ) {
+        console.error(
+          chalk.bgRed.white.bold(` BANNED `) +
+          chalk.red(` Skill matches ban list entry: ${ban}`)
+        );
+        console.error(chalk.dim(`  Source: ${banFile}`));
+        process.exit(1);
       }
     }
   }
@@ -221,6 +222,24 @@ export async function scanCommand(
       const trimmed = line.trim();
       if (trimmed && !trimmed.startsWith("#")) {
         ignorePatterns.push(trimmed);
+      }
+    }
+    if (ignorePatterns.length > 0) {
+      let insideSkill = false;
+      if (skillRoot) {
+        try {
+          const rel = relative(realpathSync(skillRoot), realpathSync(ignoreFile));
+          insideSkill = rel !== "" && rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+        } catch { /* ignore resolution error */ }
+      }
+      if (insideSkill) {
+        console.error(
+          `Warning: loading ${ignorePatterns.length} ignore pattern(s) from ${ignoreFile}, which is inside the scanned skill directory. Untrusted skills can ship .clawvetignore to hide non-disqualifying findings; run clawvet from outside the skill folder.`
+        );
+      } else {
+        console.error(
+          `Note: applying ${ignorePatterns.length} ignore pattern(s) from ${ignoreFile}.`
+        );
       }
     }
   }

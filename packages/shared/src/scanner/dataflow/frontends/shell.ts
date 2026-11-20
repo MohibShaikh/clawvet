@@ -1,6 +1,6 @@
 import { Parser, type Node } from "web-tree-sitter";
 import type { SourceFile } from "../../../types.js";
-import { DataflowDeadline, type Argument, type DataflowFrontend, type IRFunction, type IRNode, type IRProgram, type ValueId, coverage } from "../ir.js";
+import { DataflowDeadline, type Argument, type DataflowFrontend, type DataflowState, type IRFunction, type IRNode, type IRProgram, type ValueId } from "../ir.js";
 import { shellMayFind, shellSpecs, SHELL_OPTIONS, SHELL_SINKS } from "../specs/shell.js";
 import { SECRET_ENV } from "../specs/common.js";
 
@@ -25,7 +25,7 @@ class Lowerer {
   private readonly functionNames: Set<string>;
   private readonly globalNames: Set<string>;
 
-  constructor(root: Node, private readonly deadline = Infinity) {
+  constructor(root: Node, private readonly deadline = Infinity, private readonly scanState: DataflowState = { incomplete: false }) {
     this.functionNames = new Set(root.descendantsOfType("function_definition").map((n) => field(n, "name")?.text ?? ""));
     this.globalNames = new Set(root.descendantsOfType("variable_assignment").filter((n) => {
       for (let parent = n.parent; parent; parent = parent.parent) if (parent.type === "function_definition") return false;
@@ -132,7 +132,7 @@ class Lowerer {
     return nodes.length ? this.merge(owner, nodes.filter((c) => c.type !== "comment").map((c) => this.lower(c))) : this.literal(owner);
   }
   lower(node: Node, input = this.stdin): ValueId {
-    if (this.depth >= 128) { coverage.incomplete = true; return this.literal(node); }
+    if (this.depth >= 128) { this.scanState.incomplete = true; return this.literal(node); }
     this.depth++;
     const saved = this.stdin;
     this.stdin = input;
@@ -536,18 +536,27 @@ export const shellFrontend: DataflowFrontend = {
   grammar: "bash",
   specs: shellSpecs,
   mayFind: shellMayFind,
-  lower(root: Node, source: SourceFile, deadline?: number): IRProgram {
+  lower(root: Node, source: SourceFile, deadline?: number, state?: DataflowState): IRProgram {
     // Prompt removal is restricted to uniformly prompted documentation blocks.
     const lines = source.text.split("\n"), nonempty = lines.filter((line) => line.trim());
     const prompt = /\.(?:md|markdown|mdown)$/i.test(source.path) && nonempty.length ? /^(\$ |# )/.exec(nonempty[0])?.[0] : undefined;
     let parser: Parser | undefined, tree;
     try {
       if (prompt && nonempty.every((line) => line.startsWith(prompt))) {
+        if (deadline !== undefined && performance.now() >= deadline) throw new DataflowDeadline();
         parser = new Parser(); parser.setLanguage(root.tree.language);
-        tree = parser.parse(lines.map((line) => line.startsWith(prompt) ? line.slice(prompt.length) : line).join("\n"));
-        if (tree) root = tree.rootNode;
+        const progressCallback = deadline !== undefined && Number.isFinite(deadline)
+          ? ((() => performance.now() >= deadline) as unknown as NonNullable<Parameters<typeof parser.parse>[2]>["progressCallback"])
+          : undefined;
+        tree = parser.parse(
+          lines.map((line) => line.startsWith(prompt) ? line.slice(prompt.length) : line).join("\n"),
+          null,
+          progressCallback ? { progressCallback } : undefined,
+        );
+        if (!tree) throw new DataflowDeadline();
+        root = tree.rootNode;
       }
-      const lowerer = new Lowerer(root, deadline);
+      const lowerer = new Lowerer(root, deadline, state);
       lowerer.lower(root);
       return { source, module: lowerer.module, functions: lowerer.functions, globals: lowerer.globals };
     } finally { tree?.delete(); parser?.delete(); }

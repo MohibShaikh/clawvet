@@ -1,5 +1,5 @@
 import type { Finding, SourceFile } from "../../types.js";
-import { coverage, DataflowDeadline, type AccessRule, type CallRule, type IRFunction, type IRNode, type IRProgram, type LanguageSpecs, type TaintFlag, type TaintKind } from "./ir.js";
+import { DataflowDeadline, type AccessRule, type CallRule, type DataflowState, type IRFunction, type IRNode, type IRProgram, type LanguageSpecs, type TaintFlag, type TaintKind } from "./ir.js";
 import { credentialPath, persistencePath, projectSecretPath, SECRET_ENV, TRANSFER_COMMAND } from "./specs/common.js";
 
 interface Trace { kind: TaintKind; line: number; detail: string; parameter?: number; authOnly?: boolean }
@@ -47,7 +47,7 @@ function same(a: Value, b: Value): boolean {
 const merged = new WeakSet<Value>();
 const settled = (v: Value) => merged.has(v) || v.traces.length <= 1 && v.flags.length <= 1 && v.strings.length <= 1 && (v.strings[0]?.length ?? 0) <= 2048;
 
-function merge(values: Value[]): Value {
+function merge(values: Value[], state: DataflowState): Value {
   let only: Value | undefined, live = 0;
   for (const value of values) if (value.traces.length || value.flags.length || value.strings.length || value.api !== undefined || value.readLine !== undefined) { only = value; live++; }
   if (live === 0) return EMPTY;
@@ -62,7 +62,7 @@ function merge(values: Value[]): Value {
       const key = traceKey(trace);
       if (traces.has(key)) continue;
       if (traces.size < MAX_TRACES) traces.set(key, trace);
-      else coverage.incomplete = true;
+      else state.incomplete = true;
     }
     for (const flag of value.flags) flags.add(flag);
     for (const str of value.strings) if (strings.size < 4) strings.add(str.slice(0, 2048));
@@ -79,17 +79,17 @@ function source(kind: TaintKind, node: IRNode, detail: string): Value {
 function flag(value: Value, name: TaintFlag): Value {
   return { ...value, flags: [...new Set([...value.flags, name])].sort() };
 }
-function replaceParameters(value: Value, args: Value[]): Value {
+function replaceParameters(value: Value, args: Value[], state: DataflowState): Value {
   const ordinary = { ...value, traces: value.traces.filter((t) => t.kind !== "parameter") };
   const inputs = value.traces.filter((t) => t.kind === "parameter").map((t) => {
     const arg = args[t.parameter!] ?? EMPTY;
     return t.authOnly ? { ...arg, traces: arg.traces.filter((trace) => trace.kind !== "environment").map((trace) => trace.kind === "parameter" ? { ...trace, authOnly: true } : trace) } : arg;
   });
-  let result = merge([ordinary, ...inputs]);
-  if (result.readLine !== undefined && !has(result, "environment_all") && result.strings.some(projectSecretPath)) result = merge([result, { ...EMPTY, traces: [{ kind: "environment_all", line: result.readLine, detail: "read project .env" }] }]);
+  let result = merge([ordinary, ...inputs], state);
+  if (result.readLine !== undefined && !has(result, "environment_all") && result.strings.some(projectSecretPath)) result = merge([result, { ...EMPTY, traces: [{ kind: "environment_all", line: result.readLine, detail: "read project .env" }] }], state);
   const sensitive = result.strings.find(credentialPath);
-  if (result.readLine !== undefined && sensitive && !has(result, "credential")) result = merge([result, { ...EMPTY, traces: [{ kind: "credential", line: result.readLine, detail: `read ${sensitive}` }] }]);
-  if (result.readLine !== undefined && has(result, "walk") && !has(result, "file")) result = merge([result, { ...EMPTY, traces: [{ kind: "file", line: result.readLine, detail: "read walked file" }] }]);
+  if (result.readLine !== undefined && sensitive && !has(result, "credential")) result = merge([result, { ...EMPTY, traces: [{ kind: "credential", line: result.readLine, detail: `read ${sensitive}` }] }], state);
+  if (result.readLine !== undefined && has(result, "walk") && !has(result, "file")) result = merge([result, { ...EMPTY, traces: [{ kind: "file", line: result.readLine, detail: "read walked file" }] }], state);
   return result;
 }
 function canonical(node: IRNode, values: Value[]): string {
@@ -135,14 +135,14 @@ function boundArguments(node: IRNode, values: Value[], summary: Summary): Value[
   }
   return result;
 }
-function callValue(node: IRNode, values: Value[], specs: LanguageSpecs, summaries: Summaries): Value {
+function callValue(node: IRNode, values: Value[], specs: LanguageSpecs, summaries: Summaries, state: DataflowState): Value {
   const name = canonical(node, values);
   const args = callArguments(node, values);
   const receiver = node.receiver === undefined ? EMPTY : values[node.receiver] ?? EMPTY;
   const summary = summaries.get(name);
-  if (summary) return replaceParameters(summary.result, boundArguments(node, values, summary));
+  if (summary) return replaceParameters(summary.result, boundArguments(node, values, summary), state);
   const rule = effects(name, specs);
-  const all = merge([...args, receiver]);
+  const all = merge([...args, receiver], state);
   let result = all;
   if (rule.effects.includes("path")) {
     const separator = rule.pathSeparator ?? "";
@@ -156,11 +156,11 @@ function callValue(node: IRNode, values: Value[], specs: LanguageSpecs, summarie
     const writeOnly = rule.effects.includes("open") && modes?.some((m) => /[wax]/.test(m) && !m.includes("+"));
     const sensitive = !writeOnly && path.strings.find(credentialPath);
     const project = !writeOnly && !sensitive && path.strings.find(projectSecretPath);
-    result = sensitive ? merge([path, source("credential", node, `read ${sensitive}`)])
+    result = sensitive ? merge([path, source("credential", node, `read ${sensitive}`)], state)
       // The whole file is every secret in it, like dumping the environment;
       // indexing one key out of it narrows that to a single secret (see "index").
-      : project ? merge([path, source("environment_all", node, `read ${project}`)]) : path;
-    if (!writeOnly && has(path, "walk")) result = merge([result, source("file", node, "read walked file")]);
+      : project ? merge([path, source("environment_all", node, `read ${project}`)], state) : path;
+    if (!writeOnly && has(path, "walk")) result = merge([result, source("file", node, "read walked file")], state);
     if (!writeOnly) result = { ...result, readLine: node.line };
   }
   if (rule.effects.includes("environment")) {
@@ -170,16 +170,16 @@ function callValue(node: IRNode, values: Value[], specs: LanguageSpecs, summarie
     // What a command prints is what it read: `cat ~/.ssh/id_rsa` returns the key, `env` the environment.
     const words = (args[0]?.strings ?? []).join(" ").trim().split(/[\s'"]+/);
     const sensitive = READER_COMMAND.test(words[0] ?? "") ? words.find(credentialPath) : undefined;
-    if (sensitive) result = merge([result, source("credential", node, `read ${sensitive}`)]);
-    else if (words.length === 1 && /^(?:env|printenv)$/.test(words[0])) result = merge([result, source("environment_all", node, words[0])]);
+    if (sensitive) result = merge([result, source("credential", node, `read ${sensitive}`)], state);
+    else if (words.length === 1 && /^(?:env|printenv)$/.test(words[0])) result = merge([result, source("environment_all", node, words[0])], state);
   }
   if (rule.effects.includes("clipboard")) result = source("clipboard", node, "clipboard read");
   if (rule.effects.includes("host")) result = source("host", node, name);
   // len(), bool(), isinstance() and the like return a count or a flag: no content
   // or location survives, so a file count sent as telemetry is not exfiltration.
   if (rule.effects.includes("aggregate")) result = EMPTY;
-  if (rule.effects.includes("walk")) result = merge([all, source("walk", node, "filesystem walk")]);
-  if (rule.effects.includes("request")) result = filteredNetworkData(node, values);
+  if (rule.effects.includes("walk")) result = merge([all, source("walk", node, "filesystem walk")], state);
+  if (rule.effects.includes("request")) result = filteredNetworkData(node, values, state);
   if (rule.effects.includes("network_read")) result = source("network", node, `${name} response`);
   if (rule.effects.includes("encode")) result = flag(result, "encoded");
   if (rule.effects.includes("decode")) result = flag(result, "decoded");
@@ -195,7 +195,7 @@ function callValue(node: IRNode, values: Value[], specs: LanguageSpecs, summarie
   // Unknown calls do not invent sources, but preserve data passed through wrappers.
   return { ...result, api: rule.resultApi ?? (rule.clearApi ? undefined : result.api) };
 }
-function evaluate(node: IRNode, values: Value[], specs: LanguageSpecs, summaries: Summaries, globals: Globals): Value {
+function evaluate(node: IRNode, values: Value[], specs: LanguageSpecs, summaries: Summaries, globals: Globals, state: DataflowState): Value {
   const inputs = node.inputs.map((id) => values[id] ?? EMPTY);
   switch (node.op) {
     case "literal": return { ...EMPTY, strings: [(node.text ?? "").slice(0, 2048)] };
@@ -206,13 +206,13 @@ function evaluate(node: IRNode, values: Value[], specs: LanguageSpecs, summaries
       return { ...(rule ? source(rule.source, node, node.name!) : EMPTY), api: node.name };
     }
     case "parameter": return { ...EMPTY, traces: [{ kind: "parameter", line: node.line, detail: "parameter", parameter: node.parameter }] };
-    case "merge": return merge(inputs);
+    case "merge": return merge(inputs, state);
     case "concat": {
-      const value = merge(inputs);
+      const value = merge(inputs, state);
       // Keep literal path pieces even when another component is computed.
       return { ...value, strings: [inputs.map((v) => v.strings[0] ?? "").join(node.text ?? "").slice(0, 2048)], api: undefined };
     }
-    case "xor": return flag(flag(merge(inputs), "encoded"), "encrypted");
+    case "xor": return flag(flag(merge(inputs, state), "encoded"), "encrypted");
     case "attribute": {
       const base = inputs[0] ?? EMPTY;
       const name = base.api ? `${base.api}.${node.name}` : `.${node.name}`;
@@ -222,22 +222,22 @@ function evaluate(node: IRNode, values: Value[], specs: LanguageSpecs, summaries
     case "index": {
       const base = inputs[0] ?? EMPTY, key = inputs[1] ?? EMPTY;
       if (has(base, "environment_all")) return key.strings.some((s) => SECRET_ENV.test(s)) ? source("environment", node, `env ${key.strings[0]}`) : has(key, "environment_all") ? source("environment_all", node, "iterated environment") : EMPTY;
-      return merge([base, key]);
+      return merge([base, key], state);
     }
-    case "call": return callValue(node, values, specs, summaries);
+    case "call": return callValue(node, values, specs, summaries, state);
   }
 }
-function filteredNetworkData(node: IRNode, values: Value[]): Value {
+function filteredNetworkData(node: IRNode, values: Value[], state: DataflowState): Value {
   return merge((node.args ?? []).map((arg) => {
     const value = values[arg.value] ?? EMPTY;
     const auth = arg.name === "api_key" || arg.name === "headers";
     return auth ? { ...value, traces: value.traces.filter((t) => t.kind !== "environment").map((t) => t.kind === "parameter" ? { ...t, authOnly: true } : t) } : value;
-  }));
+  }), state);
 }
 // Past a cap, keep one of each equivalent event (same kind, call and values,
 // differing only in line) before cutting, so 64 identical sends cannot push a
 // different one off the end. Anything still cut marks the analysis incomplete.
-function capEvents(events: Event[], max: number): Event[] {
+function capEvents(events: Event[], max: number, state: DataflowState): Event[] {
   if (events.length <= max) return events;
   const seen = new Set<string>();
   const kept: Event[] = [];
@@ -246,13 +246,13 @@ function capEvents(events: Event[], max: number): Event[] {
     if (!seen.has(key)) { seen.add(key); kept.push(e); }
   }
   if (kept.length <= max) return kept;
-  coverage.incomplete = true;
+  state.incomplete = true;
   return kept.slice(0, max);
 }
-function collectEvents(fn: IRFunction, values: Value[], specs: LanguageSpecs, summaries: Summaries, deadline: number): Event[] {
+function collectEvents(fn: IRFunction, values: Value[], specs: LanguageSpecs, summaries: Summaries, deadline: number, state: DataflowState): Event[] {
   const events: Event[] = [];
   for (const node of fn.nodes) {
-    if (events.length >= MAX_FUNCTION_EVENTS) { coverage.incomplete = true; break; }
+    if (events.length >= MAX_FUNCTION_EVENTS) { state.incomplete = true; break; }
     if ((node.id & 127) === 0 && performance.now() >= deadline) throw new DataflowDeadline();
     if (node.op === "xor" && has(values[node.id], "file")) events.push({ kind: "encrypt", data: values[node.id], target: EMPTY, line: node.line, name: "XOR", loops: node.loops });
     if (node.op !== "call") continue;
@@ -260,15 +260,15 @@ function collectEvents(fn: IRFunction, values: Value[], specs: LanguageSpecs, su
     const summary = summaries.get(name);
     if (summary) {
       const args = boundArguments(node, values, summary);
-      for (const event of capEvents(summary.events, Math.min(MAX_EVENTS, MAX_FUNCTION_EVENTS - events.length))) {
-        events.push({ ...event, data: replaceParameters(event.data, args), target: replaceParameters(event.target, args), loops: node.loops, name: `${name} -> ${event.name}` });
+      for (const event of capEvents(summary.events, Math.min(MAX_EVENTS, MAX_FUNCTION_EVENTS - events.length), state)) {
+        events.push({ ...event, data: replaceParameters(event.data, args, state), target: replaceParameters(event.target, args, state), loops: node.loops, name: `${name} -> ${event.name}` });
       }
       continue;
     }
     const rule = effects(name, specs);
     const args = callArguments(node, values);
     const receiver = node.receiver === undefined ? EMPTY : values[node.receiver] ?? EMPTY;
-    const all = merge([...args, receiver]);
+    const all = merge([...args, receiver], state);
     const target = targetValue(rule, args, receiver);
     const add = (kind: EventKind, data = all, dest = target, dns = false) => {
       // Public sends and unrelated local writes cannot contribute to a flow.
@@ -282,7 +282,7 @@ function collectEvents(fn: IRFunction, values: Value[], specs: LanguageSpecs, su
     if (rule.effects.includes("network") || rule.effects.includes("dns")) {
       const url = (node.args ?? []).find((a) => a.name === "url");
       const destination = url ? values[url.value] : args[rule.urlPosition ?? 0];
-      add("network", filteredNetworkData(node, values), destination ?? EMPTY, rule.effects.includes("dns"));
+      add("network", filteredNetworkData(node, values, state), destination ?? EMPTY, rule.effects.includes("dns"));
     }
     if (rule.effects.includes("execute")) add("execute", args[0] ?? EMPTY);
     if (rule.effects.includes("command")) {
@@ -299,7 +299,7 @@ function collectEvents(fn: IRFunction, values: Value[], specs: LanguageSpecs, su
   }
   return events;
 }
-function solve(fn: IRFunction, specs: LanguageSpecs, summaries: Summaries, deadline: number, globals: Globals = new Map<string, Value>(), exports?: Record<string, number>): Summary {
+function solve(fn: IRFunction, specs: LanguageSpecs, summaries: Summaries, deadline: number, state: DataflowState, globals: Globals = new Map<string, Value>(), exports?: Record<string, number>): Summary {
   const values = fn.nodes.map(() => EMPTY);
   const dependents: number[][] = fn.nodes.map(() => []);
   for (const node of fn.nodes) for (const input of [...node.inputs, ...(node.mutations ?? [])]) dependents[input]?.push(node.id);
@@ -312,11 +312,11 @@ function solve(fn: IRFunction, specs: LanguageSpecs, summaries: Summaries, deadl
   while (head < queue.length) {
     if ((head & 255) === 0 && performance.now() >= deadline) break;
     const id = queue[head++]; queued[id] = false;
-    if (updates[id]++ >= MAX_UPDATES) { coverage.incomplete = true; continue; }
+    if (updates[id]++ >= MAX_UPDATES) { state.incomplete = true; continue; }
     const node = fn.nodes[id];
-    const computed = evaluate(node, values, specs, summaries, globals);
+    const computed = evaluate(node, values, specs, summaries, globals, state);
     const extra = [...(node.mutations ?? []).map((input) => values[input] ?? EMPTY), ...(stored[id].traces.length ? [stored[id]] : [])];
-    const result = extra.length ? merge([computed, ...extra]) : computed;
+    const result = extra.length ? merge([computed, ...extra], state) : computed;
     const enqueue = (target: number) => { if (!queued[target]) { queued[target] = true; queue.push(target); } };
     if (node.op === "call") {
       const summary = summaries.get(canonical(node, values));
@@ -327,7 +327,7 @@ function solve(fn: IRFunction, specs: LanguageSpecs, summaries: Summaries, deadl
           const index = arg.name ? summary.positions.get(arg.name) ?? -1 : position++;
           const mutation = index >= 0 ? summary.mutates[index] : undefined;
           if (!mutation?.traces.length) continue;
-          const next = merge([stored[arg.value] ?? EMPTY, replaceParameters(mutation, args)]);
+          const next = merge([stored[arg.value] ?? EMPTY, replaceParameters(mutation, args, state)], state);
           if (!same(next, stored[arg.value] ?? EMPTY)) { stored[arg.value] = next; enqueue(arg.value); }
         }
       }
@@ -344,16 +344,16 @@ function solve(fn: IRFunction, specs: LanguageSpecs, summaries: Summaries, deadl
     const extra = own.traces.filter((t) => !(t.kind === "parameter" && t.parameter === node.parameter));
     if (extra.length) mutates[node.parameter] = { ...own, traces: extra };
   }
-  return { result: merge(fn.returns.map((id) => values[id])), events: capEvents(collectEvents(fn, values, specs, summaries, deadline), MAX_FUNCTION_EVENTS), mutates,
+  return { result: merge(fn.returns.map((id) => values[id]), state), events: capEvents(collectEvents(fn, values, specs, summaries, deadline, state), MAX_FUNCTION_EVENTS, state), mutates,
     parameters: fn.parameters, positions: new Map(fn.parameters.map((name, index) => [name, index])), globals: exports ? new Map(Object.entries(exports).map(([name, id]) => [name, values[id]])) : undefined };
 }
 // Two definitions with one name (a redefinition, or a frontend that cannot tell
 // scopes apart) share one summary holding both. Keeping only the last would let
 // a later harmless definition hide the one a call actually reaches.
-function combine(a: Summary | undefined, b: Summary): Summary {
+function combine(a: Summary | undefined, b: Summary, state: DataflowState): Summary {
   if (!a) return b;
-  return { ...a, result: merge([a.result, b.result]), events: capEvents([...a.events, ...b.events], MAX_FUNCTION_EVENTS),
-    mutates: a.mutates.map((m, i) => merge([m, b.mutates[i] ?? EMPTY])) };
+  return { ...a, result: merge([a.result, b.result], state), events: capEvents([...a.events, ...b.events], MAX_FUNCTION_EVENTS, state),
+    mutates: a.mutates.map((m, i) => merge([m, b.mutates[i] ?? EMPTY], state)) };
 }
 function finding(sourceFile: SourceFile, event: Event, category: string, severity: Finding["severity"], title: string, trace?: Trace): Finding {
   const evidence = trace ? `${sourceFile.path}:${trace.line} ${trace.detail} -> :${event.line} ${event.name}` : `${sourceFile.path}:${event.line} ${event.name}`;
@@ -440,10 +440,10 @@ function findingsForEvents(events: Event[], sourceFile: SourceFile): Finding[] {
 }
 
 /** Bounded worklists and summaries keep work linear in the IR size. */
-export function analyzeProgram(program: IRProgram, specs: LanguageSpecs, deadline = Infinity): Finding[] {
+export function analyzeProgram(program: IRProgram, specs: LanguageSpecs, deadline = Infinity, state: DataflowState = { incomplete: false }): Finding[] {
   const summaries = new Map<string, Summary>();
   const serialized = new Map<string, string>();
-  let module = solve(program.module, specs, summaries, deadline, undefined, program.globals);
+  let module = solve(program.module, specs, summaries, deadline, state, undefined, program.globals);
   // A function's summary depends only on the summaries it looked up and the
   // module globals it read. When none of those changed since it was last
   // solved, the answer is the same, so a round re-solves only real callers.
@@ -460,12 +460,12 @@ export function analyzeProgram(program: IRProgram, specs: LanguageSpecs, deadlin
         && [...entry.reads].every(([name, value]) => { const now = globals?.get(name); return value === now || value !== undefined && now !== undefined && same(value, now); });
       if (!entry || !current) {
         const calls = new Set<string>(), reads = new Map<string, Value | undefined>();
-        const summary = solve(fn, specs, { get: (name) => { calls.add(name); return summaries.get(name); } }, deadline,
+        const summary = solve(fn, specs, { get: (name) => { calls.add(name); return summaries.get(name); } }, deadline, state,
           { get: (name) => { const value = globals?.get(name); reads.set(name, value); return value; } });
         entry = { summary, calls, reads };
         solved.set(fn, entry);
       }
-      next.set(fn.name, combine(next.get(fn.name), entry.summary));
+      next.set(fn.name, combine(next.get(fn.name), entry.summary, state));
       if (performance.now() >= deadline) break;
     }
     for (const [name, summary] of next) {
@@ -474,10 +474,10 @@ export function analyzeProgram(program: IRProgram, specs: LanguageSpecs, deadlin
     }
     if (!changedNow.size) { converged = true; break; }
     changedBefore = changedNow;
-    module = solve(program.module, specs, summaries, deadline, undefined, program.globals);
+    module = solve(program.module, specs, summaries, deadline, state, undefined, program.globals);
   }
   // Out of rounds, not out of time (index.ts reports that): summaries may be stale.
-  if (!converged && program.functions.length && performance.now() < deadline) coverage.incomplete = true;
+  if (!converged && program.functions.length && performance.now() < deadline) state.incomplete = true;
   const events = [...module.events, ...[...summaries.values()].flatMap((s) => s.events)];
   const result = findingsForEvents(events, program.source);
   const seen = new Set<string>();

@@ -54,13 +54,14 @@ function mentions(text: string, path: string): boolean {
 // filenames are matched separately, including extensionless helpers. Extract
 // concrete script paths and Markdown links as well so missing references are
 // reported, rather than disappearing because they weren't in the inventory.
-function references(text: string): string[] {
-  const refs = new Set<string>();
+function references(text: string): { all: string[]; markdownLinks: Set<string>; nonLinkRefs: Set<string> } {
+  const markdownLinks = new Set<string>();
+  const nonLinkRefs = new Set<string>();
   let remaining = text.replace(/(?:https?|mailto|data):[^\s<>"'`]+/gi, "");
   remaining = remaining.replace(/\[[^\[\]\n]*\]\(\s*(?:<([^<>\n]+)>|([^\s()[\]<>]+))(?:\s+["\'][^"\'\n]*["\'])?\s*\)/g,
     (_match, angle: string, plain: string) => {
       const ref = angle || plain;
-      if (ref && !ref.startsWith("#")) refs.add(ref.split(/[?#]/)[0]);
+      if (ref && !ref.startsWith("#")) markdownLinks.add(ref.split(/[?#]/)[0]);
       return " ";
     });
   // An interpreter/source command can reference an extensionless file too.
@@ -68,39 +69,39 @@ function references(text: string): string[] {
   // bundled file run by its bare name is still found by the inventory match.
   for (const match of remaining.matchAll(/\b(?:bash|sh|zsh|source|node|python\d*|ruby|perl)[ \t]+(?!-)(?:"([^"\n]+)"|'([^'\n]+)'|([^\s`"'<>|;&)]+))/g)) {
     const ref = (match[1] || match[2] || match[3]).replace(/[.,:]+$/, "");
-    if (/[/.]/.test(ref) && /\w/.test(ref)) refs.add(ref);
+    if (/[/.]/.test(ref) && /\w/.test(ref)) nonLinkRefs.add(ref);
   }
   // Remove quoted paths after extraction, so "my helper.sh" doesn't also
   // manufacture a missing reference to "helper.sh".
   remaining = remaining.replace(/["'`]([^"'`\n]+\.(?:sh|bash|zsh|ps1|bat|cmd|py|js|mjs|cjs|ts|rb|pl|lua))["'`]/g,
     (match, ref: string) => {
       if (/^(?:bash|sh|node|python\d*)\s/.test(ref)) return match;
-      refs.add(ref);
+      nonLinkRefs.add(ref);
       return " ";
     });
   for (const match of remaining.matchAll(/(?:^|[\s`"'(=])((?:\.{1,2}\/|\/)?[\w.@+~$\/\\-]+\.(?:sh|bash|zsh|ps1|bat|cmd|py|pyw|js|mjs|cjs|ts|mts|cts|rb|pl|lua))(?=$|[\s`"')\],;:#?]|\.(?=\s|$))/gm)) {
-    refs.add(match[1]);
+    nonLinkRefs.add(match[1]);
   }
   // `. path` dot-sources a file. The dot must stand alone, so a sentence's
   // trailing period or a numbered list item is not read as a command.
   // The target must look like a path, or "`code`. The next step" reads as one.
   for (const match of remaining.matchAll(/(?:^|[\s;&|(])\.[ \t]+(?!-)(?:"([^"\n]+)"|'([^'\n]+)'|([^\s`"'<>|;&)]+))/gm)) {
     const ref = (match[1] || match[2] || match[3]).replace(/[.,:]+$/, "");
-    if (/[/.~]/.test(ref)) refs.add(ref);
+    if (/[/.~]/.test(ref)) nonLinkRefs.add(ref);
   }
   // An absolute path in command position runs code outside the bundle.
   // System binary directories are excluded: `/usr/bin/python3 helper.py`
   // still runs a bundled file, and needs root to tamper with.
   // "/discover" with one segment is an agent slash command, not a path.
   for (const match of remaining.matchAll(/\b(?:run|execute|exec|invoke|launch)\b(?:\s+(?:this|it|that|first|now|next|the\s+following))*\s*:?\s+(\/[^\s`"'<>|;&)]+)/gim)) {
-    const ref = match[1].replace(/[.,:]+$/, "");
-    if (/^\/[^/]+\/./.test(ref) && !/^\/(?:usr\/(?:local\/)?)?s?bin\//.test(ref)) refs.add(ref);
+    const ref = match[1].replace(/[.,:]+$/, "").replace(/^\/+/, "/");
+    if (/^\/[^/]+\/./.test(ref) && !/^\/(?:usr\/(?:local\/)?)?s?bin\//.test(ref)) nonLinkRefs.add(ref);
   }
   // Explicit local paths also cover extensionless executables and imports.
   for (const match of remaining.matchAll(/(?:^|[\s`"'(=])((?:\.{1,2}\/)[^\s`"'<>|;&)\]]+)/gm)) {
-    refs.add(match[1].replace(/[.,:]+$/, ""));
+    nonLinkRefs.add(match[1].replace(/[.,:]+$/, ""));
   }
-  return [...refs];
+  return { all: [...new Set([...markdownLinks, ...nonLinkRefs])], markdownLinks, nonLinkRefs };
 }
 
 // An agent's skill directory under ~ (see skill-dirs.ts): <name>, then the file.
@@ -368,13 +369,21 @@ export function assembleSkill(
       : [];
     // An imported module runs, so a download written over it is executed code.
     executedFiles.push(...modules.map((target) => ({ path: entryFile, target })));
-    for (const original of new Set([...references(text), ...runtime.executedFiles, ...modules])) {
+    const extracted = references(text);
+    for (const original of new Set([...extracted.all, ...runtime.executedFiles, ...modules])) {
       if (PLACEHOLDER_PATH.test(original)) continue;
       const ref = ownCopy(original);
-      // Code resolves its imports from its own file. Shell and the manifest
-      // resolve from a working directory ClawVet cannot know, so a reference
-      // there may be relative to the helper or to the skill root: check both.
-      const paths = CODE_FILE.test(source.path)
+      const runs = runtime.executedFiles.includes(original);
+      const markdownLinkOnly =
+        /\.md$/i.test(source.path) &&
+        !runs &&
+        extracted.markdownLinks.has(original) &&
+        !extracted.nonLinkRefs.has(original) &&
+        !modules.includes(original);
+      // Code and non-executed Markdown hyperlinks resolve from their own file.
+      // Shell and manifest commands resolve from a working directory ClawVet
+      // cannot know, so check both the file's directory and the skill root.
+      const paths = CODE_FILE.test(source.path) || markdownLinkOnly
         ? [resolve(root, dirname(source.path), ref)]
         : [...new Set([resolve(root, dirname(source.path), ref), resolve(root, ref)])];
       const hasFile = (path: string) => files.has(relative(root, path).split(sep).join("/"));
@@ -388,7 +397,6 @@ export function assembleSkill(
       });
       // A quoted sentence that happens to end in a filename is prose, unless a
       // file by that whole name exists.
-      const runs = runtime.executedFiles.includes(original);
       if (/\s/.test(ref) && !matches.length && !runs) continue;
       if (DOCUMENT.test(ref) && !runs && paths.every((path) => !inside(path))) {
         issue(ref, "outside-document", undefined, source.path);

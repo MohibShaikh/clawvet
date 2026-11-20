@@ -38,8 +38,7 @@ jobs:
         run: npx turbo build --filter=@clawvet/shared
 
       - name: Run tests
-        run: npx vitest run
-        working-directory: apps/api
+        run: npx turbo test --filter=@clawvet/shared --filter=@clawvet/api --force
 
       - name: Build CLI
         run: npx tsup

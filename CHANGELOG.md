@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.16.2
+
+Reliability, performance, security, and setup polish patch with no policy changes.
+
+- **Speed and regex safety:** replaced quadratic per-match line splitting with a
+  precomputed line index across the scanner, parser, dependency checker, runtime
+  coverage, and bundler (a 2 MiB skill drops from minutes to seconds). Fixed
+  cubic backtracking in `HTML_COMMENT_INJECTION` on repeated unclosed `<!--`
+  comments and improved multi-comment line accuracy.
+- **Dataflow reliability:** moved one-time WebAssembly runtime and tree-sitter
+  grammar loading outside the 250 ms per-skill analysis budget so cold starts no
+  longer silently truncate the first skill. Stopped permanently caching failed
+  grammar loads, replaced global `coverage.incomplete` state with per-scan state
+  for concurrent scans, and enforced the deadline on re-parsed prompted shell
+  blocks in Markdown.
+- **Parsing and coverage accuracy:** switched Markdown fence parsing to
+  CommonMark rules parsed per bundled file (accepting any indentation for
+  list-nested fences) and shared the same parser with `runtime-coverage`,
+  preventing fences in one file from swallowing later files or closing on
+  ```` ```lang ```` lines. Normalized malformed YAML frontmatter (`null`, lists,
+  numeric `name`/`version`, non-string `requires.env`/`requires.bins`) instead
+  of crashing. Fixed POSIX `//` command paths (such as `//usr/bin/curl` or
+  `///tmp/script.sh`) being skipped as comments or missed in shell scripts and
+  fences. Resolved non-executed relative Markdown links against the linking
+  document instead of triggering `decoy-path`, and stopped flagging standard
+  PowerShell CLI completion lines (`<cli> completion -s powershell | Out-String | Invoke-Expression`)
+  as `eval`.
+- **Detection and bypass fixes:** fixed `taintExfiltration` checking only the
+  first credential/exfiltration finding so an earlier prose mention cannot mask
+  an in-code exfiltration flow. Prevented `.clawvetignore` from ever suppressing
+  disqualifying indicators of compromise, and added a stderr notice when
+  `.clawvetignore` is loaded (with an explicit warning if it lives inside the
+  scanned skill directory). Fixed `osv.ts` unhandled promise rejection on
+  deadline expiration, added `lineNumber` to global `npm install -g` findings,
+  and preserved existing `warn` reasons in `dependencyVerdict`.
+- **Terminal, setup, and CI polish:** stripped ANSI, OSC, DCS, and carriage
+  return control sequences from untrusted skill fields in terminal reports, and
+  displayed bundled findings as `Location: path:line`. Added stderr preflight
+  diagnostics to `clawvet gate --print-config` (while keeping stdout pure JSON)
+  to detect group/world-writable executable or parent directories that OpenClaw
+  rejects and print the exact `chmod go-w` command, plus a note when `--semantic`
+  is requested without an API key set in the current environment. Fixed `watch`
+  signal listener cleanup across multiple directories. Updated
+  `.github/workflows/release.yml` to run both `@clawvet/shared` and `@clawvet/api`
+  test suites before publishing, and removed unused `next` and `drizzle-kit`
+  entries from `@clawvet/shared` dependencies.
+
+**Behaviour changes:** `.clawvetban` now applies to skills without YAML
+frontmatter, and `clawvet watch --threshold 0` now honors `0` instead of falling
+back to `50`. On the MalSkillBench tune half against 0.16.1, 0 benign skills
+moved from allow to warn/block (benign stops 669 to 666, blocks 153 to 152,
+allows 1,292 to 1,295) while malicious blocks rose from 1,181 to 1,184 with 0
+lost stops; on 945 cached ClawHub skill versions, blocks dropped from 387 to 374
+and allows rose from 381 to 384 with 0 regressions.
+
 ## 0.16.1
 
 `clawvet scan --semantic` now uses the same judge as `gate --semantic`: the

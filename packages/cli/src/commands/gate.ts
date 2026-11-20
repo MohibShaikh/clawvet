@@ -216,6 +216,32 @@ export function semanticHostTimeout(semanticTimeoutMs: number): number {
 // What the gate keeps back from the host timeout for everything after the judge.
 const SEMANTIC_RESERVE_MS = 1500;
 
+/**
+ * Walk each resolved executable path and all of its ancestor directories up to
+ * `/` on POSIX systems, returning every path that is group- or world-writable
+ * (`mode & 0o022`). OpenClaw rejects installPolicy hooks when any of these are
+ * writable by other users or groups.
+ */
+export function checkExecutablePermissions(paths: string[]): string[] {
+  if (process.platform === "win32") return [];
+  const seen = new Set<string>();
+  const writable: string[] = [];
+  for (const input of paths) {
+    let cur = resolve(input);
+    for (;;) {
+      if (seen.has(cur)) break;
+      seen.add(cur);
+      try {
+        if ((statSync(cur).mode & 0o022) !== 0) writable.push(cur);
+      } catch { break; }
+      const parent = dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+    }
+  }
+  return writable;
+}
+
 // OpenClaw requires the policy command and any interpreter script argument to
 // be "direct regular files with trusted ownership, restricted permissions, and
 // verifiable parent directories. Symlinks and insecure paths are rejected."
@@ -226,6 +252,7 @@ const SEMANTIC_RESERVE_MS = 1500;
 function printConfig(blockAt: number, options: GateOptions): void {
   const { approval, strict } = options;
   const self = realpathSync(fileURLToPath(import.meta.url));
+  const command = realpathSync(process.execPath);
   const args: string[] = [self, "gate"];
   if (blockAt !== DEFAULT_BLOCK_AT) args.push("--block-at", String(blockAt));
   if (approval) args.push("--approval", resolve(approval));
@@ -259,7 +286,7 @@ function printConfig(blockAt: number, options: GateOptions): void {
           // OpenClaw requires exec.source == "exec"; omit it and config
           // validation rejects the block as-is.
           source: "exec",
-          command: realpathSync(process.execPath),
+          command,
           args,
           // The judge's own deadline plus room for assembly and the static
           // passes, so the host never kills a gate that is about to answer.
@@ -275,6 +302,24 @@ function printConfig(blockAt: number, options: GateOptions): void {
     },
   };
   process.stdout.write(JSON.stringify(config, null, 2) + "\n");
+  // Preflight diagnostics go strictly to stderr so stdout stays pasteable JSON.
+  const writable = checkExecutablePermissions([command, self]);
+  if (writable.length > 0) {
+    const quoted = writable.map((p) => `'${p.replace(/'/g, "'\\''")}'`).join(" ");
+    process.stderr.write(
+      `Warning: OpenClaw rejects installPolicy hooks when the binary, script, or any parent directory is group- or world-writable.\n` +
+      `Writable path(s) detected:\n${writable.map((p) => `  ${p}`).join("\n")}\n` +
+      `Fix with: chmod go-w ${quoted}\n`
+    );
+  }
+  if (options.semantic) {
+    try { resolveSemanticConfig(process.env); }
+    catch (err) {
+      process.stderr.write(
+        `Note: --semantic requires an LLM API key in the gateway environment (${err instanceof Error ? err.message : "not configured"}). Ensure one of the passEnv variables is set where OpenClaw runs.\n`
+      );
+    }
+  }
 }
 
 export async function gateCommand(options: GateOptions = {}): Promise<void> {
@@ -395,7 +440,11 @@ export function dependencyVerdict(response: PolicyResponse, spec: unknown): Poli
     return { ...response, decision: "block", reason: `ClawVet blocks a dependency download that is not over https: ${where}` };
   }
   if (typeof sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(sha256)) {
-    return { ...response, decision: "warn", reason: `Dependency download from ${where} is not pinned by sha256; review it, or add sha256 to the skill's install spec.` };
+    const depNote = `Dependency download from ${where} is not pinned by sha256; review it, or add sha256 to the skill's install spec.`;
+    const reason = response.decision === "warn" && response.reason
+      ? `${response.reason} ${depNote}`.slice(0, REASON_MAX)
+      : depNote;
+    return { ...response, decision: "warn", reason };
   }
   return response;
 }

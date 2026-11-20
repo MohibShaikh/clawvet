@@ -530,7 +530,9 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
   },
   {
     name: "HTML_COMMENT_INJECTION",
-    pattern: /<!--[\s\S]*?(?:ignore|instructions|system|override|secret)[\s\S]*?-->/gi,
+    // Bounded and stopped at nested/closing comment markers so repeated unclosed
+    // comments stay linear instead of backtracking cubically across the whole file.
+    pattern: /<!--(?:(?!<!--|-->|ignore|instructions|system|override|secret)[\s\S]){0,4000}(?:ignore|instructions|system|override|secret)(?:(?!<!--|-->)[\s\S]){0,4000}-->/gi,
     severity: "medium",
     category: "obfuscation",
     title: "Hidden HTML comment instruction",

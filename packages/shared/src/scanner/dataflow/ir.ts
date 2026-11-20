@@ -42,6 +42,15 @@ export interface CallRule {
 export interface AccessRule { names: RegExp; source: Exclude<TaintKind, "parameter"> }
 export interface LanguageSpecs { calls: CallRule[]; accesses: AccessRule[] }
 
+/**
+ * Per-scan mutable status flag set by a frontend or the engine when a depth
+ * guard or size cap drops part of a file, so the scan reports that the analysis
+ * is incomplete instead of presenting a partial answer as a clean one.
+ */
+export interface DataflowState {
+  incomplete: boolean;
+}
+
 /** Register a language here through index.ts; the engine has no language cases. */
 export interface DataflowFrontend {
   grammar: string;
@@ -52,15 +61,8 @@ export interface DataflowFrontend {
    */
   mayFind?(text: string): boolean;
   /** Throw DataflowDeadline once `deadline` (performance.now()) passes; lowering is not free. */
-  lower(root: SyntaxNode, source: SourceFile, deadline?: number): IRProgram;
+  lower(root: SyntaxNode, source: SourceFile, deadline?: number, state?: DataflowState): IRProgram;
 }
-
-/**
- * Set by a frontend or the engine when a depth guard or size cap drops part of
- * a file, so the scan reports that the analysis is incomplete instead of
- * presenting a partial answer as a clean one. analyzeDataflow resets it.
- */
-export const coverage = { incomplete: false };
 
 /** Thrown by a frontend or the engine when the per-skill budget runs out mid-file. */
 export class DataflowDeadline extends Error {

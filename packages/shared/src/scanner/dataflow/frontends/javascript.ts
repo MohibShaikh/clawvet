@@ -1,8 +1,8 @@
 import type { Node } from "web-tree-sitter";
 import type { SourceFile } from "../../../types.js";
-import type { Argument, DataflowFrontend, IRFunction, IRNode, IRProgram, ValueId } from "../ir.js";
+import type { Argument, DataflowFrontend, DataflowState, IRFunction, IRNode, IRProgram, ValueId } from "../ir.js";
 import { persistencePath, sinkHint } from "../specs/common.js";
-import { DataflowDeadline, coverage } from "../ir.js";
+import { DataflowDeadline } from "../ir.js";
 import { javascriptApis as apis, javascriptSpecs } from "../specs/javascript.js";
 
 const field = (node: Node, name: string) => node.childForFieldName(name);
@@ -16,7 +16,7 @@ const keyName = (node: Node) => node.type === "string" ? unquote(node.text) : no
 const moduleName = (name: string) => name.replace(/^node:/, "").replaceAll("/promises", ".promises");
 
 class Lowerer {
-  constructor(private readonly deadline = Infinity) {}
+  constructor(private readonly deadline = Infinity, private readonly state: DataflowState = { incomplete: false }) {}
   readonly module: IRFunction = { name: "<module>", parameters: [], nodes: [], returns: [] };
   readonly functions: IRFunction[] = [];
   private fn = this.module;
@@ -174,7 +174,7 @@ class Lowerer {
     this.loops.pop();
   }
   statement(node: Node): void {
-    if (this.depth >= 128) { coverage.incomplete = true; return; }
+    if (this.depth >= 128) { this.state.incomplete = true; return; }
     this.depth++;
     try { this.statementInner(node); } finally { this.depth--; }
   }
@@ -332,7 +332,7 @@ class Lowerer {
     return result;
   }
   private expr(node: Node): ValueId {
-    if (this.depth >= 128) { coverage.incomplete = true; return this.add(node, "merge"); }
+    if (this.depth >= 128) { this.state.incomplete = true; return this.add(node, "merge"); }
     this.depth++;
     try { return this.exprInner(node); } finally { this.depth--; }
   }
@@ -449,8 +449,8 @@ function compact(program: IRProgram, api: Map<IRFunction, Map<ValueId, string>>,
   return program;
 }
 
-function lower(root: Node, source: SourceFile, deadline = Infinity): IRProgram {
-  const lowerer = new Lowerer(deadline); lowerer.statement(root);
+function lower(root: Node, source: SourceFile, deadline = Infinity, state?: DataflowState): IRProgram {
+  const lowerer = new Lowerer(deadline, state); lowerer.statement(root);
   return compact({ source, module: lowerer.module, functions: lowerer.functions, globals: lowerer.globals }, lowerer.apis, deadline);
 }
 // A string escape can spell a module name the hint cannot see: 'f\\x73' is 'fs'

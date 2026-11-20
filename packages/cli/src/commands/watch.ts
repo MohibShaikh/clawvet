@@ -10,7 +10,7 @@ export async function watchCommand(options: {
   threshold?: number;
   dir?: string;
 }): Promise<void> {
-  const threshold = options.threshold || 50;
+  const threshold = Number.isFinite(options.threshold) ? (options.threshold as number) : 50;
   const SKILL_DIRS = options.dir ? [options.dir] : skillDirs();
   console.log(
     chalk.bold(
@@ -45,6 +45,7 @@ export async function watchCommand(options: {
   }
   console.log();
 
+  const watchers: ReturnType<typeof watch>[] = [];
   for (const dir of watchDirs) {
     const watcher = watch(dir, { recursive: true }, async (event, filename) => {
       if (!filename) return;
@@ -87,13 +88,14 @@ export async function watchCommand(options: {
         console.error(chalk.red(`Error scanning ${filename}:`), err);
       }
     });
-
-    process.on("SIGINT", () => {
-      watcher.close();
-      console.log(chalk.dim("\nWatch stopped."));
-      process.exit(0);
-    });
+    watchers.push(watcher);
   }
+
+  process.once("SIGINT", () => {
+    for (const watcher of watchers) watcher.close();
+    console.log(chalk.dim("\nWatch stopped."));
+    process.exit(0);
+  });
 
   console.log(chalk.dim("Press Ctrl+C to stop watching.\n"));
   await new Promise(() => {});

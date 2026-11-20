@@ -1,6 +1,6 @@
 ---
 name: clawvet
-version: 0.16.1
+version: 0.16.2
 description: Scan a third-party OpenClaw skill with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
 author: MohibShaikh
 license: MIT

@@ -36,7 +36,7 @@ describe("regex safety — catastrophic backtracking", () => {
       ...new Set(
         source
           .replace(/\\[sdwSbB]/g, " ")
-          .match(/[A-Za-z_][A-Za-z0-9_.+-]{1,}|https?:\/\/|\$\(/g) ?? [],
+          .match(/[A-Za-z_][A-Za-z0-9_.+-]{1,}|https?:\/\/|\$\(|<!--/g) ?? [],
       ),
     ];
     const units: string[] = [];
@@ -85,6 +85,7 @@ describe("regex safety — catastrophic backtracking", () => {
       "curl ".repeat(n),
       "wget ".repeat(n),
       "urgent ".repeat(n),
+      "<!-- ignore ".repeat(Math.ceil(n / 3)),
     ];
     const cost = (n: number) =>
       THREAT_PATTERNS.reduce((t, p) => t + timeAll(p.pattern, shapes(n)), 0);

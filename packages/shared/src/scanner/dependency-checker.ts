@@ -36,6 +36,7 @@ export function checkDependencies(skill: ParsedSkill): Finding[] {
         title: "Global npm package install",
         description: `Installs npm package globally: ${match[2]}`,
         evidence: match[0],
+        lineNumber: lineOf(match.index),
         analysisPass: pass,
         fix: "Use a local install (`npm install` without `-g`) or declare the dependency in requires.bins.",
       });

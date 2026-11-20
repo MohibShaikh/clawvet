@@ -76,11 +76,13 @@ export async function scanSkill(
     allFindings.push(...detectTyposquats(skill.frontmatter.name));
   }
 
-  // Filter out ignored patterns
+  // Filter out ignored patterns. Disqualifying indicators of compromise (such
+  // as curated C2 IPs or known malicious packages) can never be ignored.
+  const ignored = (f: Finding) =>
+    !f.disqualifying &&
+    (options.ignorePatterns?.some((ig) => f.title === ig || f.category === ig) ?? false);
   const filteredFindings = options.ignorePatterns?.length
-    ? allFindings.filter(
-        (f) => !options.ignorePatterns!.some((ig) => f.title === ig || f.category === ig)
-      )
+    ? allFindings.filter((f) => !ignored(f))
     : allFindings;
 
   // Context pass: downweight dual-use capabilities that have no exfil/exec sink.
@@ -88,7 +90,6 @@ export async function scanSkill(
   // a mention of one in prose or frontmatter.
   // Dataflow findings join after it: each one is already a proven flow from a
   // source to a sink, which is what that pass looks for between regex hits.
-  const ignored = (f: Finding) => options.ignorePatterns?.some((ig) => f.title === ig || f.category === ig) ?? false;
   // A vendor's documented one-line installer is exempt here as it is in the
   // regex and coverage layers, so the three never disagree about `curl | sh`.
   const lines = content.split("\n");

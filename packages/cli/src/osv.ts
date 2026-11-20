@@ -85,6 +85,7 @@ export async function queryOsv(deps: PinnedDependency[], options: OsvOptions = {
   const timeoutMs = options.timeoutMs ?? 3000;
   let expire!: () => void;
   const expired = new Promise<never>((_, reject) => { expire = () => { controller.abort(); reject(new Error("OSV deadline exceeded")); }; });
+  expired.catch(() => {});
   const timer = setTimeout(expire, timeoutMs);
   // Race every operation too: an injected fetch may ignore AbortSignal.
   const bounded = <T>(p: Promise<T>): Promise<T> => Promise.race([p, expired]);

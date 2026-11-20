@@ -182,7 +182,7 @@ program
   .option("--threshold <score>", "Risk score threshold (default 50)", "50")
   .option("--dir <path>", "Custom skills directory to watch")
   .action(async (opts) => {
-    await watchCommand({ threshold: parseInt(opts.threshold), dir: opts.dir });
+    await watchCommand({ threshold: parseInt(opts.threshold, 10), dir: opts.dir });
   });
 
 program

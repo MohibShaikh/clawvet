@@ -17,7 +17,12 @@ export async function grammarPath(grammar: string): Promise<string> {
 }
 
 export async function createParser(grammar: string): Promise<Parser> {
-  initialized ??= Parser.init();
+  if (!initialized) {
+    initialized = Parser.init().catch((err) => {
+      initialized = undefined;
+      throw err;
+    });
+  }
   await initialized;
   let loading = languages.get(grammar);
   if (!loading) {
@@ -26,6 +31,9 @@ export async function createParser(grammar: string): Promise<Parser> {
         throw new Error(`Unsupported dataflow grammar ABI: ${language.abiVersion}`);
       }
       return language;
+    }).catch((err) => {
+      languages.delete(grammar);
+      throw err;
     });
     languages.set(grammar, loading);
   }

@@ -1,6 +1,6 @@
 import type { Node } from "web-tree-sitter";
 import type { SourceFile } from "../../../types.js";
-import { DataflowDeadline, type DataflowFrontend, type IRFunction, type IRNode, type IRProgram, type ValueId, coverage } from "../ir.js";
+import { DataflowDeadline, type DataflowFrontend, type DataflowState, type IRFunction, type IRNode, type IRProgram, type ValueId } from "../ir.js";
 import { pythonSpecs } from "../specs/python.js";
 import { sinkHint } from "../specs/common.js";
 
@@ -23,7 +23,7 @@ class Lowerer {
   // module function of the same name that a plain call reaches.
   private classes: string[] = [];
   private steps = 0;
-  constructor(private readonly deadline = Infinity) {}
+  constructor(private readonly deadline = Infinity, private readonly state: DataflowState = { incomplete: false }) {}
   private tick(): void {
     if ((++this.steps & 255) === 0 && performance.now() >= this.deadline) throw new DataflowDeadline();
   }
@@ -141,7 +141,7 @@ class Lowerer {
   }
   statement(node: Node): void {
     this.tick();
-    if (this.depth >= 128) { coverage.incomplete = true; return; }
+    if (this.depth >= 128) { this.state.incomplete = true; return; }
     this.depth++;
     try { this.statementInner(node); } finally { this.depth--; }
   }
@@ -198,7 +198,7 @@ class Lowerer {
   }
   private expr(node: Node): ValueId {
     this.tick();
-    if (this.depth >= 128) { coverage.incomplete = true; return this.add(node, "merge"); }
+    if (this.depth >= 128) { this.state.incomplete = true; return this.add(node, "merge"); }
     this.depth++;
     try { return this.exprInner(node); } finally { this.depth--; }
   }
@@ -264,8 +264,8 @@ export const pythonFrontend: DataflowFrontend = {
   grammar: "python",
   specs: pythonSpecs,
   mayFind: (text) => !hint || hint.test(text),
-  lower(root: Node, source: SourceFile, deadline?: number): IRProgram {
-    const lowerer = new Lowerer(deadline);
+  lower(root: Node, source: SourceFile, deadline?: number, state?: DataflowState): IRProgram {
+    const lowerer = new Lowerer(deadline, state);
     lowerer.statement(root);
     return { source, module: lowerer.module, functions: lowerer.functions, globals: lowerer.globals };
   },
