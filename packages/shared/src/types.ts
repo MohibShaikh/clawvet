@@ -25,6 +25,23 @@ export interface Finding {
   disqualifying?: boolean;
 }
 
+export type CapabilityKind = "network" | "secret" | "env" | "persistence" | "behavior";
+
+/** One thing a skill can do, at the first line that does it (scanned-content line). */
+export interface Capability {
+  kind: CapabilityKind;
+  /** A site, a credential store, a secret env var, a persistence location, or a finding title. */
+  value: string;
+  file?: string;
+  line?: number;
+  /** env: the frontmatter declares this variable. */
+  declared?: boolean;
+  /** behavior: the finding's severity. */
+  severity?: Severity;
+  /** network: a raw IP, tunnel, request bin, paste or file drop, abuse-prone TLD, or a code host owner. */
+  risky?: boolean;
+}
+
 export interface FindingsCount {
   critical: number;
   high: number;
@@ -44,6 +61,8 @@ export interface ScanResult {
   findings: Finding[];
   summary?: string;
   recommendation?: Recommendation;
+  /** What the skill's code can do; compared across versions to flag new permissions. */
+  capabilities?: Capability[];
   createdAt?: Date;
   completedAt?: Date;
   cached?: boolean;

@@ -1,8 +1,9 @@
+import type { BundledFile } from "@clawvet/shared";
 import { readFileSync, existsSync, statSync, realpathSync } from "node:fs";
 import { resolve, join, basename, dirname, isAbsolute, relative, sep } from "node:path";
 import chalk from "chalk";
 import { rescore, scanSkill } from "@clawvet/shared";
-import { printScanResult } from "../output/terminal.js";
+import { locateCapabilities, printScanResult } from "../output/terminal.js";
 import { printJsonResult } from "../output/json.js";
 import { printSarifResult } from "../output/sarif.js";
 import { sendTelemetry, hasBeenAsked, setTelemetry, isTelemetryEnabled, getScanCount } from "../telemetry.js";
@@ -348,7 +349,7 @@ export async function scanCommand(
       const root = skillRoot ? relative(process.cwd(), skillRoot).split(sep).join("/") || "." : undefined;
       printSarifResult(result, { root: root === ".." || root?.startsWith("../") || (root && isAbsolute(root)) ? undefined : root, profile: options.strict ? "strict" : "default" });
     } else if (options.format === "json") {
-      printJsonResult(result);
+      printJsonResult({ ...result, capabilities: locateCapabilities(result.capabilities, (result as { coverage?: { files?: BundledFile[] } }).coverage?.files) });
     } else {
       printScanResult(result);
     }

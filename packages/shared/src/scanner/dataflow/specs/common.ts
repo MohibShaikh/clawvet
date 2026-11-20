@@ -2,28 +2,36 @@ import type { CallEffect, LanguageSpecs } from "../ir.js";
 
 // These tables describe sensitive locations, independently of language APIs.
 export const SECRET_ENV = /(?:TOKEN|KEY|SECRET|PASSWORD|PASSWD|CREDENTIAL)/i;
-export const CREDENTIAL_PATHS: RegExp[] = [
-  /(?:^|\/)\.ssh\/(?!config(?:$|\/))[^/]+/i,
+/**
+ * Each sensitive location once, with the name a person would use for it. The
+ * name is what a capability diff shows and compares, so two patterns for one
+ * store share a name. `rooted`: the path is sensitive without a home prefix.
+ */
+export interface SensitiveLocation { name: string; pattern: RegExp; rooted?: boolean }
+export const CREDENTIAL_STORES: SensitiveLocation[] = [
+  { name: "~/.ssh", pattern: /(?:^|\/)\.ssh\/(?!config(?:$|\/))[^/]+/i },
   // The whole directory, as tar, zip and scp -r take it.
-  /(?:^|\/)\.(?:ssh|aws|gnupg)\/?$/i,
-  /^\/etc\/g?shadow$/,
-  /(?:^|\/)\.aws\/credentials(?:$|\/)/i,
-  /(?:^|\/)(?:\.npmrc|\.netrc|\.pypirc|\.git-credentials)(?:$|\/)/i,
-  /(?:^|\/)\.docker\/config\.json$/i,
-  /(?:^|\/)\.kube\/config$/i,
-  /(?:^|\/)(?:cookies(?:\.sqlite)?|login data|logins\.json|key[34]\.db|wallet\.dat|keystore)(?:$|\/)/i,
-  /(?:^|\/)(?:\.openclaw|\.clawdbot|\.moltbot)(?:$|\/)/i,
-  /(?:^|\/)(?:\.config\/)?(?:solana|electrum|ethereum|exodus|metamask)(?:$|\/)/i,
+  { name: "~/.ssh, ~/.aws or ~/.gnupg", pattern: /(?:^|\/)\.(?:ssh|aws|gnupg)\/?$/i },
+  { name: "/etc/shadow", pattern: /^\/etc\/g?shadow$/, rooted: true },
+  { name: "~/.aws/credentials", pattern: /(?:^|\/)\.aws\/credentials(?:$|\/)/i },
+  { name: "registry tokens", pattern: /(?:^|\/)(?:\.npmrc|\.netrc|\.pypirc|\.git-credentials)(?:$|\/)/i },
+  { name: "~/.docker/config.json", pattern: /(?:^|\/)\.docker\/config\.json$/i },
+  { name: "~/.kube/config", pattern: /(?:^|\/)\.kube\/config$/i },
+  { name: "browser or wallet data", pattern: /(?:^|\/)(?:cookies(?:\.sqlite)?|login data|logins\.json|key[34]\.db|wallet\.dat|keystore)(?:$|\/)/i },
+  { name: "~/.openclaw", pattern: /(?:^|\/)(?:\.openclaw|\.clawdbot|\.moltbot)(?:$|\/)/i },
+  { name: "crypto wallets", pattern: /(?:^|\/)(?:\.config\/)?(?:solana|electrum|ethereum|exodus|metamask)(?:$|\/)/i },
 ];
-export const PERSISTENCE_PATHS: RegExp[] = [
-  /(?:^|\/)(?:crontab|cron\.(?:d|daily|hourly|weekly|monthly))(?:$|\/)/i,
-  /(?:^|\/)(?:systemd\/(?:system|user)|LaunchAgents|LaunchDaemons|autostart)(?:$|\/)/i,
-  /(?:^|\/)(?:\.(?:bashrc|bash_profile|profile|zshrc|zprofile)|profile\.d)(?:$|\/)/i,
+export const PERSISTENCE_LOCATIONS: SensitiveLocation[] = [
+  { name: "cron", pattern: /(?:^|\/)(?:crontab|cron\.(?:d|daily|hourly|weekly|monthly))(?:$|\/)/i },
+  { name: "systemd or launchd", pattern: /(?:^|\/)(?:systemd\/(?:system|user)|LaunchAgents|LaunchDaemons|autostart)(?:$|\/)/i },
+  { name: "shell startup files", pattern: /(?:^|\/)(?:\.(?:bashrc|bash_profile|profile|zshrc|zprofile)|profile\.d)(?:$|\/)/i },
   // A key appended here can log in from then on.
-  /(?:^|\/)\.ssh\/authorized_keys2?$/i,
-  /(?:^|\/)Microsoft\/Windows\/Start Menu\/Programs\/Startup(?:$|\/)/i,
-  /(?:^|\\)Software\\Microsoft\\Windows\\CurrentVersion\\Run(?:Once)?(?:$|\\)/i,
+  { name: "~/.ssh/authorized_keys", pattern: /(?:^|\/)\.ssh\/authorized_keys2?$/i },
+  { name: "Windows startup folder", pattern: /(?:^|\/)Microsoft\/Windows\/Start Menu\/Programs\/Startup(?:$|\/)/i, rooted: true },
+  { name: "Windows Run key", pattern: /(?:^|\\)Software\\Microsoft\\Windows\\CurrentVersion\\Run(?:Once)?(?:$|\\)/i, rooted: true },
 ];
+export const CREDENTIAL_PATHS: RegExp[] = CREDENTIAL_STORES.map((s) => s.pattern);
+export const PERSISTENCE_PATHS: RegExp[] = PERSISTENCE_LOCATIONS.map((s) => s.pattern);
 // A project's .env holds the same secrets as its environment, read the way
 // dotenv does. Treat it as environment taint: sending the whole file is a dump
 // of every secret, while one key in an auth header is the ordinary API client

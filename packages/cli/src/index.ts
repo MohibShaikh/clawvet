@@ -148,6 +148,7 @@ program
   .option("--baseline <path>", "Operator baseline file, or a directory of them, accepting known findings")
   .option("--osv", "Look up pinned dependencies on OSV.dev (network; off by default)")
   .option("--osv-cache", "Cache OSV results under ~/.cache/clawvet")
+  .option("--no-update-check", "Do not compare an update with what the installed version was allowed to do")
   .action(async (opts) => {
     // `policy` was the name in 0.12.0. It collides with `openclaw policy`,
     // which lints workspace config rather than gating installs. Kept as an
@@ -162,7 +163,7 @@ program
       blockAt: opts.blockAt, printConfig: opts.printConfig, approval: opts.approval, strict: opts.strict,
       semantic: opts.semantic, semanticRuns: opts.semanticRuns, semanticTimeoutMs: opts.semanticTimeout,
       semanticCache: opts.semanticCache, semanticOnError: opts.semanticOnError,
-      baseline: opts.baseline, osv: opts.osv, osvCache: opts.osvCache,
+      baseline: opts.baseline, osv: opts.osv, osvCache: opts.osvCache, updateCheck: opts.updateCheck,
     });
   });
 

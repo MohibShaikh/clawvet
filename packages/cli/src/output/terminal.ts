@@ -1,6 +1,8 @@
 import chalk from "chalk";
-import type { BundledFile, ScanResult, Severity } from "@clawvet/shared";
+import type { BundledFile, Capability, ScanResult, Severity } from "@clawvet/shared";
 import type { AssemblyResult } from "../assemble.js";
+import { locateCapabilities, PERMISSION_LABELS } from "../capabilities.js";
+export { locateCapabilities } from "../capabilities.js";
 
 // Strip ANSI/OSC/DCS/C1 escape sequences and control characters so untrusted
 // skill text cannot forge terminal lines or reach terminal features (e.g. OSC 52).
@@ -19,6 +21,29 @@ function formatLocation(lineNumber: number, files?: BundledFile[]): string {
   const file = files?.find((f) => lineNumber >= f.startLine && lineNumber <= f.endLine);
   if (!file) return `Line: ${lineNumber}`;
   return `Location: ${sanitizeTerminal(file.path)}:${lineNumber - file.startLine + 1}`;
+}
+
+
+function printPermissions(capabilities: Capability[] | undefined): void {
+  if (!capabilities) return;
+  console.log("  Permissions (what the code can do):");
+  if (!capabilities.length) {
+    console.log(`    ${chalk.green("No network, secret, persistence or high-risk behaviour found in code.")}`);
+    console.log();
+    return;
+  }
+  for (const kind of Object.keys(PERMISSION_LABELS) as Capability["kind"][]) {
+    const items = capabilities.filter((c) => c.kind === kind);
+    if (!items.length) continue;
+    const shown = items.slice(0, 6).map((c) => {
+      const where = c.file ? chalk.dim(` (${sanitizeTerminal(c.file)}${c.line ? `:${c.line}` : ""})`) : "";
+      const declared = c.declared ? chalk.dim(" declared") : "";
+      return `${sanitizeTerminal(c.value)}${declared}${where}`;
+    });
+    const more = items.length > 6 ? chalk.dim(` +${items.length - 6} more`) : "";
+    console.log(`    ${PERMISSION_LABELS[kind].padEnd(12)} ${shown.join(", ")}${more}`);
+  }
+  console.log();
 }
 
 const SEVERITY_COLORS: Record<Severity, (s: string) => string> = {
@@ -62,6 +87,8 @@ export function printScanResult(result: ScanResult & { coverage?: AssemblyResult
     `  Risk Score: ${gradeColor(`${Math.round(result.riskScore)}/100`)}  Grade: ${gradeColor(result.riskGrade)}`
   );
   console.log();
+
+  printPermissions(locateCapabilities(result.capabilities, files));
 
   // Findings summary
   const fc = result.findingsCount;

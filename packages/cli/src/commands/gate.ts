@@ -2,8 +2,10 @@ import { checkApproval } from "../review.js";
 import { existsSync, lstatSync, statSync, realpathSync } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { rescore, scanSkill } from "@clawvet/shared";
-import type { Finding, Recommendation } from "@clawvet/shared";
+import { diffCapabilities, newPermissions, rescore, scanSkill } from "@clawvet/shared";
+import type { Capability, Finding, Recommendation } from "@clawvet/shared";
+import { describePermission, locateCapabilities } from "../capabilities.js";
+import { ledgerDir, ledgerKey, readEntry, writeEntry } from "../ledger.js";
 import { assembleSkill, coverageReason, coverageWarning, type AssemblyResult } from "../assemble.js";
 import { applyProfile, type Profile } from "../policy.js";
 import { createSemanticJudge, judgmentGap, resolveSemanticConfig, SemanticUnavailableError, type SemanticJudgment } from "../semantic/judge.js";
@@ -35,7 +37,9 @@ interface PolicyRequest {
   targetName?: string;
   sourcePath?: string;
   sourcePathKind?: "directory" | "file";
-  origin?: { slug?: string; version?: string; registry?: string };
+  origin?: { type?: string; slug?: string; version?: string; registry?: string; ownerHandle?: string };
+  // "install" or "update"; an update is checked against what was allowed before.
+  request?: { kind?: string; mode?: string };
   // Set when OpenClaw is installing one of the skill's dependencies
   // (metadata.openclaw.install[]): the spec it is about to run.
   skill?: { installId?: string; installSpec?: unknown };
@@ -170,6 +174,13 @@ export interface GateOptions {
   /** Opt-in OSV.dev lookup of pinned dependencies. The gate is offline otherwise. */
   osv?: boolean;
   osvCache?: boolean;
+  /**
+   * Compare an update with what the installed version was allowed to do, and
+   * ask when it can do more. On by default; `--no-update-check` turns it off.
+   */
+  updateCheck?: boolean;
+  /** Where the record of allowed installs lives (tests). Defaults to the user's state dir. */
+  ledgerDir?: string;
 }
 
 // The judge must answer inside the host's install timeout, with room left for
@@ -257,6 +268,7 @@ function printConfig(blockAt: number, options: GateOptions): void {
   if (blockAt !== DEFAULT_BLOCK_AT) args.push("--block-at", String(blockAt));
   if (approval) args.push("--approval", resolve(approval));
   if (strict) args.push("--strict");
+  if (options.updateCheck === false) args.push("--no-update-check");
   const semanticTimeout = options.semanticTimeoutMs ?? DEFAULT_SEMANTIC_TIMEOUT_MS;
   const passEnv = [
     ...(options.semantic ? ["CLAWVET_LLM_PROVIDER", "CLAWVET_LLM_MODEL", "CLAWVET_LLM_BASE_URL", "CLAWVET_LLM_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"] : []),
@@ -413,7 +425,7 @@ async function gateRequest(req: PolicyRequest, blockAt: number, options: GateOpt
     catch (err) { blockWith(`ClawVet baseline unusable: ${err instanceof Error ? err.message : "invalid baseline"}`); }
   }
   if (options.osv) passes = { ...passes, osv: { cache: options.osvCache } };
-  const { response } = await evaluateSkill(root, {
+  const evaluation = await evaluateSkill(root, {
     blockAt,
     profile: options.strict ? "strict" : "default",
     entryFile: basename(skillFile),
@@ -424,7 +436,49 @@ async function gateRequest(req: PolicyRequest, blockAt: number, options: GateOpt
     )) : undefined,
     passes,
   });
-  emit(dependencyVerdict(response, req.skill?.installSpec));
+  emit(withUpdateCheck(dependencyVerdict(evaluation.response, req.skill?.installSpec), req, evaluation.capabilities, options));
+}
+
+/**
+ * The rug-pull check. A skill that was clean when it was installed can turn in
+ * a later version, and a score alone misses that when the update changed only a
+ * few lines. The gate remembers what each allowed install could do; an update
+ * that can do more asks the user, naming the new permissions. It never turns a
+ * block or a warn into an allow, and a missing or unreadable record changes
+ * nothing. Under --strict every new site asks, not only risky ones.
+ */
+export function withUpdateCheck(response: PolicyResponse, req: PolicyRequest, capabilities: Capability[] | undefined, options: GateOptions): PolicyResponse {
+  if (options.updateCheck === false || !capabilities || req.targetType === "plugin") return response;
+  const dir = options.ledgerDir ?? ledgerDir();
+  const key = ledgerKey(req.origin, req.targetName);
+  if (!dir || !key) return response;
+  const previous = readEntry(dir, key);
+  let result = response;
+  if (previous) {
+    const asks = newPermissions(diffCapabilities(previous.capabilities as Capability[], capabilities), options.strict ? "all" : "quiet", { owner: req.origin?.ownerHandle });
+    if (asks.length) {
+      const name = req.targetName || req.origin?.slug || "This skill";
+      const versions = previous.version && req.origin?.version && previous.version !== req.origin.version ? ` ${previous.version} -> ${req.origin.version}` : "";
+      const list = asks.slice(0, 4).map(describePermission).join("; ") + (asks.length > 4 ? `; +${asks.length - 4} more` : "");
+      const line = `${name}${versions} can do more than the installed version: ${list}. Approve only if you expected this.`;
+      const findings: PolicyFinding[] = asks.slice(0, 10).map((c) => ({
+        ruleId: "new-permission", severity: "warn", message: `New permission: ${describePermission(c)}`.slice(0, 200),
+        ...(c.file ? { file: c.file } : {}), ...(c.line ? { line: c.line } : {}),
+      }));
+      result = {
+        ...response,
+        decision: response.decision === "allow" ? "warn" : response.decision,
+        reason: (response.reason ? `${line} ${response.reason}` : line).slice(0, REASON_MAX),
+        findings: [...findings, ...(response.findings ?? [])].slice(0, 20),
+      };
+    }
+  }
+  // Only an allow is recorded: an install the user had to approve, or one that
+  // was blocked, says nothing about what the next version may do quietly.
+  if (result.decision === "allow" && !writeEntry(dir, {
+    key, version: req.origin?.version, capabilities: capabilities.map(({ kind, value }) => ({ kind, value })), recordedAt: new Date().toISOString(),
+  })) process.stderr.write(`clawvet: could not record this install under ${dir}; the next update will not be compared with it.\n`);
+  return result;
 }
 
 // A dependency install of kind "download" puts a file from the network on the
@@ -451,6 +505,8 @@ export function dependencyVerdict(response: PolicyResponse, spec: unknown): Poli
 
 export interface Evaluation {
   response: PolicyResponse;
+  /** What the scanned code can do, with file-relative lines. Absent when the scan did not run. */
+  capabilities?: Capability[];
   // Present when assembly ran. Benchmarks read it instead of the reason text,
   // which is truncated for the host.
   coverage?: AssemblyResult["coverage"];
@@ -512,7 +568,7 @@ export async function evaluateSkill(
   } catch (err) {
     return block(`ClawVet gate failed to scan the staged skill: ${err instanceof Error ? err.message : "unknown error"}`);
   }
-  const evaluated = { coverage: assembly.coverage, content: assembly.content };
+  const evaluated = { coverage: assembly.coverage, content: assembly.content, capabilities: locateCapabilities(result.capabilities, assembly.coverage.files) };
 
   // A disqualifying indicator is a verdict on its own, independent of score.
   const disqualified = result.findings.some((f) => f.disqualifying);
@@ -591,7 +647,7 @@ async function evaluateWithJudge(
 ): Promise<Evaluation> {
   const semantic = options.semantic!;
   const passes = options.passes ?? {};
-  const evaluated = { coverage: assembly.coverage, content: assembly.content };
+  const evaluated: Omit<Evaluation, "response"> = { coverage: assembly.coverage, content: assembly.content };
   const osv = startOsv(assembly.content, assembly.coverage.files, passes.osv);
   let result = await scanSkill(assembly.content, { skillName: options.skillName ?? basename(skillDir), files: assembly.coverage.files });
   const gaps = [...assembly.coverage.issues, ...assembly.coverage.warnings];
@@ -602,6 +658,7 @@ async function evaluateWithJudge(
   const finished = await finishScan(result, assembly, osv, passes);
   result = finished.result;
   if (finished.osvErrors.length) process.stderr.write(`clawvet: OSV lookup incomplete: ${finished.osvErrors.join("; ")}\n`);
+  evaluated.capabilities = locateCapabilities(result.capabilities, assembly.coverage.files);
   const disqualified = result.findings.some((f) => f.disqualifying);
   const staticAction: Decision = coverage.block.length || disqualified || result.riskScore >= blockAt ? "block"
     : DECISION[result.recommendation ?? "warn"] === "allow" && !coverage.ask.length ? "allow" : "warn";

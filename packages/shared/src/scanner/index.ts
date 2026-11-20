@@ -9,6 +9,7 @@ import { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.j
 import { getCached, setCached } from "./cache.js";
 import { codeLines, collectSources } from "./sources.js";
 import { analyzeDataflow } from "./dataflow/index.js";
+import { extractCapabilities, refreshBehaviours } from "./capabilities.js";
 
 export interface ScanOptions {
   semantic?: boolean;
@@ -38,7 +39,8 @@ export function recommend(riskScore: number): Recommendation {
 export function rescore(result: ScanResult, findings: Finding[]): ScanResult {
   const riskScore = calculateRiskScore(findings);
   return { ...result, findings, riskScore, riskGrade: getRiskGrade(riskScore),
-    findingsCount: countFindings(findings), recommendation: recommend(riskScore) };
+    findingsCount: countFindings(findings), recommendation: recommend(riskScore),
+    ...(result.capabilities ? { capabilities: refreshBehaviours(result.capabilities, findings) } : {}) };
 }
 
 export async function scanSkill(
@@ -94,7 +96,8 @@ export async function scanSkill(
   // regex and coverage layers, so the three never disagree about `curl | sh`.
   const lines = content.split("\n");
   const vendorInstaller = (f: Finding) => f.category === "remote_code_execution" && f.lineNumber != null && onlyTrustedInstallers(lines[f.lineNumber - 1] ?? "");
-  const dataflow = (await analyzeDataflow(collectSources(skill, files))).filter((f) => !ignored(f) && !vendorInstaller(f));
+  const sources = collectSources(skill, files);
+  const dataflow = (await analyzeDataflow(sources)).filter((f) => !ignored(f) && !vendorInstaller(f));
   const contextFindings = [...applyContext(filteredFindings, codeLines(skill, files)), ...dataflow];
 
   const riskScore = calculateRiskScore(contextFindings);
@@ -116,6 +119,7 @@ export async function scanSkill(
     findingsCount,
     findings: contextFindings,
     recommendation,
+    capabilities: extractCapabilities(sources, contextFindings, { declaredEnv: skill.frontmatter.metadata?.openclaw?.requires?.env }),
   };
 
   if (cacheable) {
@@ -126,6 +130,7 @@ export async function scanSkill(
 }
 
 export { parseSkill, parseFences, normalizeFrontmatter } from "./skill-parser.js";
+export { extractCapabilities, diffCapabilities, newPermissions, refreshBehaviours, riskySite, siteOf, type CapabilityChange } from "./capabilities.js";
 export { lineIndex, countNewlines } from "./lines.js";
 export { collectSources, codeLines, languageOf, isCode } from "./sources.js";
 export { extractPinnedDependencies, type PinnedDependency } from "./manifests.js";

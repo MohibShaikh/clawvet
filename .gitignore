@@ -41,3 +41,6 @@ benchmarks/gate-eval/.codex-*.log
 benchmarks/gate-eval/results/maliciousskillbench-*
 # Install-gate paper sources stay local until submission.
 research/
+
+# Capability-diff results include MalSkillBench-derived rows (research-only).
+benchmarks/capability-diff/results/
