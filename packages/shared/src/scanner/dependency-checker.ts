@@ -1,4 +1,5 @@
 import type { Finding, ParsedSkill } from "../types.js";
+import { lineIndex } from "./lines.js";
 
 const NPX_AUTO_INSTALL_RE = /npx\s+-y\s+/gi;
 const NPM_INSTALL_RE = /npm\s+install\s+(-g\s+)?(\S+)/gi;
@@ -10,9 +11,9 @@ export function checkDependencies(skill: ParsedSkill): Finding[] {
   let match: RegExpExecArray | null;
   const npxRe = new RegExp(NPX_AUTO_INSTALL_RE.source, NPX_AUTO_INSTALL_RE.flags);
 
+  const lineOf = lineIndex(skill.rawContent);
   while ((match = npxRe.exec(skill.rawContent)) !== null) {
-    const before = skill.rawContent.slice(0, match.index);
-    const lineNumber = before.split("\n").length;
+    const lineNumber = lineOf(match.index);
 
     findings.push({
       category: "dependency_risk",

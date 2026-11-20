@@ -35,7 +35,10 @@ const half = (name: string) =>
   createHash("sha256").update(family(name)).digest()[0] % 2 === 0 ? "tune" : "test";
 
 const git = (cmd: string) => execSync(cmd, { cwd: repo, encoding: "utf8" });
-const provenance = {
+// The no-network sandbox has no git: record provenance on the host first with
+//   PROVENANCE_ONLY=1 npx tsx evaluate.mts - - > prov.json
+// and pass it in as PROVENANCE=$(cat prov.json).
+const provenance = process.env.PROVENANCE ? { ...JSON.parse(process.env.PROVENANCE), measured: new Date().toISOString() } : {
   head: git("git rev-parse HEAD").trim(),
   // Hash of the uncommitted tracked diff plus untracked source, so a result
   // can be tied to the exact code that produced it.
@@ -47,6 +50,7 @@ const provenance = {
   measured: new Date().toISOString(),
 };
 
+if (process.env.PROVENANCE_ONLY) { console.log(JSON.stringify(provenance)); process.exit(0); }
 const lines = [JSON.stringify({ provenance })];
 for (const tier of ["malware", "benign"]) {
   for (const name of readdirSync(join(skills, tier)).sort()) {

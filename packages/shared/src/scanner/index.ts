@@ -58,7 +58,7 @@ export async function scanSkill(
     }
   }
 
-  const skill = parseSkill(content);
+  const skill = parseSkill(content, options.files);
   const allFindings: Finding[] = [];
 
   const files = options.files ?? [];
@@ -124,7 +124,8 @@ export async function scanSkill(
   return result;
 }
 
-export { parseSkill } from "./skill-parser.js";
+export { parseSkill, parseFences, normalizeFrontmatter } from "./skill-parser.js";
+export { lineIndex, countNewlines } from "./lines.js";
 export { collectSources, codeLines, languageOf, isCode } from "./sources.js";
 export { extractPinnedDependencies, type PinnedDependency } from "./manifests.js";
 export { isTrustedInstallerUrl, onlyTrustedInstallers } from "./context-classifier.js";

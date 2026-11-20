@@ -1,13 +1,10 @@
 import { THREAT_PATTERNS } from "../patterns.js";
 import type { BundledFile, Finding, ParsedSkill, Severity } from "../types.js";
 import { codeLines } from "./sources.js";
+import { lineIndex } from "./lines.js";
 
+const HEADING = /^\s*#{1,6}\s/;
 
-function isInHeading(lineNumber: number, rawContent: string): boolean {
-  const lines = rawContent.split("\n");
-  const line = lines[lineNumber - 1] || "";
-  return /^\s*#{1,6}\s/.test(line);
-}
 
 const BASE_CONFIDENCE: Record<Severity, number> = {
   critical: 0.9,
@@ -22,21 +19,22 @@ export function runStaticAnalysis(skill: ParsedSkill, files: BundledFile[] = [])
   const findings: Finding[] = [];
   const code = codeLines(skill, files);
   const isInCodeBlock = (line: number) => code.has(line);
+  const lines = skill.rawContent.split("\n");
+  const lineOf = lineIndex(skill.rawContent);
 
   for (const threat of THREAT_PATTERNS) {
     const re = new RegExp(threat.pattern.source, threat.pattern.flags);
     let match: RegExpExecArray | null;
 
     while ((match = re.exec(skill.rawContent)) !== null) {
-      const before = skill.rawContent.slice(0, match.index);
-      const lineNumber = before.split("\n").length;
+      const lineNumber = lineOf(match.index);
 
       if (threat.codeOnly && !isInCodeBlock(lineNumber)) {
         continue;
       }
 
       const inCode = isInCodeBlock(lineNumber);
-      const inHeading = isInHeading(lineNumber, skill.rawContent);
+      const inHeading = HEADING.test(lines[lineNumber - 1] ?? "");
 
       let contextMultiplier: number;
       if (inCode && threat.codeOnly) {

@@ -4,6 +4,7 @@ import {
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
+import { countNewlines } from "@clawvet/shared";
 import { inspectRuntimeCoverage } from "./runtime-coverage.js";
 import { RULES, type RuleId } from "./policy.js";
 
@@ -295,7 +296,8 @@ export function assembleSkill(
   const manifest = skillMd ?? read(entryFile);
   if (manifest === undefined) return result;
   result.content = manifest;
-  result.coverage.files.push({ path: entryFile, startLine: 1, endLine: manifest.split("\n").length });
+  let contentLines = countNewlines(manifest);
+  result.coverage.files.push({ path: entryFile, startLine: 1, endLine: contentLines + 1 });
   const visited = new Set([entryFile]);
   const queue = [{ path: entryFile, text: manifest }];
   const candidates = [...files].sort();
@@ -438,9 +440,12 @@ export function assembleSkill(
       if (text === undefined) continue;
       const separator = result.content.endsWith("\n") ? "\n" : "\n\n";
       const prefix = `${separator}# [clawvet] referenced file: ${path}\n`;
-      const startLine = (result.content + prefix).split("\n").length;
+      // Count lines as content grows: re-splitting all of it per file was quadratic.
+      contentLines += countNewlines(prefix);
+      const startLine = contentLines + 1;
       result.content += prefix + text;
-      result.coverage.files.push({ path, startLine, endLine: startLine + text.split("\n").length - 1 });
+      contentLines += countNewlines(text);
+      result.coverage.files.push({ path, startLine, endLine: startLine + countNewlines(text) });
       queue.push({ path, text });
     }
   }

@@ -1,5 +1,5 @@
 import { basename } from "node:path";
-import { onlyTrustedInstallers } from "@clawvet/shared";
+import { lineIndex, onlyTrustedInstallers, parseFences } from "@clawvet/shared";
 import { RULES, type RuleId } from "./policy.js";
 
 export interface RuntimeIssue {
@@ -200,6 +200,17 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
   const lines = content.split(/\r?\n/);
   let fence: string | undefined;
   let fenceLanguage = "";
+  // Fence lines come from the scanner's own parser, so the two never disagree
+  // about which lines are code: ```` ```bash ```` inside an open fence is
+  // content, and only a matching, bare fence closes it.
+  const fenceLines = new Map<number, { open: boolean; char: string; language: string }>();
+  if (markdown) {
+    for (const block of parseFences(content)) {
+      const char = lines[block.lineStart - 1].trim().replace(/^(?:>\s*)*/, "")[0] ?? "`";
+      fenceLines.set(block.lineStart - 1, { open: true, char, language: block.info });
+      if (block.closed) fenceLines.set(block.lineEnd - 1, { open: false, char, language: "" });
+    }
+  }
   let heredoc: string | undefined;
   const download = (target: string, line: number) => {
     if (target === "-") return;
@@ -214,9 +225,10 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
     }
   };
   if (!markdown && NETWORK_READ.test(content)) {
+    const lineOf = lineIndex(content);
     for (const pattern of CODE_WRITES) {
       for (const write of content.matchAll(pattern)) {
-        result.downloads.push({ target: write[2], line: content.slice(0, write.index).split("\n").length });
+        result.downloads.push({ target: write[2], line: lineOf(write.index!) });
       }
     }
   }
@@ -410,25 +422,23 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
   };
   for (let index = 0; index < lines.length; index++) {
     const lineNumber = index + 1;
+    const marker = fenceLines.get(index);
+    if (marker) {
+      inspectProse();
+      if (marker.open) { fence = marker.char; fenceLanguage = marker.language; }
+      else fence = undefined;
+      heredoc = undefined;
+      continue;
+    }
     let line = lines[index];
     // The shell removes backslash-newline outright, so `ba\` + `sh` is bash.
     // In markdown prose a trailing backslash is a line break between words.
     const join = markdown && !fence ? " " : "";
-    while (/\\$/.test(line) && index + 1 < lines.length) line = line.slice(0, -1) + join + lines[++index];
+    // A continuation never swallows a fence line: that would desync the fences.
+    while (/\\$/.test(line) && index + 1 < lines.length && !fenceLines.has(index + 1)) line = line.slice(0, -1) + join + lines[++index];
     // A leading # is a comment in code, but a heading in markdown prose, and a
     // heading can still tell the agent to run something.
     if ((!markdown || fence) && /^\s*(?:#|\/\/)/.test(line)) continue;
-    if (markdown) {
-      // Fences nested in list items are indented, so allow any indentation.
-      const marker = line.match(/^\s*(`{3,}|~{3,})\s*([\w+.-]*)/);
-      if (marker) {
-        inspectProse();
-        if (!fence) { fence = marker[1][0]; fenceLanguage = marker[2]; }
-        else if (fence === marker[1][0]) fence = undefined;
-        heredoc = undefined;
-        continue;
-      }
-    }
     if (heredoc) {
       if (line.trim() === heredoc) { heredoc = undefined; continue; }
       // A heredoc body is the interpreter's input: code, not shell commands.

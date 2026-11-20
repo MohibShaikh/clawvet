@@ -16,7 +16,7 @@ export interface PassOptions {
 
 export function startOsv(content: string, files: BundledFile[], osv: PassOptions["osv"]) {
   if (!osv) return undefined;
-  const deps = extractPinnedDependencies(collectSources(parseSkill(content), files));
+  const deps = extractPinnedDependencies(collectSources(parseSkill(content, files), files));
   return queryOsv(deps, { timeoutMs: osv.timeoutMs ?? 3000, cache: osv.cache });
 }
 

@@ -13,7 +13,9 @@ const scanSkillMock = vi.fn(async () => ({
   recommendation: "approve",
 }));
 
-vi.mock("@clawvet/shared", () => ({
+// Only the scan is replaced: assembly uses the package's other helpers.
+vi.mock("@clawvet/shared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@clawvet/shared")>()),
   scanSkill: scanSkillMock,
 }));
 
