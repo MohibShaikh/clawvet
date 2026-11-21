@@ -1,0 +1,10 @@
+{
+  "name": "clawvet-web-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-install, 100% client-side ClawVet playground powered by @clawvet/shared + WebAssembly Tree-sitter AST dataflow.",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

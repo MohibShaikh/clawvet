@@ -9,6 +9,7 @@ import { watchCommand } from "./commands/watch.js";
 import { badgeCommand } from "./commands/badge.js";
 import { reviewCommand, approveCommand } from "./commands/review.js";
 import { gateCommand } from "./commands/gate.js";
+import { initCommand, claudeHookCommand } from "./commands/init.js";
 import { FEEDBACK_URL, FEEDBACK_DISPLAY_URL } from "./feedback.js";
 
 // Open a URL in the user's browser without going through a shell. Using
@@ -68,8 +69,45 @@ const program = new Command();
 
 program
   .name("clawvet")
-  .description("Skill vetting & supply chain security for OpenClaw")
+  .description("Security scanner & install gate for AI agent skills, rules, hooks & MCP configs (OpenClaw, Claude Code, Cursor, Codex, Windsurf)")
   .version(readPackageVersion());
+
+program
+  .command("init")
+  .description("Auto-detect OpenClaw & Claude Code, configure security hooks safely, check permissions, and audit your machine")
+  .option("--dry-run", "Show planned config changes without writing files")
+  .option("-y, --yes", "Apply detected config changes without interactive prompts")
+  .option("--strict", "Configure OpenClaw install gate with --strict coverage")
+  .option("--semantic", "Configure OpenClaw install gate with --semantic LLM judge")
+  .option("--block-at <score>", "Risk score at or above which the gate blocks installs", parseBlockAt, 76)
+  .option("--fix-permissions", "Automatically run chmod go-w on group/world-writable paths for OpenClaw")
+  .option("--openclaw-config <path>", "Explicit path to OpenClaw openclaw.json / config.json")
+  .option("--claude-settings <path>", "Explicit path to Claude Code settings.json")
+  .option("--skip-openclaw", "Do not modify OpenClaw configuration")
+  .option("--skip-claude", "Do not modify Claude Code settings")
+  .option("--no-audit", "Skip the immediate audit at the end of init")
+  .action(async (opts) => {
+    await initCommand({
+      dryRun: opts.dryRun,
+      yes: opts.yes,
+      strict: opts.strict,
+      semantic: opts.semantic,
+      blockAt: opts.blockAt,
+      fixPermissions: opts.fixPermissions,
+      openclawConfig: opts.openclawConfig,
+      claudeSettings: opts.claudeSettings,
+      skipOpenclaw: opts.skipOpenclaw,
+      skipClaude: opts.skipClaude,
+      audit: opts.audit,
+    });
+  });
+
+program
+  .command("claude-hook", { hidden: true })
+  .description("Claude Code PostToolUse hook: warns when a written/edited skill, rule, or MCP config has security findings")
+  .action(async () => {
+    await claudeHookCommand();
+  });
 
 program
   .command("scan")
@@ -169,12 +207,20 @@ program
 
 program
   .command("audit")
-  .description("Scan every installed skill (OpenClaw and Claude Code), or each skill in --dir")
+  .description("Audit installed agent skills, rules, hooks & MCP configs across OpenClaw, Claude Code, Cursor, Codex, and Windsurf")
   .option("--dir <path>", "Custom skills directory to scan")
+  .option("-s, --summary", "Compact table view plus Machine Permissions Summary")
+  .addOption(new Option("--ecosystem <name>", "Limit auto-discovery to one ecosystem").choices(["openclaw", "claude-code", "cursor", "codex", "windsurf", "mcp"]))
   .addOption(new Option("--format <format>", "Output format").choices(["terminal", "json"]).default("terminal"))
-  .addOption(new Option("--fail-on <severity>", "Exit 1 if any skill has findings at this severity or above").choices(["critical", "high", "medium", "low"]))
+  .addOption(new Option("--fail-on <severity>", "Exit 1 if any item has findings at this severity or above").choices(["critical", "high", "medium", "low"]))
   .action(async (opts) => {
-    await auditCommand({ dir: opts.dir, format: opts.format, failOn: opts.failOn });
+    await auditCommand({
+      dir: opts.dir,
+      summary: opts.summary,
+      ecosystem: opts.ecosystem,
+      format: opts.format,
+      failOn: opts.failOn,
+    });
   });
 
 program

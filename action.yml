@@ -1,5 +1,5 @@
 name: "ClawVet Skill Scanner"
-description: "Scan agent skills (OpenClaw, Claude Code) for security threats"
+description: "Scan AI agent skills (OpenClaw, Claude Code, Cursor, Codex) for security threats and post PR Permissions Diff comments"
 branding:
   icon: "shield"
   color: "red"
@@ -24,6 +24,18 @@ inputs:
     description: "Upload SARIF to GitHub code scanning (needs security-events: write). Implies format sarif"
     required: false
     default: "false"
+  comment-pr:
+    description: "Post or update a sticky PR comment showing Grade, Permissions Diff, findings, and README trust badge (needs pull-requests: write)"
+    required: false
+    default: "false"
+  github-token:
+    description: "GitHub token used when comment-pr is true"
+    required: false
+    default: ${{ github.token }}
+  base-ref:
+    description: "Base git ref to diff permissions against on pull requests"
+    required: false
+    default: ${{ github.base_ref }}
   version:
     description: "clawvet version from npm. Defaults to the version this action was released with"
     required: false
@@ -57,12 +69,16 @@ runs:
         CLAWVET_FORMAT: ${{ inputs.format }}
         CLAWVET_SARIF_FILE: ${{ inputs.sarif-file }}
         CLAWVET_UPLOAD: ${{ inputs.upload-sarif }}
+        CLAWVET_COMMENT_PR: ${{ inputs.comment-pr }}
+        CLAWVET_BASE_REF: ${{ inputs.base-ref }}
         CLAWVET_VERSION: ${{ inputs.version }}
+        CLAWVET_EVENT_NAME: ${{ github.event_name }}
         CLAWVET_TELEMETRY: "off"
       run: |
         case "$CLAWVET_FAIL_ON" in critical|high|medium|low) ;; *) echo "Invalid fail-on" >&2; exit 1 ;; esac
         case "$CLAWVET_FORMAT" in terminal|json|sarif) ;; *) echo "Invalid format" >&2; exit 1 ;; esac
         case "$CLAWVET_UPLOAD" in true|false) ;; *) echo "Invalid upload-sarif" >&2; exit 1 ;; esac
+        case "$CLAWVET_COMMENT_PR" in true|false) ;; *) echo "Invalid comment-pr" >&2; exit 1 ;; esac
         if [ "$CLAWVET_UPLOAD" = true ]; then CLAWVET_FORMAT=sarif; fi
         version="${CLAWVET_VERSION:-$(node -p 'require(process.argv[1]).version' "$CLAWVET_ACTION_PATH/packages/cli/package.json")}"
         [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Invalid version: $version" >&2; exit 1; }
@@ -80,6 +96,29 @@ runs:
         fi
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
 
+        # Capture structured JSON for head (and base ref when available) to render
+        # the sticky PR Permissions Diff comment.
+        if [ "$CLAWVET_COMMENT_PR" = true ] && [ "$CLAWVET_EVENT_NAME" = pull_request ]; then
+          head_json="$RUNNER_TEMP/clawvet-head.json"
+          base_json="$RUNNER_TEMP/clawvet-base.json"
+          node "$cli" scan --format json -- "$CLAWVET_INPUT_PATH" > "$head_json" 2>/dev/null
+          echo "head-json=$head_json" >> "$GITHUB_OUTPUT"
+          if [ -n "$CLAWVET_BASE_REF" ] && [[ "$CLAWVET_BASE_REF" =~ ^[A-Za-z0-9._/+-]+$ ]] && [[ "$CLAWVET_BASE_REF" != -* ]]; then
+            git fetch --no-tags --depth=1 origin -- "$CLAWVET_BASE_REF" >/dev/null 2>&1 || true
+            base_dir="$RUNNER_TEMP/clawvet-base"
+            rm -rf "$base_dir"
+            mkdir -p "$base_dir"
+            if git archive "origin/$CLAWVET_BASE_REF" -- "$CLAWVET_INPUT_PATH" 2>/dev/null | tar -x -C "$base_dir" 2>/dev/null; then
+              if [ -e "$base_dir/$CLAWVET_INPUT_PATH" ]; then
+                node "$cli" scan --format json -- "$base_dir/$CLAWVET_INPUT_PATH" > "$base_json" 2>/dev/null || rm -f "$base_json"
+                if [ -s "$base_json" ]; then
+                  echo "base-json=$base_json" >> "$GITHUB_OUTPUT"
+                fi
+              fi
+            fi
+          fi
+        fi
+
     - name: Upload SARIF
       if: inputs.upload-sarif == 'true'
       uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
@@ -87,7 +126,19 @@ runs:
         sarif_file: ${{ steps.scan.outputs.sarif-file }}
         category: clawvet
 
-    # Fail after the upload, so findings reach code scanning either way.
+    - name: Post PR Permissions Diff comment
+      if: inputs.comment-pr == 'true' && github.event_name == 'pull_request' && steps.scan.outputs.head-json != ''
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CLAWVET_ACTION_PATH: ${{ github.action_path }}
+        CLAWVET_INPUT_PATH: ${{ inputs.path }}
+        CLAWVET_BASE_REF: ${{ inputs.base-ref }}
+        CLAWVET_HEAD_JSON: ${{ steps.scan.outputs.head-json }}
+        CLAWVET_BASE_JSON: ${{ steps.scan.outputs.base-json }}
+      run: node "$CLAWVET_ACTION_PATH/scripts/action-pr-comment.mjs"
+
+    # Fail after uploads and PR comment, so reviewers see the report either way.
     - name: Apply fail-on
       shell: bash
       env:

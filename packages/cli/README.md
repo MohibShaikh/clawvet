@@ -1,6 +1,6 @@
 # clawvet
 
-Static and install-time security scanner for OpenClaw and Claude Code skills. ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. Offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes.
+Static and install-time security scanner for AI agent skills, rules, hooks, and MCP configs (**OpenClaw, Claude Code, Cursor, Codex, Windsurf**). ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. Offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes.
 
 ![ClawVet CLI demo](https://raw.githubusercontent.com/MohibShaikh/clawvet/master/clawvet-demo.gif)
 
@@ -15,6 +15,13 @@ Releases are published with signed npm provenance. Check `npm view clawvet dist.
 ## Usage
 
 ```bash
+# Audit all installed skills, rules, hooks & MCP configs on your machine (prints Machine Permissions Summary)
+clawvet audit --summary
+clawvet audit --dir ./skills --format json --fail-on high
+
+# One-command setup for OpenClaw installPolicy + Claude Code PostToolUse guard (supports --dry-run)
+clawvet init
+
 # Scan a local skill (grade, Permissions summary, and findings)
 clawvet scan ./my-skill/
 
@@ -23,10 +30,6 @@ clawvet scan ./my-skill/ --format json --fail-on high
 
 # Fetch a manifest preview from ClawHub (incomplete coverage; stage locally to clear)
 clawvet scan weather-forecast --remote
-
-# Audit all installed OpenClaw and Claude Code skill directories
-clawvet audit
-clawvet audit --dir ./skills --format json --fail-on high
 
 # Watch skill directories for new installs
 clawvet watch --threshold 50
@@ -69,13 +72,14 @@ Seven passes run across `SKILL.md` and every referenced script (Passes 1-6 are s
 
 ## CI/CD
 
-GitHub Action (with optional SARIF code-scanning upload):
+GitHub Action (with optional sticky PR **Permissions Diff** comment and SARIF upload):
 
 ```yaml
-- uses: MohibShaikh/clawvet@v0.17.0
+- uses: MohibShaikh/clawvet@v0.18.0
   with:
     path: skills/my-skill
     fail-on: high
+    comment-pr: true     # needs pull-requests: write
     upload-sarif: true   # needs security-events: write
 ```
 

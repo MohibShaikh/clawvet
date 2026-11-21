@@ -260,7 +260,28 @@ export function checkExecutablePermissions(paths: string[]): string[] {
 // `which clawvet` fails. Resolve through to the real file and invoke it via
 // node explicitly, so both the command and the script argument are regular
 // files.
-function printConfig(blockAt: number, options: GateOptions): void {
+export interface BuiltGateConfig {
+  config: {
+    security: {
+      installPolicy: {
+        enabled: true;
+        targets: ["skill"];
+        exec: {
+          source: "exec";
+          command: string;
+          args: string[];
+          timeoutMs: number;
+          passEnv?: string[];
+        };
+      };
+    };
+  };
+  command: string;
+  self: string;
+  writable: string[];
+}
+
+export function buildGateConfig(blockAt = DEFAULT_BLOCK_AT, options: GateOptions = {}): BuiltGateConfig {
   const { approval, strict } = options;
   const self = realpathSync(fileURLToPath(import.meta.url));
   const command = realpathSync(process.execPath);
@@ -285,7 +306,7 @@ function printConfig(blockAt: number, options: GateOptions): void {
     if (options.semanticCache) args.push("--semantic-cache");
     if (options.semanticOnError === "ignore") args.push("--semantic-on-error", "ignore");
   }
-  const config = {
+  const config: BuiltGateConfig["config"] = {
     security: {
       installPolicy: {
         enabled: true,
@@ -313,9 +334,13 @@ function printConfig(blockAt: number, options: GateOptions): void {
       },
     },
   };
+  return { config, command, self, writable: checkExecutablePermissions([command, self]) };
+}
+
+function printConfig(blockAt: number, options: GateOptions): void {
+  const { config, writable } = buildGateConfig(blockAt, options);
   process.stdout.write(JSON.stringify(config, null, 2) + "\n");
   // Preflight diagnostics go strictly to stderr so stdout stays pasteable JSON.
-  const writable = checkExecutablePermissions([command, self]);
   if (writable.length > 0) {
     const quoted = writable.map((p) => `'${p.replace(/'/g, "'\\''")}'`).join(" ");
     process.stderr.write(

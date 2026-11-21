@@ -4,7 +4,7 @@
 [![npm](https://img.shields.io/npm/v/clawvet)](https://www.npmjs.com/package/clawvet)
 [![npm downloads](https://img.shields.io/npm/dw/clawvet)](https://www.npmjs.com/package/clawvet)
 
-Static and install-time security scanner for OpenClaw and Claude Code skills. ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. It runs fully offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes when you turn them on.
+Static and install-time security scanner for AI agent skills, rules, hooks, and MCP configs (**OpenClaw, Claude Code, Cursor, Codex, Windsurf**). ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. It runs fully offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes when you turn them on.
 
 ![ClawVet demo](clawvet-demo.gif)
 
@@ -14,17 +14,17 @@ Static and install-time security scanner for OpenClaw and Claude Code skills. Cl
 # Install once, then run the copy you installed
 npm install -g clawvet
 
-# Scan a local skill (prints grade, Permissions summary, and findings)
+# Audit all installed skills, rules, hooks & MCP configs on your machine (prints Machine Permissions Summary)
+clawvet audit --summary
+
+# One-command setup for OpenClaw installPolicy + Claude Code PostToolUse guard (supports --dry-run)
+clawvet init
+
+# Scan a single skill (prints grade, Permissions summary, and findings)
 clawvet scan ./my-skill/
 
 # JSON output for CI/CD
 clawvet scan ./my-skill/ --format json --fail-on high
-
-# Audit all installed OpenClaw and Claude Code skill directories
-clawvet audit
-
-# Enforce automatically on every OpenClaw skill install and update
-clawvet gate --print-config
 ```
 
 Install globally rather than running `npx clawvet`: a fresh `npx` fetch executes whatever version the registry serves at that moment, and cache cleanup breaks `gate` configs. Update deliberately with `npm update -g clawvet`, and verify signed npm provenance with `npm view clawvet dist.attestations`.
@@ -49,19 +49,21 @@ Full setup details, `chmod g-w,o-w` troubleshooting, coverage profiles (`default
 
 ## CI & pre-commit
 
-GitHub Action (scans one skill and optionally uploads SARIF to code scanning):
+GitHub Action (scans a skill, optionally uploads SARIF to code scanning, and posts a sticky PR **Permissions Diff** comment with a README trust badge):
 
 ```yaml
 permissions:
   contents: read
+  pull-requests: write     # only for comment-pr
   security-events: write   # only for upload-sarif
 
 steps:
   - uses: actions/checkout@v4
-  - uses: MohibShaikh/clawvet@v0.17.0
+  - uses: MohibShaikh/clawvet@v0.18.0
     with:
       path: skills/my-skill
       fail-on: high
+      comment-pr: true
       upload-sarif: true
 ```
 
@@ -123,8 +125,9 @@ The published npm package `clawvet` contains only `packages/cli` and `packages/s
 
 | Package | Published | Description |
 |---|---|---|
-| `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner and OpenClaw install gate |
+| `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner, multi-agent audit, `clawvet init`, and OpenClaw install gate |
 | `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, AST dataflow, capability extractor, patterns |
+| `web-demo` | Static site (optional) | Zero-backend browser playground (`@clawvet/shared` + WebAssembly Tree-sitter) |
 | `apps/api` | No (optional self-hosted) | Fastify REST API + BullMQ worker (Postgres, Redis, GitHub OAuth) |
 | `apps/web` | No (optional self-hosted) | Next.js 14 dashboard |
 

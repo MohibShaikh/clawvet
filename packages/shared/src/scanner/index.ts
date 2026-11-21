@@ -141,3 +141,4 @@ export { validateMetadata } from "./metadata-validator.js";
 export { checkDependencies } from "./dependency-checker.js";
 export { detectTyposquats } from "./typosquat-detector.js";
 export { calculateRiskScore, getRiskGrade, countFindings } from "./risk-scorer.js";
+export { configureDataflowParser, type DataflowParserConfig } from "./dataflow/parser.js";

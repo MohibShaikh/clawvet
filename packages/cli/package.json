@@ -1,7 +1,7 @@
 {
   "name": "clawvet",
   "version": "0.17.0",
-  "description": "Skill vetting & supply chain security for OpenClaw. Scans SKILL.md files for prompt injection, credential theft, RCE, typosquatting, and social engineering.",
+  "description": "Security scanner & install gate for AI agent skills, rules, hooks, and MCP configs (OpenClaw, Claude Code, Cursor, Codex, Windsurf). Detects credential theft, RCE, prompt injection, and rug-pull updates offline.",
   "type": "module",
   "bin": {
     "clawvet": "dist/index.js"
@@ -20,10 +20,16 @@
   },
   "keywords": [
     "openclaw",
+    "claude-code",
+    "cursor",
+    "codex",
+    "mcp",
+    "agent-security",
     "clawvet",
     "security",
     "scanner",
-    "skill",
+    "skills",
+    "rug-pull",
     "supply-chain",
     "prompt-injection",
     "ai-agent",
