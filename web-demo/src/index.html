@@ -3,119 +3,259 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ClawVet Playground — Client-Side AI Agent Skill Security Scanner</title>
-  <meta name="description" content="Scan SKILL.md, Cursor rules, Claude Code commands, and agent scripts in your browser using WebAssembly Tree-sitter AST dataflow. Zero backend, nothing uploaded.">
+  <title>ClawVet Playground: scan an AI agent skill before you install it</title>
+  <meta name="description" content="Scan SKILL.md, Cursor rules, AGENTS.md and agent scripts in your browser with static rules and WebAssembly Tree-sitter AST dataflow. No backend, nothing uploaded.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2309090b'/%3E%3Cpath d='M12 4.5 6 6.8v4.6c0 3.7 2.5 6.4 6 7.4 3.5-1 6-3.7 6-7.4V6.8L12 4.5Z' fill='none' stroke='%23ededf0' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='m9.4 11.9 1.9 1.9 3.4-3.6' fill='none' stroke='%2334d399' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("clawvet-theme"); } catch (e) {}
+      if (t !== "light" && t !== "dark") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <header class="top-bar">
-    <div class="container top-bar-inner">
-      <div class="brand">
-        <span class="brand-mark">CV</span>
-        <div>
-          <h1>ClawVet Playground</h1>
-          <p class="subtitle">Zero-install AI agent skill scanner · OpenClaw, Claude Code, Cursor, Codex, MCP</p>
-        </div>
-      </div>
-      <div class="top-actions">
-        <a class="btn-link" href="https://github.com/MohibShaikh/clawvet" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a class="btn-link" href="https://www.npmjs.com/package/clawvet" target="_blank" rel="noopener noreferrer">npm</a>
-        <button id="theme-toggle" class="btn-ghost" type="button" aria-label="Toggle theme">Theme</button>
-      </div>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="./" aria-label="ClawVet Playground home">
+        <svg class="brand-mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M12 2.5 4 5.6v6.1c0 4.9 3.3 8.6 8 9.8 4.7-1.2 8-4.9 8-9.8V5.6L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="m8.4 12.2 2.4 2.4 4.8-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="brand-name">clawvet</span>
+        <span class="brand-tag">playground</span>
+      </a>
+      <nav class="topnav" aria-label="Project links">
+        <a href="https://github.com/MohibShaikh/clawvet/blob/master/docs/launch-report-2026.md" target="_blank" rel="noopener noreferrer">Report</a>
+        <a href="https://www.npmjs.com/package/clawvet" target="_blank" rel="noopener noreferrer">npm</a>
+        <a class="nav-gh" href="https://github.com/MohibShaikh/clawvet" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to light theme" title="Toggle theme">
+          <svg class="ico-sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg class="ico-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </button>
+      </nav>
     </div>
   </header>
 
-  <main class="container main-grid">
-    <section class="card privacy-banner">
-      <strong>100% client-side in your browser.</strong>
-      Powered by <code>@clawvet/shared</code> + WebAssembly Tree-sitter AST taint analysis. Pasted skills never leave your device.
+  <main>
+    <section class="wrap intro">
+      <h1>Know what an agent skill can do <em>before</em> it runs.</h1>
+      <p class="lede">Paste a <code>SKILL.md</code>, Cursor rule, <code>AGENTS.md</code> or helper script. ClawVet runs its static rule passes plus Tree-sitter taint tracking right here in your browser and tells you which secrets, hosts and startup files the code touches.</p>
     </section>
 
-    <section class="card input-card">
-      <form id="url-form" class="url-row">
-        <input
-          id="url-input"
-          type="url"
-          placeholder="Paste a GitHub SKILL.md URL (e.g. https://github.com/owner/repo/blob/main/SKILL.md)"
-          aria-label="GitHub or raw SKILL.md URL"
-        >
-        <button class="btn-secondary" type="submit">Fetch &amp; Scan</button>
-      </form>
-
-      <div class="sample-row">
-        <span class="sample-label">Try a sample:</span>
-        <div id="sample-buttons" class="sample-buttons"></div>
-      </div>
-
-      <textarea
-        id="skill-input"
-        spellcheck="false"
-        rows="14"
-        placeholder="Paste SKILL.md, .cursorrules, AGENTS.md, or agent script contents here..."
-        aria-label="Skill content"
-      ></textarea>
-
-      <div class="scan-bar">
-        <div id="status-bar" class="status-bar" data-tone="idle">Ready to scan.</div>
-        <button id="scan-btn" class="btn-primary" type="button">Scan Skill</button>
-      </div>
-    </section>
-
-    <section id="results-panel" class="results-stack" hidden>
-      <div class="card score-card">
-        <div id="grade-badge" class="grade-badge" data-grade="A">A</div>
-        <div class="score-meta">
-          <div class="score-title-row">
-            <h2 id="result-name">skill</h2>
-            <span id="result-verdict" class="verdict-pill" data-verdict="approve">APPROVE</span>
+    <section class="wrap workbench" aria-label="Scanner workbench">
+      <!-- ───────── Source pane ───────── -->
+      <div class="pane pane-source">
+        <div class="pane-head">
+          <div class="pane-title">
+            <span class="step">1</span>
+            <h2>Source</h2>
+            <span id="source-label" class="source-label">sample</span>
           </div>
-          <div class="score-stats">
-            <span>Risk Score: <strong id="result-score">0/100</strong></span>
-            <span class="dot">·</span>
-            <span id="result-timing">0 ms</span>
+          <div class="privacy" title="The scanner, rules and Tree-sitter grammars are bundled into this page. Your input is never sent anywhere.">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span>Runs 100% locally via WebAssembly Tree-sitter. Nothing is uploaded.</span>
           </div>
-          <div class="severity-strip">
-            <span class="sev-pill sev-critical">Critical <strong id="count-critical">0</strong></span>
-            <span class="sev-pill sev-high">High <strong id="count-high">0</strong></span>
-            <span class="sev-pill sev-medium">Medium <strong id="count-medium">0</strong></span>
-            <span class="sev-pill sev-low">Low <strong id="count-low">0</strong></span>
+        </div>
+
+        <form id="url-form" class="url-bar" novalidate>
+          <svg class="url-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input id="url-input" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+            placeholder="github.com/owner/repo/blob/main/SKILL.md"
+            aria-label="GitHub, Gist or raw HTTPS URL of a skill file">
+          <button class="btn btn-secondary" type="submit">Fetch &amp; scan</button>
+        </form>
+
+        <div class="samples" role="group" aria-label="Sample skills">
+          <span class="samples-label">Samples</span>
+          <div id="sample-buttons" class="sample-list"></div>
+        </div>
+
+        <div id="editor" class="editor">
+          <div class="editor-bar">
+            <span id="editor-filename" class="editor-filename">SKILL.md</span>
+            <div class="editor-actions">
+              <label class="btn btn-ghost btn-sm" for="file-input">
+                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 15V4m0 0-4 4m4-4 4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Open file
+              </label>
+              <input id="file-input" type="file" class="sr-only" accept=".md,.mdc,.cursorrules,.sh,.bash,.py,.js,.mjs,.cjs,.ts,.txt,text/plain,text/markdown">
+              <button id="clear-btn" class="btn btn-ghost btn-sm" type="button">Clear</button>
+            </div>
           </div>
+          <div class="editor-body">
+            <pre id="gutter" class="gutter" aria-hidden="true">1</pre>
+            <div class="code-area">
+              <div id="line-hl" class="line-hl" hidden></div>
+              <textarea id="skill-input" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"
+                placeholder="Paste SKILL.md, .cursorrules, AGENTS.md, or a .sh / .py / .js helper here, or drop a file."
+                aria-label="Skill content"></textarea>
+            </div>
+          </div>
+          <div id="drop-zone" class="drop-zone" hidden>
+            <div class="drop-card">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 15V4m0 0-4 4m4-4 4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <strong>Drop to scan locally</strong>
+              <span>SKILL.md · .cursorrules · AGENTS.md · .sh · .py · .js</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scan-row">
+          <div class="scan-meta">
+            <span id="char-count" class="counter">0 lines · 0 B</span>
+            <span id="status-bar" class="status" data-tone="idle" role="status" aria-live="polite">Ready.</span>
+          </div>
+          <button id="scan-btn" class="btn btn-primary" type="button">
+            Scan skill
+            <kbd id="scan-kbd">Ctrl ↵</kbd>
+          </button>
         </div>
       </div>
 
-      <div class="card">
-        <h3 class="section-title">Permissions (what this code can do)</h3>
-        <div id="permissions-grid" class="permissions-grid"></div>
-      </div>
-
-      <div class="card">
-        <h3 class="section-title">Findings (<span id="findings-heading-count">0</span>)</h3>
-        <div id="findings-list" class="findings-list"></div>
-      </div>
-
-      <div class="card badge-card">
-        <div class="badge-header">
-          <h3 class="section-title">README Trust Badge</h3>
-          <img id="badge-preview-img" alt="ClawVet badge" height="20">
+      <!-- ───────── Verdict pane ───────── -->
+      <div class="pane pane-verdict" aria-live="polite">
+        <div class="pane-head">
+          <div class="pane-title">
+            <span class="step">2</span>
+            <h2>Verdict</h2>
+          </div>
+          <div id="engine-status" class="engine" data-state="idle">
+            <span class="engine-dot"></span>
+            <span id="engine-text">AST engine idle</span>
+          </div>
         </div>
-        <div class="copy-row">
-          <input id="badge-markdown" type="text" readonly aria-label="Badge Markdown snippet">
-          <button id="copy-badge-btn" class="btn-secondary" type="button">Copy Markdown</button>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-grade">?</div>
+          <p>Pick a sample, paste a skill or fetch a URL to see its grade, permissions and findings.</p>
+        </div>
+
+        <div id="results-panel" class="results" hidden>
+          <article class="card verdict-card">
+            <div class="gauge-wrap">
+              <svg id="gauge" class="gauge" viewBox="0 0 120 120" aria-hidden="true"></svg>
+              <div class="gauge-center">
+                <span id="grade-letter" class="grade-letter">A</span>
+                <span class="grade-caption">grade</span>
+              </div>
+            </div>
+            <div class="verdict-body">
+              <div class="verdict-top">
+                <span id="result-verdict" class="verdict-pill" data-verdict="approve">APPROVE</span>
+                <span id="result-score" class="score">0<span>/100 risk</span></span>
+              </div>
+              <h3 id="result-name" class="skill-name">skill</h3>
+              <p id="result-summary" class="verdict-summary"></p>
+              <div class="sev-bar" id="sev-bar" role="img" aria-label="Findings by severity"></div>
+              <ul class="sev-legend">
+                <li data-sev="critical"><i></i>Critical <b id="count-critical">0</b></li>
+                <li data-sev="high"><i></i>High <b id="count-high">0</b></li>
+                <li data-sev="medium"><i></i>Medium <b id="count-medium">0</b></li>
+                <li data-sev="low"><i></i>Low <b id="count-low">0</b></li>
+              </ul>
+              <div class="verdict-foot">
+                <span id="result-timing">0 ms</span>
+                <span id="result-dataflow" class="df-flag" hidden>
+                  <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><circle cx="5" cy="6" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="18" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 6h5a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                  taint flow proven by AST
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <header class="card-head">
+              <h3>Permissions</h3>
+              <span class="card-sub">What this skill's code can do</span>
+            </header>
+            <div id="permissions-grid" class="perm-grid"></div>
+          </article>
+
+          <article class="card">
+            <header class="card-head">
+              <h3>Findings <span id="findings-heading-count" class="count-pill">0</span></h3>
+              <span class="card-sub">Sorted by severity · click a line to jump</span>
+            </header>
+            <div id="findings-list" class="findings"></div>
+          </article>
+
+          <article class="card share-card">
+            <header class="card-head">
+              <h3>Share &amp; trust badge</h3>
+              <img id="badge-preview-img" class="badge-img" alt="" height="20" referrerpolicy="no-referrer">
+            </header>
+            <div class="copy-field">
+              <input id="badge-markdown" type="text" readonly aria-label="Badge Markdown snippet">
+              <button id="copy-badge-btn" class="btn btn-secondary btn-sm" type="button">Copy Markdown</button>
+            </div>
+            <div id="share-row" class="copy-field" hidden>
+              <input id="share-link" type="text" readonly aria-label="Shareable scan link">
+              <button id="copy-share-btn" class="btn btn-secondary btn-sm" type="button">Copy share link</button>
+            </div>
+            <p id="share-hint" class="hint">Fetch a skill from a URL to get a link that re-runs this scan for anyone who opens it.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="card cta-card">
-      <div>
-        <h3>Audit every skill, rule, hook &amp; MCP server on your machine</h3>
-        <p>Scan multi-file bundles, enforce install-time rug-pull protection with <code>clawvet init</code>, and add PR Permissions Diff checks in GitHub Actions.</p>
+    <!-- ───────── CLI CTA ───────── -->
+    <section class="wrap cta" aria-labelledby="cta-title">
+      <div class="cta-copy">
+        <h2 id="cta-title">Audit every skill, rule, hook and MCP server on your machine</h2>
+        <p>The CLI scans whole multi-file bundles. <code>clawvet init</code> adds install-time gating with rug-pull permission diffs, and the GitHub Action posts a Permissions Diff on every PR.</p>
       </div>
-      <div class="cli-box">
-        <code>npm i -g clawvet &amp;&amp; clawvet audit</code>
-        <button id="copy-cli-btn" class="btn-primary" type="button">Copy</button>
+      <div class="cli">
+        <span class="cli-prompt" aria-hidden="true">$</span>
+        <code id="cli-cmd">npm i -g clawvet &amp;&amp; clawvet audit --summary</code>
+        <button id="copy-cli-btn" class="btn btn-primary btn-sm" type="button">Copy</button>
+      </div>
+    </section>
+
+    <!-- ───────── Benchmarks ───────── -->
+    <section class="wrap proof" aria-labelledby="proof-title">
+      <div class="proof-head">
+        <h2 id="proof-title">Measured, not claimed</h2>
+        <a href="https://github.com/MohibShaikh/clawvet/blob/master/docs/launch-report-2026.md" target="_blank" rel="noopener noreferrer">Read the launch report →</a>
+      </div>
+      <div class="proof-grid">
+        <div class="stat">
+          <div class="stat-label">SkillTrustBench v1.1 · held-out, 556 skills</div>
+          <div class="stat-figs"><b>0.833</b> acc <span class="sep">/</span> <b>0.770</b> macro F1</div>
+          <div class="stat-note"><code>clawvet gate --semantic</code></div>
+          <ul class="bench">
+            <li><span>ClawVet</span><i style="--w:83.3%"></i><em>0.833</em></li>
+            <li><span>Cisco Skill Scanner</span><i style="--w:77.5%"></i><em>0.775</em></li>
+            <li><span>NVIDIA SkillSpector</span><i style="--w:71.2%"></i><em>0.712</em></li>
+          </ul>
+          <div class="stat-note">Macro F1: Cisco 0.614, NVIDIA 0.511 (published leaderboard).</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Offline rug-pull detection</div>
+          <div class="stat-figs"><b>95.2%</b> caught</div>
+          <div class="stat-note">Code-injection rug-pulls, at a <b>5.1%</b> prompt rate on benign updates. No LLM.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Real ClawHub audit · 209 skills</div>
+          <div class="stat-figs"><b>40.2%</b> <span class="small">read undeclared secret env vars</span></div>
+          <div class="stat-figs"><b>4.8%</b> <span class="small">touch host credential stores</span></div>
+        </div>
       </div>
     </section>
   </main>
+
+  <footer class="wrap foot">
+    <span>MIT · <a href="https://github.com/MohibShaikh/clawvet" target="_blank" rel="noopener noreferrer">github.com/MohibShaikh/clawvet</a></span>
+    <span>Static page. No analytics, no backend.</span>
+  </footer>
 
   <script type="module" src="./app.js"></script>
 </body>
