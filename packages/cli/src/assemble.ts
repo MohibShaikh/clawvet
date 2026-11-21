@@ -117,11 +117,15 @@ const WORKSPACE_SKILL_PATH = /^(?:\.\/)?(?:\{workspace\}\/)?(?:\.[\w-]+\/(?:work
 // ~/.zshrc and then source it.
 const SHELL_SETUP = /(?:^|\/)bin\/activate(?:\.(?:fish|csh|ps1))?$/;
 
-// "/path/to/script.py" is a documentation placeholder, not a location.
-const PLACEHOLDER_PATH = /^\/(?:path\/to|your|absolute\/path)\//i;
+// "/path/to/script.py" and "/Users/..." are documentation placeholders, not locations.
+const PLACEHOLDER_PATH = /^\/(?:path\/to|your|absolute\/path)\/|\/\.\.\.(?:\/|$)/i;
 
-// Source files that resolve paths from their own location and are read with the
-// code-loading rules rather than as shell.
+// File classes: markdown prose/fences, HTML (code rules, not shell), pure data
+// configs/specs (prose + line-level rules, never tokenized as shell commands),
+// and source files that resolve imports from their own location.
+const MARKDOWN_FILE = /\.(?:md|mdx|markdown|mdown)$/i;
+const HTML_FILE = /\.html?$/i;
+const DATA_FILE = /\.(?:json|jsonc|json5|ya?ml|toml|ini|xml|css|csv|tsv|txt|rst|svg)$/i;
 const CODE_FILE = /\.(?:py|pyw|js|mjs|cjs|jsx|ts|mts|cts|tsx|rb|pl|lua|go|rs)$/i;
 // The shell idiom for "the directory this script is in". A path after it is
 // relative to the script, which is what "./" means to the resolver below.
@@ -129,16 +133,27 @@ const DIRNAME_SELF = /\$\(\s*dirname\s+["']?\$\{?(?:0|BASH_SOURCE(?:\[0\])?)\}?[
 
 // $(dirname "$0") always names the script's directory. $SCRIPT_DIR only does
 // when every assignment to it in this file is built from that idiom; otherwise
-// a reassigned SCRIPT_DIR could borrow a bundled decoy's name.
-function scriptRelative(text: string): string {
+// a reassigned SCRIPT_DIR could borrow a bundled decoy's name. Paths derived
+// from either idiom are recorded in `selfAnchored` because bash resolves them
+// from the script's own directory, never the caller's cwd.
+function scriptRelative(text: string): { text: string; selfAnchored: Set<string> } {
   // Every assignment anywhere, including a second one later on the same line;
   // read, for and printf -v can set it without an equals sign at all.
   const assignments = text.match(/\bSCRIPT_DIR\+?=/g)?.length ?? 0;
   const idiomatic = text.match(new RegExp(`\\bSCRIPT_DIR=["']?(?:\\$\\(\\s*cd\\s+["']?)?${DIRNAME_SELF.source}`, "g"))?.length ?? 0;
   const other = /\b(?:read|for|printf\s+-v|mapfile|readarray|declare\s+-n|local\s+-n)\b[^\n;]*\bSCRIPT_DIR\b/.test(text);
   const own = assignments > 0 && assignments === idiomatic && !other;
+  const selfAnchored = new Set<string>();
+  const collect = (re: RegExp) => {
+    for (const m of text.matchAll(re)) {
+      const candidate = `./${m[1].replace(/[.,:]+$/, "")}`;
+      if (!text.includes(candidate)) selfAnchored.add(candidate);
+    }
+  };
+  collect(new RegExp(`${DIRNAME_SELF.source}\\/([^\\s\`"'<>|;&)\\]]+)`, "g"));
+  if (own) collect(/\$\{?SCRIPT_DIR\}?\/([^\s`"'<>|;&)\]]+)/g);
   const resolved = text.replace(DIRNAME_SELF, ".");
-  return own ? resolved.replace(/\$\{?SCRIPT_DIR\}?/g, ".") : resolved;
+  return { text: own ? resolved.replace(/\$\{?SCRIPT_DIR\}?/g, ".") : resolved, selfAnchored };
 }
 // Rules for a reference ClawVet cannot resolve to one file.
 const UNRESOLVED = new Set<RuleId>(["dynamic-loading", "dynamic-module", "dynamic-target", "computed-command"]);
@@ -324,8 +339,24 @@ export function assembleSkill(
   // Download checks compare with `created`: the file may exist only because
   // the skill downloads it, so the bundle need not have it. Every side of a
   // download comparison must map the same way, or the paths never match.
+  const nestedWorkspaceSkill = (ref: string, created: boolean): string | undefined => {
+    const m = ref.match(/^(?:\.\/)?(?:\{workspace\}\/)?(?:\.[\w-]+\/(?:workspace\/)?)?skills\/(.+)$/);
+    if (!m) return undefined;
+    const parts = m[1].split("/");
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (skillNames.has(parts[i].toLowerCase())) {
+        const tail = parts.slice(i + 1).join("/");
+        if (created || files.has(tail)) return tail;
+      }
+    }
+    return undefined;
+  };
   const ownCopy = (ref: string, created = false) => {
     // A bundled file by that exact path is itself, not an installed copy.
+    if (!isAbsolute(ref) && !ref.startsWith("~/") && !files.has(ref)) {
+      const nested = nestedWorkspaceSkill(ref, created);
+      if (nested) return nested;
+    }
     const installed = isAbsolute(ref) ? ref.match(/\/skills\/([^/]+)\/(.+)$/)
       : ref.startsWith("~/") ? ref.match(HOME_SKILL_PATH)
       : files.has(ref) ? null : ref.match(WORKSPACE_SKILL_PATH);
@@ -348,8 +379,11 @@ export function assembleSkill(
     })()));
   for (let index = 0; index < queue.length; index++) {
     const source = queue[index];
-    const text = scriptRelative(source.text.replace(SKILL_ROOT, ""));
-    const runtime = inspectRuntimeCoverage(text, /\.md$/i.test(source.path), 0, CODE_FILE.test(source.path));
+    const { text, selfAnchored } = scriptRelative(source.text.replace(SKILL_ROOT, ""));
+    const isMarkdown = MARKDOWN_FILE.test(source.path);
+    const isCodeFile = CODE_FILE.test(source.path) || HTML_FILE.test(source.path);
+    const isDataFile = DATA_FILE.test(source.path) && !RUNS_ON_INSTALL.test(source.path);
+    const runtime = inspectRuntimeCoverage(text, isMarkdown, 0, isCodeFile, isDataFile);
     for (const problem of runtime.issues) issue(source.path, problem.rule, problem.line);
     unresolved ||= runtime.issues.some((problem) => UNRESOLVED.has(problem.rule));
     for (const download of runtime.downloads) downloads.push({ path: source.path, ...download, target: ownCopy(download.target, true) });
@@ -375,15 +409,16 @@ export function assembleSkill(
       const ref = ownCopy(original);
       const runs = runtime.executedFiles.includes(original);
       const markdownLinkOnly =
-        /\.md$/i.test(source.path) &&
+        isMarkdown &&
         !runs &&
         extracted.markdownLinks.has(original) &&
         !extracted.nonLinkRefs.has(original) &&
         !modules.includes(original);
-      // Code and non-executed Markdown hyperlinks resolve from their own file.
-      // Shell and manifest commands resolve from a working directory ClawVet
-      // cannot know, so check both the file's directory and the skill root.
-      const paths = CODE_FILE.test(source.path) || markdownLinkOnly
+      const markdownDocRef = isMarkdown && !runs && (markdownLinkOnly || DOCUMENT.test(ref));
+      // Code, non-executed Markdown document references, and paths anchored to
+      // $(dirname "$0") / idiomatic $SCRIPT_DIR resolve from their own file.
+      // Other shell/manifest references depend on cwd, so check both locations.
+      const paths = isCodeFile || markdownDocRef || selfAnchored.has(original)
         ? [resolve(root, dirname(source.path), ref)]
         : [...new Set([resolve(root, dirname(source.path), ref), resolve(root, ref)])];
       const hasFile = (path: string) => files.has(relative(root, path).split(sep).join("/"));
@@ -398,7 +433,7 @@ export function assembleSkill(
       // A quoted sentence that happens to end in a filename is prose, unless a
       // file by that whole name exists.
       if (/\s/.test(ref) && !matches.length && !runs) continue;
-      if (DOCUMENT.test(ref) && !runs && paths.every((path) => !inside(path))) {
+      if ((DOCUMENT.test(ref) || (markdownLinkOnly && !EXECUTABLE.test(ref))) && !runs && paths.every((path) => !inside(path))) {
         issue(ref, "outside-document", undefined, source.path);
         continue;
       }

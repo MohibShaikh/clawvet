@@ -49,6 +49,12 @@ function isPowerShellCompletion(text: string): boolean {
   const m = text.match(/^\s*([a-z][a-z0-9_-]{0,63})\s+completions?\s+(?:(?:-s|--shell)\s+)?powershell(?:\s+--?[a-z0-9_-]+)*\s*\|\s*(?:Out-String\s*\|\s*)?(?:Invoke-Expression|iex)\s*$/i);
   return !!m && !COMPLETION_EXCLUDED.test(m[1]);
 }
+// Standard local shell environment-init idioms (`eval "$(ssh-agent -s)"`,
+// `eval "$(brew shellenv)"`, etc.) that emit local `export` lines. Strictly
+// anchored to the full line with no extra commands, pipes, variables, or URLs.
+function isShellEnvInit(text: string): boolean {
+  return /^\s*eval\s+(?:"\$\((?:ssh-agent(?:\s+-s)?|(?:\/(?:opt\/homebrew|usr\/local|home\/linuxbrew\/\.linuxbrew)\/bin\/)?brew\s+shellenv|direnv\s+hook\s+(?:bash|zsh|fish)|(?:pyenv|rbenv|nodenv|starship|zoxide)\s+init\s+(?:-|bash|zsh|fish|--path)|fnm\s+env|mise\s+activate\s+(?:bash|zsh|fish))\)"|\$\((?:ssh-agent(?:\s+-s)?|(?:\/(?:opt\/homebrew|usr\/local|home\/linuxbrew\/\.linuxbrew)\/bin\/)?brew\s+shellenv)\))\s*$/.test(text);
+}
 const REMOTE = /^(?:https?|ftp|data):/i;
 // Commands that make a prose fragment worth reading as shell. Lowercase only:
 // "Python 3 is required" and "Node version 18" are sentences, not commands.
@@ -175,9 +181,12 @@ function literalAt(text: string, start: number): { value: string; end: number } 
 // the remainder of the line, each only when it starts with a recognized
 // command, optionally after an imperative such as "Run". Tables, bullets and
 // sentences are not shell, so "$145" in a price table is not a computed command.
-function proseCommands(line: string): string[] {
+function proseCommands(line: string, dataFile = false): string[] {
   const commands: string[] = [];
-  const starts = (text: string) => PROSE_COMMAND.test((text.trim().split(/\s+/)[0] ?? "").replace(/^["']|["']$/g, ""));
+  const starts = (text: string) => {
+    const first = (text.trim().split(/\s+/)[0] ?? "").replace(/^["']|["']$/g, "");
+    return PROSE_COMMAND.test(first) && !(dataFile && /^\.{1,2}\//.test(first));
+  };
   for (const span of line.matchAll(/`([^`\n]+)`/g)) if (starts(span[1])) commands.push(span[1]);
   const rest = line.replace(/`[^`\n]+`/g, (span) => span.slice(1, -1))
     .replace(/^\s*(?:#{1,6}\s+|>\s*|[-*+]\s+|\d+[.)]\s+)*/, "")
@@ -190,7 +199,7 @@ function proseCommands(line: string): string[] {
 }
 
 /** Recognized runtime loading boundaries that static file assembly cannot inspect. */
-export function inspectRuntimeCoverage(content: string, markdown = false, depth = 0, code = false): RuntimeCoverage {
+export function inspectRuntimeCoverage(content: string, markdown = false, depth = 0, code = false, dataFile = false): RuntimeCoverage {
   const result: RuntimeCoverage = { issues: [], downloads: [], executedFiles: [], instructionFiles: [] };
   const add = (line: number, rule: RuleId) => {
     const reason = RULES[rule].message;
@@ -353,12 +362,13 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
           result.downloads.push(...nested.downloads.map((download) => ({ ...download, line: lineNumber })));
           result.executedFiles.push(...nested.executedFiles);
           result.instructionFiles.push(...nested.instructionFiles);
-        } else if (input && !input.operator && (!prose || (/[/.]/.test(input.value) && /\w/.test(input.value)))) {
+        } else if (input && !input.operator && (!prose || (/[/.]/.test(input.value) && /\w/.test(input.value) && !/^v?\d+(?:\.\d+)+$/i.test(input.value)))) {
           result.executedFiles.push(input.value.replace(/[.,:]+$/, ""));
         }
       }
       // A redirect target follows an operator but is a file, not a command.
-      const commandPosition = i === 0 || (tokens[i - 1].operator && !"<>".includes(tokens[i - 1].value)) ||
+      // `)` ends a subshell or `$(...)` expansion inside a word, never starts a command.
+      const commandPosition = i === 0 || (tokens[i - 1].operator && !"<>)" .includes(tokens[i - 1].value)) ||
         /^(?:run|execute|sudo|command|exec|env)$/i.test(tokens[i - 1].value);
       // `$env:TOKEN="x"` and `$url = "..."` assign; `$PYTHON scripts/run.py`
       // runs a literal bundled script through an interpreter variable.
@@ -371,7 +381,15 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       }
       // In a code-labelled fence, `import('./x')` puts a path after "(" too; that
       // is an import argument, not a command, so only shell reads it as one.
-      if (commandPosition && !lenient && /^\.\.?\//.test(token.value) && !token.dynamic) result.executedFiles.push(token.value);
+      // In prose, a bullet listing a document or directory (`- ../prose.md: notes`,
+      // `- ./docs/: guide`) is a path reference, not direct execution; `assemble.ts`
+      // still follows it as a document reference.
+      const execTarget = prose ? token.value.replace(/[.,:]+$/, "") : token.value;
+      if (commandPosition && !lenient && /^\.\.?\//.test(execTarget) && !token.dynamic &&
+          !(prose && (execTarget.endsWith("/") || /^\.\.?\/[^\s:]+:\//.test(execTarget) ||
+            /\.(?:md|markdown|mdx|rst|txt|pdf|png|jpe?g|gif|webp|svg|html?|json|ya?ml|toml|csv|tsv)$/i.test(execTarget)))) {
+        result.executedFiles.push(execTarget);
+      }
       // An absolute command runs a file outside the bundle, except the system
       // binary directories, which need root to change. A single segment such as
       // /deploy is an agent slash command, not a path. Normalize leading slashes
@@ -381,7 +399,13 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
           !/^\/(?:usr\/(?:local\/)?)?s?bin\/|^\/opt\/homebrew\/bin\//.test(normalizedPath)) {
         result.executedFiles.push(normalizedPath);
       }
-      if (commandPosition && /^(?:eval|iex|invoke-expression)$/i.test(command) && !isPowerShellCompletion(text)) {
+      // Bare `eval` with no arguments (e.g., `` `eval` `` mentioned in prose) is a no-op;
+      // PowerShell `iex` / `Invoke-Expression` can also receive code via a preceding pipe.
+      const hasArg = !!tokens[i + 1] && !tokens[i + 1].operator;
+      const pipedIn = i > 0 && tokens[i - 1].value === "|";
+      if (commandPosition && /^(?:eval|iex|invoke-expression)$/i.test(command) &&
+          (hasArg || (pipedIn && /^(?:iex|invoke-expression)$/i.test(command))) &&
+          !isPowerShellCompletion(text) && !isShellEnvInit(text)) {
         add(lineNumber, "eval");
       }
     }
@@ -413,7 +437,13 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       while (end < text.length && /\s/.test(text[end])) end++;
       const next = argument ? text[end] : undefined;
       if (/^(?:eval|exec|compile|Function|runInNewContext|runInThisContext)$/.test(call[1])) {
-        add(lineNumber, "eval");
+        // Zero-argument `eval()` / `exec()` cannot run code and appears in
+        // security checklists, and `def compile(self)` / `function compile()`
+        // declares a function rather than calling the builtin.
+        const isDeclaration = /\b(?:def|function)\s+$/.test(text.slice(0, call.index!));
+        let open = call.index! + call[0].length;
+        while (open < text.length && /\s/.test(text[open])) open++;
+        if (!isDeclaration && text[open] !== ")") add(lineNumber, "eval");
       } else if (!argument || (next !== ")" && next !== ",")) {
         add(lineNumber, "dynamic-loading");
       } else if (REMOTE.test(argument.value)) {
@@ -465,7 +495,7 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
     // shell. Unlabelled and code-labelled fences get both the shell rules and the
     // code-loading rules, since a label cannot be trusted to hide commands; there
     // an executed target must look like a path, so words are not taken as files.
-    const isProse = markdown && (!fence || (fenceLanguage !== "" && TEXT_FENCE.test(fenceLanguage)));
+    const isProse = dataFile || (markdown && (!fence || (fenceLanguage !== "" && TEXT_FENCE.test(fenceLanguage))));
     const shell = !isProse && !code;
     const loose = markdown && !!fence && !SHELL_FENCE.test(fenceLanguage);
     // JSON bodies and HTTP request lines appear in shell fences; neither is a
@@ -480,8 +510,8 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       }
       heredoc = line.match(/<<-?\s*(["']?)([A-Za-z_]\w*)\1/)?.[2];
     }
-    const segments = isProse ? proseCommands(line) : [line];
-    if (isProse && !fence) {
+    const segments = isProse ? proseCommands(line, dataFile) : [line];
+    if (isProse && !fence && !dataFile) {
       // Markdown delimiters are not shell substitution, so the line-level rules
       // and the instruction tracker read prose with its code spans unwrapped.
       line = line.replace(/`([^`\n]+)`/g, "$1");
@@ -492,19 +522,36 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       }
     }
     for (const segment of data ? [] : segments) inspectCommand(segment, lineNumber, isProse || loose, index, isProse || shell, code || (loose && fenceLanguage !== ""));
-    // The interpreter must receive the download: `| bash` or `bash <(...)`.
-    // A domain like opsy.sh or a pipe into jq is not execution.
-    const hasDownload = /\b(?:curl|wget|iwr|invoke-webrequest|irm|invoke-restmethod)\b/i.test(line);
+    // The interpreter must receive the download: `| bash` (after the downloader)
+    // or `bash <(...)`. A domain like opsy.sh, a pipe into jq or `python -m json.tool`,
+    // a Markdown table row (`| bash | curl |`), or a bare prose/regex mention with
+    // no target (`curl | bash`, `(curl|bash|sh|wget)`) is not execution.
     // `ba""sh` is bash to the shell: drop empty quote pairs before matching.
     const plain = line.replace(/(["'])\1/g, "");
-    if (hasDownload && (PIPE_TO_INTERPRETER.test(plain) || INTERPRETER_SUBSTITUTION.test(plain) ||
+    const downloadMatches = [...plain.matchAll(/\b(?:curl|wget|iwr|invoke-webrequest|irm|invoke-restmethod)\b/gi)];
+    const pipeToShell = downloadMatches.some((downloadMatch) => {
+      const afterDownload = plain.slice(downloadMatch.index! + downloadMatch[0].length);
+      const pipedMatch = PIPE_TO_INTERPRETER.exec(afterDownload);
+      if (!pipedMatch) return false;
+      const pipedAfter = afterDownload.slice(pipedMatch.index);
+      const onlyJsonTool = /^\|\s*(?:[\w.~/-]*\/)?python\d*(?:\.\d+)?\s+-m\s+json\.tool\b/i.test(pipedAfter) &&
+        !PIPE_TO_INTERPRETER.test(pipedAfter.slice(pipedMatch[0].length));
+      if (onlyJsonTool) return false;
+      const between = afterDownload.slice(0, pipedMatch.index);
+      const bareMention = !/\bxargs\b/i.test(plain) &&
+        !/https?:\/\//i.test(plain) &&
+        /^[\s.\\]*(?:\|\s*(?:curl|wget|iwr|irm)\b[\s.\\]*)*$/i.test(between) &&
+        (isProse || /\([^)]*\b(?:curl|wget)\|(?:ba|da|z|k)?sh\b/i.test(plain));
+      return !bareMention;
+    });
+    if (downloadMatches.length > 0 && (pipeToShell || INTERPRETER_SUBSTITUTION.test(plain) ||
         INTERPRETER_COMMAND_SUBSTITUTION.test(plain))) {
       // A vendor's own one-line installer, from an exact trusted host, is
       // reviewable. Any other host, or a mix, stays a block.
       if (onlyTrustedInstallers(line)) add(lineNumber, "trusted-installer");
       else add(lineNumber, "pipe-to-shell");
     }
-    if (/\b(?:download|fetch)\b/i.test(line) && /(?<![-\w])(?:run|execute|source|eval)\b/i.test(line) && /https?:\/\//i.test(line)) {
+    if (/(?<![-\w])(?:download|fetch)\b(?!-)/i.test(line) && /(?<![-\w])(?:run|execute|source|eval)\b(?!-)/i.test(line) && /https?:\/\//i.test(line)) {
       add(lineNumber, "download-and-run");
     }
   }
