@@ -184,6 +184,19 @@ finding back. A baseline inside the skill is refused, and so are disqualifying
 findings and gaps that no hash can pin, such as code downloaded at run time.
 Write one with `clawvet scan <skill> --write-baseline <file> --reason "..."`.
 
+**Update permission checks.** Every scan extracts the skill's permissions:
+connected sites, credential stores, secret env vars, persistence locations, and
+proved high-risk behaviours, printed under Permissions by `clawvet scan`
+and included as `capabilities` in JSON output. `clawvet gate` records what each
+allowed install could do under `~/.local/state/clawvet/installed` (using
+`XDG_STATE_HOME` when set, otherwise `os.homedir()`, so existing
+`--print-config` blocks work without changes). When OpenClaw updates the same
+owner and slug, the gate asks if the new version adds a secret read,
+persistence, a high-risk behaviour, or a risky site (the publisher's own
+GitHub/GitLab account is exempt). `--strict` asks about every new site on
+updates, and `--no-update-check` disables the comparison. The check never turns
+a `block` or `warn` into an `allow`.
+
 Anything the host cannot parse fails closed. A malformed payload, an unreadable
 staged path, or a scanner error returns `block` with a reason rather than a bare
 non-zero exit, so the operator sees why the install stopped.

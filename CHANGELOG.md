@@ -1,5 +1,112 @@
 # Changelog
 
+## 0.17.0
+
+Permissions visibility, install-time rug-pull update checks, faster scanning, stronger code-injection detection, and major false-block reductions across real-world skills.
+
+- **Permissions summary (`scan` and JSON):** every scan now records what the
+  skill's code can do: connected sites, credential stores read, secret
+  environment variables referenced, persistence locations, and proved high-risk
+  behaviours, each linked to its file and line. `clawvet scan` prints them in a
+  **Permissions** section, and `--format json` includes `capabilities`.
+  `rescore()` keeps behaviours synchronized whenever a baseline, `--semantic`,
+  or `--osv` updates findings.
+- **Update permission diff (`clawvet gate`):** the gate now records what each
+  allowed install could do, one file per skill under
+  `~/.local/state/clawvet/installed` (honoring `XDG_STATE_HOME` when set and
+  otherwise falling back to `os.homedir()`, so existing `--print-config`
+  OpenClaw blocks get update checks without changing `passEnv`). When OpenClaw
+  stages an update for the same owner and slug, the gate compares it with the
+  stored record and asks (`warn`, naming each new permission) if the update adds
+  a secret read, persistence, a high-risk behaviour, or a risky site (raw IP,
+  tunnel, request bin, paste/file drop, abuse-prone TLD, or a code host under
+  another owner; the publisher's own GitHub/GitLab account is exempt).
+  `--strict` asks about every new site on updates, and `--no-update-check`
+  disables the comparison. The check never relaxes a `block` or `warn` to
+  `allow`, and any ledger read/write error leaves the verdict unchanged.
+- **Speedups (1.5x faster overall, 2.0 to 2.25x faster on 2 MiB skills):**
+  replaced per-file RegExp compilation in `assemble.ts` with a zero-allocation
+  word-boundary matcher that skips already-visited files, added line-level
+  prefilters in `capabilities.ts` (8.4x faster capability extraction), hoisted
+  per-line regexes and guarded rare checks in `runtime-coverage.ts`, and reused
+  compiled threat patterns with shared line/code indexes and literal prefilters
+  in `static-analysis.ts`. On 212 unique ClawHub skills, total scan time dropped
+  from **40.6 s to 27.1 s** (191.5 to 128.0 ms/skill avg; 2 MiB skills such as
+  `byungkyu/api-gateway` dropped from 4.46 s to 1.98 s).
+- **Stronger static and dataflow detection:**
+  - Kept distinct secret environment variable names separate in dataflow taint
+    merging so bundling 3+ distinct secret env vars into one outbound network
+    request, or sending an SSH private key or wallet mnemonic env var over HTTP,
+    reports `critical` instead of collapsing into a single `medium` API-key hit
+    (1 to 2 API keys such as `API_KEY` + `API_SECRET` stay `medium`).
+  - Added a `critical` `OAST_CANARY` rule for live out-of-band exfiltration
+    canary domains (`.oastify.com`, `.burpcollaborator.net`, `.interact.sh`,
+    `.oast.*`, `.canarytokens.com`, `.dnslog.cn`), updated `CRYPTO_MINER_CONFIG`
+    to match escaped quotes and `"mode": "nicehash"`, and detected Python
+    `from os import system`/`popen`/`execv`/`execve` calls in `runtime-coverage.ts`.
+- **Fewer false blocks and false warns in coverage, assembly, and scoring:**
+  - Switched repeated identical `(title, evidence)` scoring in `risk-scorer.ts`
+    from unbounded linear stacking to geometric decay for non-obfuscation
+    findings (converging at 1.33x of the first hit so a long README mentioning
+    `.env` or `~/.openclaw/` with no exfil sink cannot stack to 100/100 `block`,
+    while keeping cumulative hidden Unicode/RTL `obfuscation` warns).
+  - Stopped flagging bare `eval` mentions in prose, zero-argument `eval()` /
+    `exec()` security checklists, `def`/`function` declarations (such as
+    `def compile(self)`), and standard local shell environment-init idioms
+    (`eval "$(ssh-agent -s)"`, `eval "$(brew shellenv)"`, etc.), while keeping
+    real `eval` calls (including `eval $(curl ...)` in prose) blocking.
+  - Required downloaders to appear before piped interpreters, exempted
+    `curl ... | python3 -m json.tool` and bare prose/regex mentions with no URL,
+    argument, or `xargs` (such as `` `curl | bash` `` or `(curl|bash|sh|wget)`),
+    and fixed hyphenated names (`run-api-gateway`) tripping `download-and-run`.
+  - Allowed literal bundled sibling Python scripts invoked via
+    `subprocess.*([sys.executable, os.path.join(os.path.dirname(__file__), "helper.py"), ...])`
+    or `Path(__file__).parent / "helper.py"` without `shell=True` (verifying and
+    scanning the sibling script in assembly), and inspected inline CLI
+    subcommand snippets (`browser-use python "..."`) recursively instead of
+    reporting bogus `missing-file` warnings.
+  - Anchored `$(dirname "$0")` / idiomatic `$SCRIPT_DIR` paths and Markdown
+    document references to the source file directory (still flagging escapes
+    outside the skill root), classified non-executable external Markdown links
+    as `outside-document`, and resolved nested monorepo skill paths
+    (`skills/.../<name>/...`).
+  - Stopped shell-tokenizing standalone JSON/YAML/TOML data files (avoiding
+    YAML bind-mount false warnings such as `- ./searxng:/etc/searxng:rw`), read
+    HTML files with code rules rather than shell, and ignored prose document or
+    directory bullets, version numbers (`Windows PowerShell 5.1`), ellipsis
+    placeholders (`/Users/...`), and `)` subshell endings (`docker -v $(pwd)/...`)
+    as executed commands.
+  - Read `//` comments by language in capability extraction too, so
+    `//usr/bin/curl` in shell is treated as a path.
+
+**Measured in the no-network sandbox (combined `0.17.0` vs `0.16.2`):**
+
+- **ClawHub (945 versions / 212 unique skills):** hard blocks dropped **374 → 160**
+  versions (**−57.2%**), **79 → 37** unique skills (**−53.2%**); clean allows rose
+  **384 → 622** versions (**+238**), **87 → 139** unique (**41.0% → 65.6%**, +60%
+  more clean installs), with **0** regressions.
+- **Update benchmark (748 benign ClawHub update pairs + 219 MalSkillBench
+  rug-pull pairs):**
+  - Benign ClawHub updates stopped, gate: **67.0% → 38.0%** tune /
+    **64.7% → 33.6%** held-out test (gate + diff: **67.6% → 39.4%** tune /
+    **65.5% → 34.1%** test)
+  - Benign updates where the permission diff asks: **3.6%** tune / **5.1%** test
+    (12.0% tune / 12.8% test under `--strict`)
+  - Code injection stopped, gate + diff: **90.9%** tune / **95.2%** test (up
+    from 81.8% / 83.9% for the gate alone)
+  - Mixed attacks stopped, gate + diff: **100.0%** tune / **95.2%** test
+  - Prompt injection stopped, gate + diff: **55.0% → 50.0%** tune (1 of 20) /
+    **39.4% → 36.4%** test (1 of 33)
+- **MalSkillBench static gate trade-off (tune half, vs `0.16.2`):**
+  - Benign (1,961): hard blocks dropped **152 → 124** (**−28**, −18.4%) and clean
+    allows rose **1,295 → 1,331** (**+36**), with **0** benign regressions.
+  - Malware (2,023): hard blocks jumped **1,184 → 1,215** (**+31**, including
+    +34 more CI hard blocks) while total stopped stayed at **1,435 / 2,023**
+    (9 newly caught CI attacks offsetting 9 skills, mostly prompt injection,
+    that moved `warn → allow` because they had been stopped only by coverage
+    false positives such as missing `./references/*.md`; `--semantic` is the
+    check for those).
+
 ## 0.16.2
 
 Reliability, performance, security, and setup polish patch with no policy changes.
