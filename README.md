@@ -4,24 +4,9 @@
 [![npm](https://img.shields.io/npm/v/clawvet)](https://www.npmjs.com/package/clawvet)
 [![npm downloads](https://img.shields.io/npm/dw/clawvet)](https://www.npmjs.com/package/clawvet)
 
-Skill vetting and supply chain security for agent skills, built for OpenClaw and usable on Claude Code skills. ClawVet scans a SKILL.md and the scripts it bundles for prompt injection, credential theft, remote code execution, typosquatting, and social engineering. It runs fully offline by default, with an optional AI stage you turn on when you want it.
-
-## Demo
+Static and install-time security scanner for OpenClaw and Claude Code skills. ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. It runs fully offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes when you turn them on.
 
 ![ClawVet demo](clawvet-demo.gif)
-
-A safe skill scores a clean **A**. A skill that pipes `curl` to `bash` and reads your `~/.aws/credentials` gets flagged **CRITICAL** and fails CI.
-
-Reproduce it yourself (Windows PowerShell):
-
-```powershell
-.\demo.ps1            # uses the installed `clawvet` (npm i -g clawvet)
-.\demo.ps1 -Local     # uses this repo's build, no global install needed
-```
-
-## Why
-
-In Feb 2026 researchers found 824+ malicious skills, around 20% of ClawHub. The "ClawHavoc" campaign distributed infostealers via fake skills. ClawVet runs six independent analysis passes on every skill to catch what single-pass scanners miss.
 
 ## Quick start
 
@@ -29,28 +14,42 @@ In Feb 2026 researchers found 824+ malicious skills, around 20% of ClawHub. The 
 # Install once, then run the copy you installed
 npm install -g clawvet
 
-# Scan a local skill
+# Scan a local skill (prints grade, Permissions summary, and findings)
 clawvet scan ./my-skill/
 
 # JSON output for CI/CD
 clawvet scan ./my-skill/ --format json --fail-on high
 
-# Audit every skill OpenClaw loads (<workspace>/skills, .agents/skills,
-# ~/.agents/skills, $OPENCLAW_STATE_DIR/skills, Skill Workshop skills)
-# and Claude Code's .claude/skills and ~/.claude/skills
+# Audit all installed OpenClaw and Claude Code skill directories
 clawvet audit
 
-# One JSON report for a whole folder of skills, failing on high or worse
-clawvet audit --dir ./skills --format json --fail-on high
+# Enforce automatically on every OpenClaw skill install and update
+clawvet gate --print-config
 ```
 
-Install it rather than running `npx clawvet`. A fresh `npx` fetch runs whatever version the registry serves at that moment, which is the wrong habit for a tool you use to vet other code. Updating is a deliberate `npm update -g clawvet`, and every release carries npm provenance you can check first with `npm view clawvet dist.attestations`.
+Install globally rather than running `npx clawvet`: a fresh `npx` fetch executes whatever version the registry serves at that moment, and cache cleanup breaks `gate` configs. Update deliberately with `npm update -g clawvet`, and verify signed npm provenance with `npm view clawvet dist.attestations`.
 
-By default the CLI is static and offline, so it works in CI with no key and no network, and nothing is sent anywhere. Two passes are opt-in and use the network. `--semantic` sends the skill to an LLM judge on your own key, either Anthropic or any OpenAI-compatible endpoint, which includes a local Ollama or vLLM. `--osv` looks pinned dependencies up on OSV.dev, where a `MAL-` advisory blocks the install. Without its key, `--semantic` refuses to scan rather than reporting a result the judge never saw.
+## Install-time gate & update checks
 
-## CI
+`clawvet gate` hooks into OpenClaw's [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config) so every staged skill is vetted before installation completes, without relying on an agent to remember to scan.
 
-The GitHub Action installs the npm release it was tagged with, scans one skill, and can upload SARIF to code scanning so findings show up on the pull request at the file and line they came from.
+Run `clawvet gate --print-config` and paste the printed block into your OpenClaw config. It resolves through npm's symlink to the real `dist/index.js` and `node` binary, emits `source: "exec"`, and warns on stderr if any path needs `chmod go-w`.
+
+| Risk score | Grade | `scan` | `gate` (`installPolicy`) |
+|---|---|---|---|
+| 0-25 | A / B | `approve` | `allow` |
+| 26-75 | C / D | `warn` | `warn` (stops install and prompts) |
+| 76-100 | F | `block` | `block` |
+
+- **Permissions & rug-pull update diff (on by default):** every scan extracts what the skill's code can do (connected sites, credential stores, secret env vars, persistence locations, and proved high-risk behaviours), printed under Permissions by `clawvet scan` and included as `capabilities` in JSON. `clawvet gate` records each allowed install under `~/.local/state/clawvet/installed` (using `XDG_STATE_HOME` or `os.homedir()`, so existing `--print-config` blocks get update checks unchanged). On an update for the same owner and slug, the gate asks (`warn`, naming each new permission) if it adds a secret read, persistence, a high-risk behaviour, or a risky site (the publisher's own GitHub/GitLab account is exempt). Use `--strict` to ask about every new site on updates, or `--no-update-check` to disable comparison.
+- **Optional LLM judge (`--semantic`):** sends static findings and coverage gaps to Anthropic or any OpenAI-compatible/local endpoint (Ollama, vLLM) on your own key. Every cleared gap must cite a real quote from the skill, and hard security floors still apply.
+- **Baselines (`--baseline <file-or-dir>`):** accept reviewed findings bound to file hashes (`clawvet scan <skill> --write-baseline <file> --reason "..."`).
+
+Full setup details, `chmod g-w,o-w` troubleshooting, coverage profiles (`default` vs `--strict`), limits, and known gaps are in [docs/gate-and-coverage.md](docs/gate-and-coverage.md).
+
+## CI & pre-commit
+
+GitHub Action (scans one skill and optionally uploads SARIF to code scanning):
 
 ```yaml
 permissions:
@@ -59,476 +58,118 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: MohibShaikh/clawvet@v0.15.0
+  - uses: MohibShaikh/clawvet@v0.17.0
     with:
       path: skills/my-skill
       fail-on: high
       upload-sarif: true
 ```
 
-The step fails after the upload, so a blocked skill still gets its annotations. Pin the action to a commit SHA if your policy requires it. For a repository full of skills, run `clawvet audit --dir skills --format json --fail-on high` in a plain `run:` step.
-
-For pre-commit, add this to `.pre-commit-config.yaml`. It scans each skill folder that a commit touches, once, with the pinned npm release. Pre-commit never passes deleted files to a hook, so a commit that only deletes a bundled script is not rescanned. Keep the `audit` step in CI as the check of record.
+Pre-commit hook (`.pre-commit-config.yaml`):
 
 ```yaml
 repos:
   - repo: https://github.com/MohibShaikh/clawvet
-    rev: v0.15.0
+    rev: v0.17.0
     hooks:
       - id: clawvet
         # args: [--fail-on, medium]   # default is --fail-on high
 ```
 
-## Install-time enforcement
+For a repository of skills, run `clawvet audit --dir skills --format json --fail-on high` in CI.
 
-`clawvet gate` is an OpenClaw [`security.installPolicy`](https://docs.openclaw.ai/tools/skills-config)
-hook. OpenClaw stages the source, writes the install metadata to the command's
-stdin, and reads back one JSON verdict before the install completes. It runs
-whether or not an agent remembers to scan anything.
+## How it works
 
-Install `clawvet` globally once, then print a ready-to-paste config with the
-paths already resolved:
+Seven passes turn a skill and its bundled scripts into permissions, findings, and a 0-100 risk score. Passes 1-6 are static, offline, and free; Pass 7 (`--semantic`) and `--osv` are opt-in.
 
-```bash
-npm install -g clawvet
-clawvet gate --print-config
-```
+| Pass | Module | What it checks |
+|---|---|---|
+| 1 | `skill-parser`, `sources` | Frontmatter, CommonMark code fences per bundled file, and executable/shebang files |
+| 2 | `static-analysis` | Regex rules for RCE, reverse shells, credential theft, OAST canaries, miners, obfuscation, and exfiltration |
+| 3 | `dataflow` | Tree-sitter AST taint analysis for Python, JavaScript/TypeScript, and shell (never executed): credential or multi-secret exfil, decoded/remote execution, persistence writes, ransomware loops |
+| 4 | `metadata-validator` | Undeclared binaries/env vars, missing descriptions, invalid semver (hygiene only, zero score weight) |
+| 5 | `dependency-checker`, `manifests` | `npx -y`, global installs, and pinned dependencies for `--osv` |
+| 6 | `typosquat-detector` | Levenshtein distance against popular ClawHub skills |
+| 7 | `semantic` | Opt-in (`--semantic`) LLM judge weighing static evidence and coverage gaps |
 
-Do not use `npx clawvet gate --print-config`. The config embeds resolved paths,
-and npx resolves them into its cache (`~/.npm/_npx/...`). A cache cleanup later
-removes the policy executable the config points at. Every install then fails
-closed, and the only fix is pasting the config again. A global install is
-permanent.
-
-Use the printed block rather than writing the paths by hand. OpenClaw requires
-the policy command and any interpreter script argument to be regular files, and
-rejects symlinks. `npm i -g clawvet` installs a symlink into `bin/`, so
-pointing `installPolicy` at `which clawvet` fails. `--print-config` resolves
-through to the real `dist/index.js` and invokes it via an absolute `node` path.
-The block is valid as-is; it includes the `source: "exec"` field OpenClaw's
-config validation requires.
-
-OpenClaw also refuses to execute the policy through insecure paths. The
-resolved `node` and `dist/index.js`, and every directory above them, must not
-be writable by group or others. A stock npm global install is `0755`, so
-pasting the block and running an install can fail with `... exec.command
-parent directory permissions are too open`. The fix is to remove the
-group/other-write bits on the directories the block names, typically the node
-installation and the npm global prefix. A launcher-managed node such as
-`~/.local/share/fnm/node-versions/<version>` is commonly installed
-group-writable and needs the same treatment. The failure message names the
-offending directory; start there.
-
-Run this for the directory the error names, then retry the install. Repeat if
-it names another one.
-
-```bash
-chmod g-w,o-w "/path/from/the/error"
-# For example, an fnm-managed node:
-chmod g-w,o-w ~/.local/share/fnm/node-versions/v22.17.1
-```
-
-`targets` is `["skill"]`. ClawVet reads `SKILL.md` and the files it references,
-so a plugin that ships no `SKILL.md` is allowed through, and `"plugin"` is not
-listed because it would claim a protection that does not exist yet. A skill
-target that stages no `SKILL.md` is blocked: with the policy aimed only at
-skills, an instruction-less "skill" is either not a skill or installs its
-payload without saying so.
-
-OpenClaw runs `clawvet` with the absolute `node` path in the printed block,
-which is the node that ran `--print-config`. That node can differ from the one
-running OpenClaw. OpenClaw 2026.11.5 refuses to start on Node 22 and asks for
-24.16 or later; `clawvet` itself needs `>=22.0.0`.
-
-Verdicts map onto ClawVet's own vocabulary:
-
-| Risk score | Grade | ClawVet | installPolicy |
-|-----------|-------|---------|---------------|
-| 0-25 | A / B | `approve` | `allow` |
-| 26-75 | C / D | `warn` | `warn` |
-| 76-100 | F | `block` | `block` |
-
-A `warn` is not a pass. OpenClaw's docs are explicit: "A warning stops the
-install before commit." An interactive CLI install asks the operator to confirm,
-and Gateway-backed or automatic installs stay blocked without an
-operator-confirmation path.
-
-**Choosing a threshold.** `--block-at <score>` moves the blocking line, default
-76. ClawHavoc campaign fixtures score 28-36, below that line, but their
-instructions to download and run code block under either profile regardless of
-score: all 49 corpus500 ClawHavoc skills that ship their referenced files block.
-`--block-at 26` also denies anything scoring 26 or more, at the cost of denying
-dual-use skills. A finding marked `disqualifying`, such as a known-malicious C2 address,
-blocks at any threshold.
-
-The gate is static by default, with no key and no network round trip. The host
-enforces the configured timeout and fails closed if inspection takes too long.
-Print the config with `--semantic` to add the LLM judge. The printed block then
-lists the judge's key variables under `passEnv`. OpenClaw starts the policy
-with an empty environment and copies in only the names listed there, so without
-them the judge never sees its key. The key itself stays in the gateway's
-environment.
-
-With `--semantic`, the gate's judge decides the verdict. ClawVet's static
-findings and coverage gaps go to it as evidence to check, and it returns
-benign, suspicious or malicious: allow, warn or block. It can clear a gap such
-as `eval` or a missing script only by reviewing it with a quote that is really
-in the skill, so a skill that tells the judge to approve it clears nothing.
-Some floors no verdict lowers: content ClawVet could not read blocks, code
-fetched at run time always asks, a truncated bundle clears nothing, a
-disqualifying indicator blocks, and anything the static findings alone would
-block at least asks. The skill's author writes the text the judge reads, so a
-prompt injection can win a benign verdict; these floors mean the most it wins
-is a prompt to you, never a silent install. If the judge times out or has no key, the
-static verdict stands and an allow becomes a warn; set
-`--semantic-on-error ignore` to keep the static verdict instead. `--strict`
-keeps the static coverage rules. `scan --semantic` uses the same judge and
-floors: its JSON gains a `semantic` field with the verdict and the reason, and
-a scan whose inspection was incomplete still exits 1.
-
-`--baseline <file-or-dir>` accepts findings you have reviewed. Each entry is
-bound to the hash of the file it came from, so editing that file brings the
-finding back. A baseline inside the skill is refused, and so are disqualifying
-findings and gaps that no hash can pin, such as code downloaded at run time.
-Write one with `clawvet scan <skill> --write-baseline <file> --reason "..."`.
-
-**Update permission checks.** Every scan extracts the skill's permissions:
-connected sites, credential stores, secret env vars, persistence locations, and
-proved high-risk behaviours, printed under Permissions by `clawvet scan`
-and included as `capabilities` in JSON output. `clawvet gate` records what each
-allowed install could do under `~/.local/state/clawvet/installed` (using
-`XDG_STATE_HOME` when set, otherwise `os.homedir()`, so existing
-`--print-config` blocks work without changes). When OpenClaw updates the same
-owner and slug, the gate asks if the new version adds a secret read,
-persistence, a high-risk behaviour, or a risky site (the publisher's own
-GitHub/GitLab account is exempt). `--strict` asks about every new site on
-updates, and `--no-update-check` disables the comparison. The check never turns
-a `block` or `warn` into an `allow`.
-
-Anything the host cannot parse fails closed. A malformed payload, an unreadable
-staged path, or a scanner error returns `block` with a reason rather than a bare
-non-zero exit, so the operator sees why the install stopped.
-
-### Inspection coverage
-
-Local folder and direct `SKILL.md` scans follow recognized file references
-recursively through the skill directory, including references inside helpers.
-JSON reports include `coverage.complete`, inspected file/line ranges, and any
-coverage issues. Reference discovery is static: it recognizes filenames,
-concrete interpreter/script paths, and local Markdown links. Skill-root
-placeholders such as `{baseDir}/`, `$SKILL_DIR/` and `<skill-dir>/` resolve to
-the bundle, so the script behind them is inspected. Recognized dynamic
-commands, globs, computed imports, runtime evaluation, remote modules, and
-download-to-execution paths make coverage incomplete; the profile below decides
-which of those block. These checks run inside referenced helpers too. Literal inline commands are inspected up to four nested
-levels; exceeding that limit also fails coverage.
-
-Markdown prose is not shell. Outside a fence, only inline code and lines that
-start with a recognized command (optionally after "Run") are read as commands,
-so a price table or a bullet that mentions `python3` is not. Fences are read by
-language: shell fences as shell, text and data fences like prose, and
-unlabelled and other code fences with both the shell and the code-loading
-rules, since a fence label cannot hide a command. A line that starts with `|`
-is a table row, not a command.
-
-**Profiles.** Coverage gaps are not equal, so a profile decides what each one
-does. The default profile blocks on clear evidence that code is hidden, swapped,
-or fetched and run: a downloaded file that is later run or followed,
-instructions to download and run code, `curl | sh` from any host other than an
-exact trusted vendor installer such as `astral.sh` or `sh.rustup.rs`, encoded or
-remote execution, process calls and `eval` on unresolved arguments, and anything
-ClawVet could not read. A referenced script that the skill does not ship, or a
-path that leads outside the skill, asks instead: the gate stops the install and
-names the file to check, and `scan`, `audit` and badges still count the
-inspection as failed, so CI fails until you ship the file or accept it in a
-baseline. Other gaps, such as a package fetched at install time with `npx`, a
-computed command, an unused download, or a document linked from outside the
-skill, pass quietly and stay listed in `coverage`. The gate then asks the
-operator only when the scan's own findings are borderline. A gate that asks too
-often gets switched off or approved without reading, which protects no one.
-
-`--strict` on `gate` and `scan` blocks every gap in inspection and asks about
-the reviewable ones. Registry installs such as `pip install requests` are not a
-gap under either profile; the dependency checker scores the package names.
-Measurements of both profiles are in `benchmarks/gate-eval/`.
-
-The gate stays offline: it never executes a skill or downloads its dependencies.
-To resolve these coverage failures, stage fixed dependencies locally, use
-literal paths, and remove their runtime downloads. A clean staged file does not
-clear a runtime replacement downloaded over it. Ordinary API data requests do
-not fail coverage solely because they use the network.
-
-Downloads made with `curl`, `wget`, PowerShell, or Python `urlretrieve` are
-checked for code destinations and later use as instructions. A script that
-reads from the network (`requests`, `httpx`, `urlopen`, `fetch`, `axios`) and
-writes a literal filename counts as downloading it; running or importing that
-file afterwards blocks. A bundled harmless
-copy does not clear a runtime replacement, including an instruction file such as
-`notes.txt`. Reading or summarizing ordinary API data remains supported. These
-are bounded syntax checks, not general data-flow analysis of arbitrary programs.
-
-Known gap: prose that tells the agent to fetch a page and do what it says, with
-no file in between, is not detected. Telling that apart from ordinary setup
-docs ("follow the instructions at <url> to get an API key") takes reading for
-meaning, which the offline CLI does not do. Review a skill's external links
-yourself before installing it.
-
-`scan --remote` fetches only the manifest, reports incomplete coverage, and exits
-1 even if that manifest has no findings. Responses are bounded to 256 KiB.
-Stage the full skill locally before relying on a gate verdict.
-
-A gap that blocks under the active profile returns `block` regardless of
-`--block-at`, and cannot produce `allow`. Local scans then return `status:
-"failed"`, `recommendation: "block"`, and exit 1; any reported score describes
-only the inspected content. Audits return a nonzero exit status for them, and
-badges are not generated. `review` and `approve` always use the strict profile:
-approving a skill should mean all of it was inspected.
-
-Limits are 256 KiB per inspected file (including the manifest), 2 MiB of inspected
-content, 1,024 directory entries, and 16 nested directory levels. Symlinks and
-special files anywhere in the inventory make coverage incomplete; referenced
-binary or invalid UTF-8 files do too. These conservative limits can reject
-legitimate skills; resolve the reported issue and rescan instead of lowering the
-risk threshold. Keep the staged directory unchanged while inspection runs.
-
-Complete coverage means the recognized references were inspected within these
-limits. These checks recognize supported syntax, not every possible program:
-obfuscated or unsupported runtime loading can still evade static detection.
-Complete coverage does not certify a skill as safe. `watch` reports file changes; install enforcement requires
-`gate`.
-
-## Architecture
-
-```
-clawvet/
-├── apps/
-│   ├── api/          # Fastify backend (scanner engine, REST API, BullMQ worker)
-│   └── web/          # Next.js 14 dashboard
-├── packages/
-│   ├── cli/          # `clawvet` CLI tool
-│   └── shared/       # Types, scanner engine, threat patterns
-├── benchmarks/       # Labeled corpus + eval harness (see benchmarks/README.md)
-├── docker-compose.yml
-└── turbo.json
-```
-
-## Scanner engine
-
-These passes turn a skill and its bundled files into a list of findings.
-
-| Pass | Module | What it catches |
-|------|--------|-----------------|
-| 1 | `skill-parser`, `sources` | Parses frontmatter and code blocks, and marks which lines are code. Bundled scripts count as code whatever their extension; a shebang wins. |
-| 2 | `static-analysis` | Regex patterns for RCE, reverse shells, credential theft, obfuscation, exfiltration |
-| 3 | `dataflow` | AST taint analysis of Python, JavaScript/TypeScript and shell with tree-sitter, never executed. Credential or whole-environment data reaching a network send, downloaded or decoded data reaching execution, persistence writes, ransomware loops. |
-| 4 | `metadata-validator` | Undeclared binaries/env vars, missing/vague descriptions, bad semver |
-| 5 | `dependency-checker`, `manifests` | npx -y auto-install, global npm installs, and pinned dependencies for `--osv` |
-| 6 | `typosquat-detector` | Levenshtein distance against top ClawHub skills |
-| 7 | `semantic` | Opt-in (`--semantic`), your own key. In the gate, an LLM judge weighs the static evidence and decides benign, suspicious or malicious; every quote it relies on must appear in the skill. |
-
-Passes 1 to 6 are static, need no key and cost nothing. Pass 7 and `--osv` use the network and run only when asked.
-
-## Risk scoring
-
-Findings are turned into a 0-100 score in three steps.
-
-1. Weight each finding by severity and confidence: critical 30, high 15, medium 7, low 3.
-2. Discount repeats. The first hit of a rule counts full, each extra hit of the same rule counts at 0.25. A skill that reads `~/.ssh` on four lines is mostly one concern repeated, not four.
-3. Context pass, which reads the findings together rather than one at a time:
-   - No exfiltration or remote-exec sink in the skill? Downweight its dual-use capabilities (reading a credential file, `docker exec`, installing a cron job). Reading `~/.aws/credentials` is theft when it is piped to a webhook and configuration when it is not.
-   - A credential read *and* an outbound send? Raise one critical "Credential exfiltration" finding.
-   - "Install a prerequisite" *and* "run this command"? Raise one high "Install-me envelope" finding. That pair is how a skill gets code it does not contain executed.
-
-Metadata findings (undeclared binaries and env vars, missing description) are reported but do not affect the score. They are documentation hygiene, not risk.
-
-A disqualifying finding, such as a known C2 IP, pins the score to the F band on its own and is never averaged away.
-
-Grades: A (0-10), B (11-25), C (26-50), D (51-75), F (76-100). The CLI recommends approve below 26, warn at 26-75, block at 76+.
+**Scoring:** findings are weighted by severity and confidence (critical 30, high 15, medium 7, low 3) with geometric repeat decay for identical non-obfuscation matches (converging at 1.33x). A context pass downweights dual-use capabilities when no exfiltration or remote-exec sink exists, promotes credential-read + outbound-send pairs and install-me envelopes, and pins disqualifying indicators (such as known C2 IPs) to grade F.
 
 ## Benchmarks
 
-### SkillTrustBench, held out
+All untrusted skill benchmarks run inside the no-network Docker sandbox ([benchmarks/capability-diff/sandbox.sh](benchmarks/capability-diff/sandbox.sh)).
 
-[SkillTrustBench](https://huggingface.co/datasets/cuhk-zhuque/SkillTrustBench) v1.1 has a fixed 556-case leaderboard subset: 316 malicious, 74 suspicious and 166 normal skills, with full bundles. Measured once on that subset, with the design frozen beforehand and the judge tuned only on the benchmark's other cases:
+### SkillTrustBench v1.1 (held-out 556-case leaderboard subset)
 
-| | Accuracy | Macro F1 | Malicious F1 | Malicious recall |
+| Configuration | Accuracy | Macro F1 | Malicious F1 | Malicious recall |
 |---|---|---|---|---|
-| `clawvet gate`, static | 0.660 | 0.511 | 0.815 | 0.788 |
-| `clawvet gate --semantic`, Claude Haiku 5.5 | 0.833 | 0.770 | 0.934 | 0.918 |
+| `clawvet gate` (static) | 0.660 | 0.511 | 0.815 | 0.788 |
+| `clawvet gate --semantic` (Claude Haiku 5.5) | **0.833** | **0.770** | **0.934** | **0.918** |
 
-The second row is the gate's action (allow / warn / block read as normal / suspicious / malicious) with the floors above. The last floor, that static findings which would block always ask, was added after the run and applied to the saved verdicts without new model calls; it changed one decision, and the design as frozen scored 0.831 / 0.767. The judge ran through the Claude Code CLI with the same prompt and parser as the API client. For comparison, the published leaderboard has Cisco Skill Scanner at 0.775 / 0.614, NVIDIA SkillSpector at 0.712 / 0.511, and Tencent A.I.G at 0.874 / 0.832 with the same Haiku model. How to reproduce it is in [benchmarks/security-signals](benchmarks/security-signals/README.md).
+### Update rug-pull & real-world friction (`v0.16.2` -> `v0.17.0`, held-out test half)
 
-### Earlier corpora
+| Metric | `v0.16.2` | `v0.17.0` |
+|---|---|---|
+| Code-injection rug-pulls caught (gate alone -> gate + diff) | 83.9% | **95.2%** |
+| Mixed rug-pulls caught (gate + diff) | - | **95.2%** (100% tune) |
+| Benign ClawHub updates stopped (gate + diff) | 65.5% | **34.1%** |
+| Benign updates prompting on permission diff | N/A | **5.1%** (12.8% `--strict`) |
+| ClawHub unique skills hard-blocked / cleanly allowed (212 skills) | 37.3% / 41.0% | **17.5%** / **65.6%** (0 regressions) |
 
-This section scores `scanSkill()` on corpora assembled for 0.11.x. For the install gate as it ships, see [benchmarks/gate-eval](benchmarks/gate-eval/README.md). Its one held-out run, on 0.13.2 and the MalSkillBench test half, blocked 45.7% of malicious skills and 9.5% of benign ones, and only 12.5% of the prompt-injection group. 0.14.0 and 0.15.0 were measured on the tune half only. 0.14.0 stops 63.1% of malicious skills and 12.0% of benign ones; 0.15.0 changes no malicious decision there and moves four benign skills from block to allow. These numbers are not held out.
+Full benchmark tables, tune vs test splits, MalSkillBench trade-offs, historical `0.9-0.15` corpora, and prior work are in [docs/benchmarks.md](docs/benchmarks.md).
 
-`benchmarks/` holds two labeled corpora and `eval.py`, a stdlib-only harness that reports precision, recall, F1, MCC, ROC-AUC and bootstrap confidence intervals.
+## Monorepo, development & telemetry
 
-Hard negatives are legitimate skills that trip credential and exec rules, an ssh helper that reads `~/.ssh/config`, a base64 utility, a `curl | bash` installer. They carry label 0, so their scores count against the false-positive rate. That is where the context pass earns its keep.
-
-Static-only baseline at the warn threshold, from the committed results:
-
-```
-101 in-text corpus   P 0.909  R 0.980  F1 0.943  FPR 0.100
-500 real-world       P 0.774  R 0.960  F1 0.857  FPR 0.031  ROC-AUC 0.977
-397 live clean       FPR 0.023  (false positives only, no positive class available)
-95% CI (real)  F1 [0.780, 0.921]   MCC [0.769, 0.912]
-```
-
-Regenerate and re-run:
-
-```bash
-npx tsx benchmarks/scan-all.mjs
-python3 benchmarks/eval.py benchmarks/results.csv --threshold 26
-
-npx tsx benchmarks/scan-corpus500.mjs
-python3 benchmarks/eval.py benchmarks/corpus500/results.csv --threshold 26
-```
-
-### Two corpora
-
-The 101-skill corpus is hand-authored, with the malicious payload written into the SKILL.md text. That is exactly what regex is built to catch, so it flatters the scanner and is best read as a regression suite. The 500-skill corpus is real: 50 ClawHavoc skills, 400 clean ClawHub skills, and 50 hard negatives, where the payload usually lives in a referenced script rather than the markdown. Numbers below are all measured on this repo with the committed harness at threshold 26.
-
-| ClawVet | Corpus | P | R | F1 | FPR |
-|---|---|---|---|---|---|
-| 0.9.0 (linear scoring) | 101 in-text | 0.820 | 0.980 | 0.893 | 0.220 |
-| 0.11.0 | 101 in-text | 0.909 | 0.980 | 0.943 | 0.100 |
-| 0.10.0 | 500 real-world | 0.000 | 0.000 | 0.000 | 0.111 |
-| 0.11.0 | 500 real-world | 0.727 | 0.960 | 0.828 | 0.040 |
-| 0.11.1 | 500 real-world | 0.774 | 0.960 | 0.857 | 0.031 |
-
-The 0.000 row is not a typo. Through 0.10.0 every ClawHavoc skill in the real corpus scored 14 to 24, and the warn threshold is 26, so the scanner caught none of them. The cause was mechanical rather than fundamental: the markdown carries the install-me envelope (install a prerequisite, run a command) while the payload sits in a referenced file, and both halves of that envelope are medium severity, so they capped two points under the line.
-
-0.11.0 closes it by treating the envelope as one finding rather than two mediums, and by raising a credential read plus an outbound send to a single critical finding. Both are co-occurrence rules, so they cost almost nothing in false positives: the envelope pair appears in 48 of 50 malicious skills and 0 of 450 benign ones. Removing metadata hygiene from the score did the rest, since a skill using eight ordinary unix tools was collecting 24 points for incomplete frontmatter alone.
-
-### Held out: false positives on live ClawHub skills
-
-The corpora above are ones this repo assembled, so the false-positive numbers in them reflect choices made here. As a check, 397 skills that ClawHub's own scan labels clean were pulled from the `tomhu/ClawSkills` snapshot and scanned cold.
-
-```
-397 live clean skills   flagged at >=26: 9   FPR 0.023   median score 0   p90 11
-```
-
-Reading all nine: eight genuinely run the construct they were flagged for, `python3 -c`, `node -e`, `curl | sh`, or a read of `~/.openclaw/`. The ninth is a security-auditing skill, which scores at the top of the range because it names `.ssh`, `.aws`, and `.env` as the paths it inspects. A skill about scanning looks much like a skill worth scanning, and no pattern separates the two.
-
-Worth knowing before reading the table above as a general improvement: the precision gains from 0.11.0 to 0.11.1 land almost entirely in the hard-negatives tier. Every one of the 14 remaining false positives is a hard negative, and the clean tier sits at 0 out of 400. Run the same versions against these 397 live skills and the false-positive count does not move at all, staying at 9 in both. Two skills merely score lower without crossing back under the threshold. The fixes are correct, and they are measured against 50 cases picked because they trip rules, so the F1 jump reads wider than it is.
-
-There is no matching recall figure here, and that is a real gap rather than an omission. Confirmed malware is vanishingly rare in the live registry: across 3,907 records there was 1 blocked skill and 2 labelled malicious, while "suspicious" covers roughly 78% of everything and carries no information. Without a usable positive class, the generalization question stays open, and it is probably why every paper in this area builds its own curated benchmark instead.
-
-One caution on interpreting the 500-skill numbers: 49 of its 50 malicious skills are ClawHavoc variants, so they share one campaign's shape. The envelope rule works well against that shape. Whether it transfers to a different campaign is untested.
-
-What remains is the honest limit. Two malicious skills are still missed. The clearest is a browser-automation skill that describes signing up for services under a fabricated identity and working around bot checks, all in ordinary English with no dangerous token anywhere. No pattern reaches that. Of the 14 remaining false positives on the 500-skill corpus, most are skills that genuinely do run `curl | bash` or `python -c`, which is statically indistinguishable from the malicious use. Both classes are what the opt-in semantic stage is for.
-
-### Prior work
-
-Related systems and measurement studies, listed so the comparison can be made rather than asserted. Their reported figures are not reproduced here: each is measured on that paper's own corpus with its own labelling, so none of it is head-to-head with the numbers above, and any comparison worth publishing should come from running the tools yourself on one shared corpus.
-
-- SkillSieve, a hierarchical triage framework combining static checks with LLM analysis: [arXiv:2604.06550](https://arxiv.org/abs/2604.06550). It includes a measurement of an earlier ClawVet release on its own benchmark.
-- A large-scale empirical study of malicious agent skills in the wild: [arXiv:2602.06547](https://arxiv.org/abs/2602.06547).
-- SkillFortify, formal analysis and supply chain security for agent skills: [arXiv:2603.00195](https://arxiv.org/abs/2603.00195).
-- ClawHub security signals across multiple scanners: [arXiv:2606.01494](https://arxiv.org/abs/2606.01494) and the [OpenClaw/clawhub-security-signals](https://huggingface.co/datasets/OpenClaw/clawhub-security-signals) dataset. Note that this dataset stores `skill_md_content` with newlines stripped, which breaks frontmatter and code-fence parsing for any structure-aware scanner.
-
-## API
-
-```
-POST   /api/v1/scans          # Submit skill content for scanning
-GET    /api/v1/scans/:id      # Get scan result
-GET    /api/v1/scans           # List scans (paginated)
-GET    /api/v1/stats           # Public stats
-POST   /api/v1/webhooks        # Register webhook
-DELETE /api/v1/webhooks/:id    # Remove webhook
-GET    /api/v1/auth/github     # GitHub OAuth flow
-```
-
-## Development
-
-```bash
-# Install deps
-npm install
-
-# Run tests
-npx turbo test
-
-# Start API server
-cd apps/api && npm run dev
-
-# Start web dashboard
-cd apps/web && npm run dev
-
-# Start Postgres + Redis
-docker-compose up -d
-
-# Push DB schema
-cd apps/api && npm run db:push
-```
-
-## Environment variables
-
-Copy `.env.example` to `.env`:
-
-```
-DATABASE_URL=postgres://clawvet:clawvet@localhost:5432/clawvet
-REDIS_URL=redis://localhost:6379
-ANTHROPIC_API_KEY=sk-ant-...    # For the hosted API's semantic stage
-GITHUB_CLIENT_ID=               # For OAuth
-GITHUB_CLIENT_SECRET=
-```
-
-## Monorepo structure
-
-This repo is a monorepo with two separate concerns.
+The published npm package `clawvet` contains only `packages/cli` and `packages/shared`, with zero database, Redis, or OAuth dependencies.
 
 | Package | Published | Description |
-|---------|-----------|-------------|
-| `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner. No databases, no auth, offline by default |
-| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, types, threat patterns |
-| `apps/api` | No (self-hosted) | Optional Fastify backend with Postgres, Redis, GitHub OAuth |
-| `apps/web` | No (self-hosted) | Optional Next.js dashboard |
-
-The npm package `clawvet` contains only `packages/cli` and `packages/shared`. It has zero database, Redis, or OAuth dependencies. The `apps/` directory is the optional self-hosted dashboard and is not part of the published package.
-
-## Telemetry
-
-ClawVet includes opt-in anonymous telemetry. On first run you are asked whether to enable it. You can also control it with an environment variable:
+|---|---|---|
+| `packages/cli` | Yes (`npm install -g clawvet`) | Stateless CLI scanner and OpenClaw install gate |
+| `packages/shared` | Yes (`@clawvet/shared`) | Scanner engine, AST dataflow, capability extractor, patterns |
+| `apps/api` | No (optional self-hosted) | Fastify REST API + BullMQ worker (Postgres, Redis, GitHub OAuth) |
+| `apps/web` | No (optional self-hosted) | Next.js 14 dashboard |
 
 ```bash
-export CLAWVET_TELEMETRY=off   # disable
-export CLAWVET_TELEMETRY=on    # enable
+npm install
+npx turbo test --filter=@clawvet/shared --filter=@clawvet/api
 ```
 
-When enabled, the following is sent and nothing else:
+<details>
+<summary>Optional self-hosted API / web dashboard &amp; API endpoints</summary>
+
+```bash
+docker-compose up -d
+cd apps/api && npm run db:push && npm run dev
+cd apps/web && npm run dev
+```
+
+Copy `.env.example` to `.env` (`DATABASE_URL`, `REDIS_URL`, `ANTHROPIC_API_KEY`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`).
+
+```text
+POST   /api/v1/scans          # Submit skill content for scanning
+GET    /api/v1/scans/:id      # Get scan result
+GET    /api/v1/scans          # List scans (paginated)
+GET    /api/v1/stats          # Public stats
+POST   /api/v1/webhooks       # Register webhook
+DELETE /api/v1/webhooks/:id   # Remove webhook
+GET    /api/v1/auth/github    # GitHub OAuth flow
+```
+
+</details>
+
+<details>
+<summary>Opt-in telemetry details (off unless you opt in)</summary>
+
+Control with `CLAWVET_TELEMETRY=off` or `on` (stored in `~/.clawvet/config.json`). Never sent: raw skill names, file contents, source code, file paths, env vars, API keys, or PII.
 
 | Field | Example | Purpose |
-|-------|---------|---------|
+|---|---|---|
 | `deviceId` | `a1b2c3d4-...` | Random UUID, not tied to identity |
-| `scanCount` | `42` | How many scans this device has run |
-| `ts` | `2026-03-14T...` | Timestamp |
-| `os` | `win32` | Platform |
-| `osVersion` | `10.0.26200` | OS version |
-| `cliVersion` | `0.10.0` | CLI version |
-| `environment` | `production` | `production` / `development` / `ci` (dev and CI traffic filtered out) |
-| `skillHash` | `9f2a…` (SHA-256) | Hash of the skill name. The raw name is never sent |
-| `riskScore` | `15` | Numeric risk score |
-| `riskGrade` | `B` | Letter grade |
-| `findingsCount` | `3` | Number of findings |
-| `cached` | `false` | Whether the result came from cache |
+| `scanCount` | `42` | Scans run on this device |
+| `ts`, `os`, `osVersion`, `cliVersion`, `environment` | `linux`, `0.17.0`, `production` | Runtime context (dev/CI filtered out) |
+| `skillHash` | `9f2a...` (SHA-256) | Hash of skill name (raw name never sent) |
+| `riskScore`, `riskGrade`, `findingsCount`, `cached` | `15`, `B`, `3`, `false` | Aggregate scan outcome |
 
-Never sent: raw skill names, file contents, source code, file paths, environment variables, API keys, or any personally identifiable information. Config is stored in `~/.clawvet/config.json`.
-
-## Tests
-
-The API and shared suites cover:
-- The benchmark corpus (101 fixtures) and the six built-in fixture skills
-- Edge cases (empty files, malformed YAML, unicode, 100KB adversarial input)
-- Regex catastrophic backtracking safety
-- Every threat pattern, including worst-case inputs for backtracking
-- Risk scoring: diminishing-returns repeats, context downweighting, disqualifying floor
-- API route validation (auth, webhooks, scans, incl. authenticated scan listing)
-- SSRF guard (scheme allowlist plus private/metadata IP-range blocking)
-- Semantic-pass prompt injection defense (unguessable boundary, untrusted-data framing)
-- Cross-file payload assembly (split payloads, precision guard, binary skip)
-- CLI end-to-end integration (--format json, --fail-on, exit codes)
-- CI output: SARIF file and line locations, audit JSON and --fail-on
+</details>
 
 ## License
 
