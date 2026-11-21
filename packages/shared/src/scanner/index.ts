@@ -64,7 +64,9 @@ export async function scanSkill(
   const allFindings: Finding[] = [];
 
   const files = options.files ?? [];
-  allFindings.push(...runStaticAnalysis(skill, files));
+  const lines = content.split("\n");
+  const code = codeLines(skill, files);
+  allFindings.push(...runStaticAnalysis(skill, files, { code, lines }));
   allFindings.push(...validateMetadata(skill));
 
   if (options.semantic && options.semanticAnalyzer) {
@@ -94,11 +96,10 @@ export async function scanSkill(
   // source to a sink, which is what that pass looks for between regex hits.
   // A vendor's documented one-line installer is exempt here as it is in the
   // regex and coverage layers, so the three never disagree about `curl | sh`.
-  const lines = content.split("\n");
   const vendorInstaller = (f: Finding) => f.category === "remote_code_execution" && f.lineNumber != null && onlyTrustedInstallers(lines[f.lineNumber - 1] ?? "");
   const sources = collectSources(skill, files);
   const dataflow = (await analyzeDataflow(sources)).filter((f) => !ignored(f) && !vendorInstaller(f));
-  const contextFindings = [...applyContext(filteredFindings, codeLines(skill, files)), ...dataflow];
+  const contextFindings = [...applyContext(filteredFindings, code), ...dataflow];
 
   const riskScore = calculateRiskScore(contextFindings);
   const riskGrade = getRiskGrade(riskScore);

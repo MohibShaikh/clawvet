@@ -297,6 +297,18 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     disqualifying: true,
   },
   {
+    name: "OAST_CANARY",
+    // Dedicated out-of-band exfiltration / canary beacon domains (Burp
+    // Collaborator, ProjectDiscovery Interactsh, Canarytokens, DNSLog).
+    pattern: /(?<=\.)(?:oastify\.com|burpcollaborator\.net|interact\.sh|oast\.(?:pro|live|site|online|fun|me)|canarytokens\.com|dnslog\.cn)\b/gi,
+    severity: "critical",
+    category: "data_exfiltration",
+    title: "Out-of-band exfiltration canary domain",
+    description: "References a live out-of-band exfiltration or canary beacon service (oastify, Burp Collaborator, Interactsh, Canarytokens).",
+    codeOnly: true,
+    fix: "Remove out-of-band exfiltration beacon domains from skill code.",
+  },
+  {
     name: "DNS_EXFIL",
     // First occurrence on a line only, as in CURL_PIPE_BASH.
     pattern: /^(?=([^\n]*?dig\s))\1[^\n]*TXT|^(?=([^\n]*?nslookup\s))\2[^\n]*\$|^(?=([^\n]*?dns))\3[^\n]*exfil|\.burpcollaborator\.|\.oastify\./gim,
@@ -631,7 +643,7 @@ export const THREAT_PATTERNS: ThreatPattern[] = [
     name: "CRYPTO_MINER_CONFIG",
     // A configuration, a pool URL or a miner binary; a scanner's own signature
     // list (`xmrig|stratum\+tcp`) names these without being one.
-    pattern: re(["[\"']nice", "hash[\"']\\s*:|strat", "um\\+(?:tcp|ssl):\\/\\/|[\"']?donate", "-level[\"']?\\s*[:=]|(?:\\.\\/|\\/)xm", "rig\\b"], "gi"),
+    pattern: re(["\\\\?[\"']nice", "hash\\\\?[\"']\\s*:|\\\\?[\"']mode\\\\?[\"']\\s*:\\s*\\\\?[\"']nice", "hash\\\\?[\"']|strat", "um\\+(?:tcp|ssl):\\/\\/|[\"']?donate", "-level[\"']?\\s*[:=]|(?:\\.\\/|\\/)xm", "rig\\b"], "gi"),
     severity: "critical",
     category: "resource_abuse",
     title: "Cryptocurrency miner configuration",

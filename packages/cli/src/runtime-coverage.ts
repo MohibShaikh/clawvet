@@ -69,6 +69,18 @@ const CODE_WRITES = [
   /\b(?:writeFileSync|writeFile|createWriteStream)\s*\(\s*(["'`])([^"'`\n]+)\1/g,
 ];
 const INSTRUCTION_USE = /\b(?:follow|obey|execute|apply|carry\s+out)\s+(?:(?:all|the|its|their|these|those|any|remote|downloaded|retrieved|provided|returned|setup|installation)\s+){0,4}(?:instructions?|directions?|steps|commands?|procedures?)\b|\b(?:follow|obey)\s+what\s+(?:it|the\s+(?:page|document|response))\s+says\b/i;
+// Hoisted hot-path regexes used on every line of inspectRuntimeCoverage.
+const CALLS_LENIENT = /(?<![.\w$])(import|require|eval|exec|compile|Function)(?:\(|(?<!import)(?:\s|\/\*[\s\S]*?\*\/)+\()|\b(import_module|run_path|run_module|runInNewContext|runInThisContext)\s*\(/g;
+const CALLS_STRICT = /(?<![.\w$])(import|require|eval|exec|compile|Function)\(|\b(import_module|run_path|run_module|runInNewContext|runInThisContext)\s*\(/g;
+const URLRETRIEVE_CALL = /\burlretrieve\s*\(/g;
+const PROCESS_CALLS = /\b(?:spawn|execFile|execFileSync|Popen|spec_from_file_location)\s*\(|\b(?:subprocess\.(?:run|call|check_call|check_output)|os\.(?:system|execv|execve))\s*\(/g;
+const IMPORTED_OS_EXEC_CALL = /(?<![.\w$])(?:system|popen|execv|execve)\s*\(/;
+const REMOTE_IMPORT_FROM = /\bfrom\s*["'](?:https?|data):/i;
+const REMOTE_IMPORT_BARE = /\bimport\s*["'](?:https?|data):/i;
+const DOWNLOADER_WORD = /\b(?:curl|wget|iwr|invoke-webrequest|irm|invoke-restmethod)\b/gi;
+const DOWNLOAD_VERB = /(?<![-\w])(?:download|fetch)\b(?!-)/i;
+const EXEC_VERB = /(?<![-\w])(?:run|execute|source|eval)\b(?!-)/i;
+const HTTP_URL = /https?:\/\//i;
 
 // Split bounded Python call arguments without evaluating expressions. Nested
 // expressions are retained as text; only an entire literal destination counts
@@ -101,6 +113,29 @@ function callArguments(text: string, start: number): string[] | undefined {
     }
     argument += char;
   }
+}
+
+// `subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "helper.py"), ...])`
+// or `Path(__file__).parent / "helper.py"` without `shell=True` runs a literal
+// bundled sibling script; return its relative filename so assembly verifies and
+// scans it instead of blocking on opaque `process`.
+function bundledSiblingPython(text: string, openParen: number): string | undefined {
+  const args = callArguments(text, openParen);
+  if (!args || !args.length) return undefined;
+  for (const arg of args.slice(1)) {
+    const shellOpt = arg.match(/^shell\s*=\s*(.+)$/);
+    if (shellOpt && shellOpt[1].trim() !== "False") return undefined;
+  }
+  const first = args[0].trim();
+  if (!first.startsWith("[") || !first.endsWith("]")) return undefined;
+  const items = callArguments(`${first.slice(1, -1).trim()})`, 0);
+  if (!items || items.length < 2 || items[0].trim() !== "sys.executable") return undefined;
+  const targetExpr = items[1].trim().replace(/^str\s*\(\s*([\s\S]+?)\s*\)$/, "$1");
+  const joinMatch = targetExpr.match(/^(?:os\.)?path\.join\s*\(\s*(?:os\.)?path\.dirname\s*\(\s*(?:(?:os\.)?path\.abspath\s*\(\s*)?__file__\s*\)?\s*\)\s*,\s*(["'])([\w./-]+\.py)\1\s*\)$/);
+  const pathMatch = targetExpr.match(/^(?:pathlib\.)?Path\s*\(\s*__file__\s*\)(?:\.resolve\s*\(\s*\))?\.parent\s*\/\s*(["'])([\w./-]+\.py)\1$/);
+  const rel = joinMatch?.[2] ?? pathMatch?.[2];
+  if (!rel || rel.startsWith("/") || rel.includes("..")) return undefined;
+  return rel;
 }
 
 // Read the resource immediately associated with a prose verb, rather than
@@ -250,6 +285,9 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
       }
     }
   }
+  // Track direct Python imports (`from os import system`) so bare `system(...)`
+  // calls in the same file are caught alongside `os.system(...)`.
+  const importedOsExec = /\bfrom\s+os\s+import\b[^#\n]*\b(?:system|popen|execv|execve)\b/.test(content);
   // Resolve explicit instruction delegation within a bounded prose paragraph,
   // including a fetch and a follow instruction on different lines. Reading or
   // summarizing remote data alone does not make it an instruction source.
@@ -350,13 +388,16 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
         // body is inline text that is inspected where it stands.
         const input = module ? undefined : tokens[arg];
         const heredoc = input?.value === "<" && tokens[arg + 1]?.value === "<";
+        const subcommandInline = !inline && i > 0 && !tokens[i - 1].operator &&
+          !/^(?:run|execute|sudo|command|exec|env|nohup|doas|uv|xargs|timeout|time|nice|watch|docker|podman)$/i.test(tokens[i - 1].value) &&
+          !!input && !input.operator && /\s/.test(input.value) && /[=()]/.test(input.value);
         if (heredoc) {
           // Nothing to resolve.
         } else if (input?.dynamic || input?.value === "<") {
           add(lineNumber, "dynamic-target");
         } else if (input && REMOTE.test(input.value)) {
           add(lineNumber, "remote-target");
-        } else if (input && !input.operator && inline) {
+        } else if (input && !input.operator && (inline || subcommandInline)) {
           const nested = inspectRuntimeCoverage(input.value, false, depth + 1);
           for (const problem of nested.issues) add(lineNumber, problem.rule);
           result.downloads.push(...nested.downloads.map((download) => ({ ...download, line: lineNumber })));
@@ -409,56 +450,65 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
         add(lineNumber, "eval");
       }
     }
-    // urlretrieve writes the response directly to a file, even when a harmless
-    // copy of that destination is bundled. Never treat that staged copy as the
-    // downloaded code. Data destinations are correlated with later use below.
-    for (const call of text.matchAll(/\burlretrieve\s*\(/g)) {
-      const context = [text, ...lines.slice(index + 1, index + 9)].join("\n");
-      const args = callArguments(context, call.index! + call[0].length);
-      const argument = args?.find((arg) => /^filename\s*=/.test(arg))?.replace(/^filename\s*=\s*/, "") ?? args?.[1];
-      const target = argument && literalAt(argument, 0);
-      if (!argument || !target || argument.slice(target.end).trim()) {
-        add(lineNumber, "python-download");
-      } else download(target.value, lineNumber);
-    }
-    // JS/Python loading and code-evaluation APIs. A nonliteral first argument,
-    // concatenation or template cannot establish which code will run.
-    // `itemRe.exec(text)` is a method, not the builtin, and `olcli compile (x)`
-    // is a shell word, so the bare builtins need a call with no gap.
-    // In code, `eval ("x")` and `eval/*c*/("x")` are calls too. Python's
-    // `from x import (a, b)` is not, so import keeps the strict form.
-    const calls = lenient
-      ? /(?<![.\w$])(import|require|eval|exec|compile|Function)(?:\(|(?<!import)(?:\s|\/\*[\s\S]*?\*\/)+\()|\b(import_module|run_path|run_module|runInNewContext|runInThisContext)\s*\(/g
-      : /(?<![.\w$])(import|require|eval|exec|compile|Function)\(|\b(import_module|run_path|run_module|runInNewContext|runInThisContext)\s*\(/g;
-    for (const call of text.matchAll(calls)) {
-      call[1] ??= call[2];
-      const argument = literalAt(text, call.index! + call[0].length);
-      let end = argument?.end ?? 0;
-      while (end < text.length && /\s/.test(text[end])) end++;
-      const next = argument ? text[end] : undefined;
-      if (/^(?:eval|exec|compile|Function|runInNewContext|runInThisContext)$/.test(call[1])) {
-        // Zero-argument `eval()` / `exec()` cannot run code and appears in
-        // security checklists, and `def compile(self)` / `function compile()`
-        // declares a function rather than calling the builtin.
-        const isDeclaration = /\b(?:def|function)\s+$/.test(text.slice(0, call.index!));
-        let open = call.index! + call[0].length;
-        while (open < text.length && /\s/.test(text[open])) open++;
-        if (!isDeclaration && text[open] !== ")") add(lineNumber, "eval");
-      } else if (!argument || (next !== ")" && next !== ",")) {
-        add(lineNumber, "dynamic-loading");
-      } else if (REMOTE.test(argument.value)) {
-        add(lineNumber, "remote-module");
+    // urlretrieve, JS/Python loading/eval APIs, and process APIs all require `(`.
+    if (text.includes("(")) {
+      if (text.includes("urlretrieve")) {
+        for (const call of text.matchAll(URLRETRIEVE_CALL)) {
+          const context = [text, ...lines.slice(index + 1, index + 9)].join("\n");
+          const args = callArguments(context, call.index! + call[0].length);
+          const argument = args?.find((arg) => /^filename\s*=/.test(arg))?.replace(/^filename\s*=\s*/, "") ?? args?.[1];
+          const target = argument && literalAt(argument, 0);
+          if (!argument || !target || argument.slice(target.end).trim()) {
+            add(lineNumber, "python-download");
+          } else download(target.value, lineNumber);
+        }
+      }
+      // JS/Python loading and code-evaluation APIs. A nonliteral first argument,
+      // concatenation or template cannot establish which code will run.
+      // `itemRe.exec(text)` is a method, not the builtin, and `olcli compile (x)`
+      // is a shell word, so the bare builtins need a call with no gap.
+      // In code, `eval ("x")` and `eval/*c*/("x")` are calls too. Python's
+      // `from x import (a, b)` is not, so import keeps the strict form.
+      for (const call of text.matchAll(lenient ? CALLS_LENIENT : CALLS_STRICT)) {
+        call[1] ??= call[2];
+        const argument = literalAt(text, call.index! + call[0].length);
+        let end = argument?.end ?? 0;
+        while (end < text.length && /\s/.test(text[end])) end++;
+        const next = argument ? text[end] : undefined;
+        if (/^(?:eval|exec|compile|Function|runInNewContext|runInThisContext)$/.test(call[1])) {
+          // Zero-argument `eval()` / `exec()` cannot run code and appears in
+          // security checklists, and `def compile(self)` / `function compile()`
+          // declares a function rather than calling the builtin.
+          const isDeclaration = /\b(?:def|function)\s+$/.test(text.slice(0, call.index!));
+          let open = call.index! + call[0].length;
+          while (open < text.length && /\s/.test(text[open])) open++;
+          if (!isDeclaration && text[open] !== ")") add(lineNumber, "eval");
+        } else if (!argument || (next !== ")" && next !== ",")) {
+          add(lineNumber, "dynamic-loading");
+        } else if (REMOTE.test(argument.value)) {
+          add(lineNumber, "remote-module");
+        }
+      }
+      for (const call of text.matchAll(PROCESS_CALLS)) {
+        const isPySubprocess = /^(?:subprocess\.|Popen\b)/.test(call[0]);
+        if (isPySubprocess) {
+          const context = [text, ...lines.slice(index + 1, index + 8)].join("\n");
+          const sibling = bundledSiblingPython(context, call.index! + call[0].length);
+          if (sibling) {
+            result.executedFiles.push(sibling);
+            continue;
+          }
+        }
+        // These APIs accept arrays/options/loader parameters. We do not pretend
+        // to resolve those expressions with a shell tokenizer.
+        add(lineNumber, "process");
+      }
+      if (importedOsExec && IMPORTED_OS_EXEC_CALL.test(text)) {
+        add(lineNumber, "process");
       }
     }
-    if (/\bfrom\s*["'](?:https?|data):/i.test(text) ||
-        /\bimport\s*["'](?:https?|data):/i.test(text)) {
+    if (text.includes(":") && (REMOTE_IMPORT_FROM.test(text) || REMOTE_IMPORT_BARE.test(text))) {
       add(lineNumber, "remote-import");
-    }
-    if (/\b(?:spawn|execFile|execFileSync|Popen|spec_from_file_location)\s*\(/.test(text) ||
-        /\b(?:subprocess\.(?:run|call|check_call|check_output)|os\.(?:system|execv|execve))\s*\(/.test(text)) {
-      // These APIs accept arrays/options/loader parameters. We do not pretend
-      // to resolve those expressions with a shell tokenizer.
-      add(lineNumber, "process");
     }
   };
   for (let index = 0; index < lines.length; index++) {
@@ -527,31 +577,36 @@ export function inspectRuntimeCoverage(content: string, markdown = false, depth 
     // a Markdown table row (`| bash | curl |`), or a bare prose/regex mention with
     // no target (`curl | bash`, `(curl|bash|sh|wget)`) is not execution.
     // `ba""sh` is bash to the shell: drop empty quote pairs before matching.
-    const plain = line.replace(/(["'])\1/g, "");
-    const downloadMatches = [...plain.matchAll(/\b(?:curl|wget|iwr|invoke-webrequest|irm|invoke-restmethod)\b/gi)];
-    const pipeToShell = downloadMatches.some((downloadMatch) => {
-      const afterDownload = plain.slice(downloadMatch.index! + downloadMatch[0].length);
-      const pipedMatch = PIPE_TO_INTERPRETER.exec(afterDownload);
-      if (!pipedMatch) return false;
-      const pipedAfter = afterDownload.slice(pipedMatch.index);
-      const onlyJsonTool = /^\|\s*(?:[\w.~/-]*\/)?python\d*(?:\.\d+)?\s+-m\s+json\.tool\b/i.test(pipedAfter) &&
-        !PIPE_TO_INTERPRETER.test(pipedAfter.slice(pipedMatch[0].length));
-      if (onlyJsonTool) return false;
-      const between = afterDownload.slice(0, pipedMatch.index);
-      const bareMention = !/\bxargs\b/i.test(plain) &&
-        !/https?:\/\//i.test(plain) &&
-        /^[\s.\\]*(?:\|\s*(?:curl|wget|iwr|irm)\b[\s.\\]*)*$/i.test(between) &&
-        (isProse || /\([^)]*\b(?:curl|wget)\|(?:ba|da|z|k)?sh\b/i.test(plain));
-      return !bareMention;
-    });
-    if (downloadMatches.length > 0 && (pipeToShell || INTERPRETER_SUBSTITUTION.test(plain) ||
-        INTERPRETER_COMMAND_SUBSTITUTION.test(plain))) {
-      // A vendor's own one-line installer, from an exact trusted host, is
-      // reviewable. Any other host, or a mix, stays a block.
-      if (onlyTrustedInstallers(line)) add(lineNumber, "trusted-installer");
-      else add(lineNumber, "pipe-to-shell");
+    const hasEmptyQuote = line.includes('""') || line.includes("''");
+    if (hasEmptyQuote || line.includes("|") || line.includes("<(") || line.includes("$(") || line.includes("`")) {
+      const plain = hasEmptyQuote ? line.replace(/(["'])\1/g, "") : line;
+      const downloadMatches = [...plain.matchAll(DOWNLOADER_WORD)];
+      if (downloadMatches.length > 0) {
+        const pipeToShell = downloadMatches.some((downloadMatch) => {
+          const afterDownload = plain.slice(downloadMatch.index! + downloadMatch[0].length);
+          const pipedMatch = PIPE_TO_INTERPRETER.exec(afterDownload);
+          if (!pipedMatch) return false;
+          const pipedAfter = afterDownload.slice(pipedMatch.index);
+          const onlyJsonTool = /^\|\s*(?:[\w.~/-]*\/)?python\d*(?:\.\d+)?\s+-m\s+json\.tool\b/i.test(pipedAfter) &&
+            !PIPE_TO_INTERPRETER.test(pipedAfter.slice(pipedMatch[0].length));
+          if (onlyJsonTool) return false;
+          const between = afterDownload.slice(0, pipedMatch.index);
+          const bareMention = !/\bxargs\b/i.test(plain) &&
+            !HTTP_URL.test(plain) &&
+            /^[\s.\\]*(?:\|\s*(?:curl|wget|iwr|irm)\b[\s.\\]*)*$/i.test(between) &&
+            (isProse || /\([^)]*\b(?:curl|wget)\|(?:ba|da|z|k)?sh\b/i.test(plain));
+          return !bareMention;
+        });
+        if (pipeToShell || INTERPRETER_SUBSTITUTION.test(plain) ||
+            INTERPRETER_COMMAND_SUBSTITUTION.test(plain)) {
+          // A vendor's own one-line installer, from an exact trusted host, is
+          // reviewable. Any other host, or a mix, stays a block.
+          if (onlyTrustedInstallers(line)) add(lineNumber, "trusted-installer");
+          else add(lineNumber, "pipe-to-shell");
+        }
+      }
     }
-    if (/(?<![-\w])(?:download|fetch)\b(?!-)/i.test(line) && /(?<![-\w])(?:run|execute|source|eval)\b(?!-)/i.test(line) && /https?:\/\//i.test(line)) {
+    if (line.includes("://") && HTTP_URL.test(line) && DOWNLOAD_VERB.test(line) && EXEC_VERB.test(line)) {
       add(lineNumber, "download-and-run");
     }
   }

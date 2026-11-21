@@ -73,6 +73,10 @@ const NOT_CODE_FILE = /(?:^|\/)(?:[^/]*\.lock|[^/]*-lock\.(?:json|ya?ml)|go\.sum
 // A persistence path is a capability only where the line writes to it or installs it.
 const WRITES = /(?:>>?|\btee\b|\b(?:cp|mv|ln|install|chmod)\s|write|append|open\s*\([^)]*['"][wa]|\bcrontab\b(?![^\n]*['"\s]-l\b)|systemctl\s+(?:--user\s+)?enable|launchctl\s+(?:load|bootstrap)|New-ItemProperty|Set-ItemProperty|reg\s+add|schtasks)/i;
 const PATH_TOKEN = /[^\s'"`()<>,;|&=]+/g;
+// Fast line-level prefilters (strict supersets of CREDENTIAL_STORES and
+// PERSISTENCE_LOCATIONS) so ordinary code lines skip per-token regex scanning.
+const ANY_CREDENTIAL_HINT = /\.(?:ssh|aws|gnupg|npmrc|netrc|pypirc|git-credentials|docker|kube|openclaw|clawdbot|moltbot)|g?shadow|cookies|login\s*data|logins\.json|key[34]\.db|wallet\.dat|keystore|solana|electrum|ethereum|exodus|metamask/i;
+const ANY_PERSISTENCE_HINT = /cron|systemd|launchagents|launchdaemons|autostart|bashrc|bash_profile|profile|zshrc|zprofile|authorized_keys|startup|currentversion[\\/]run/i;
 // Where the user's home directory starts in a path, so `~/.ssh` and `$HOME/.ssh` match.
 const HOME = /^(?:~|\$HOME|\$\{HOME\}|%USERPROFILE%|\/(?:home|Users)\/[^/]+)/;
 
@@ -114,30 +118,42 @@ export function extractCapabilities(sources: SourceFile[], findings: Finding[], 
       const line = source.startLine + i;
       // A comment line is documentation, not something the code does.
       if (isComment(source.language, text)) return;
-      if (!data) for (const m of text.matchAll(URL_HOST)) {
+      if (!data && text.includes("://")) for (const m of text.matchAll(URL_HOST)) {
         const site = siteOf(m[1], m[2]);
         if (site) add("network", site, source.path, line, riskySite(site) ? { risky: true } : {});
       }
-      for (const token of text.match(PATH_TOKEN) ?? []) {
-        const path = token.replaceAll("\\", "/");
-        // Registry paths keep their backslashes.
-        const matches = (re: RegExp) => re.test(path) || re.test(token);
-        const store = CREDENTIAL_STORES.find((s) => matches(s.pattern));
-        // A relative `.ssh/x` inside a project is not the user's key store; require the home prefix
-        // for the home stores, as cat, open() and fs.readFile all spell it.
-        const home = HOME.test(path) || /^\.?\/?\.(?:ssh|aws|gnupg|docker|kube|openclaw)\b/.test(path) && /expanduser|homedir|\$HOME|~/.test(text);
-        if (store && !(store.name === "~/.openclaw" && !OPENCLAW_SECRET.test(path)) && (home || store.rooted || path.startsWith("/etc/"))) {
-          add("secret", store.name, source.path, line);
-        }
-        const place = PERSISTENCE_LOCATIONS.find((s) => matches(s.pattern));
-        if (place && WRITES.test(text) && (HOME.test(path) || place.rooted || path.startsWith("/etc/") || path.startsWith("/Library/") || /^(?:crontab|\/var\/spool\/cron)/.test(path))) {
-          add("persistence", place.name, source.path, line);
+      const hasCred = ANY_CREDENTIAL_HINT.test(text);
+      const hasPersist = ANY_PERSISTENCE_HINT.test(text) && WRITES.test(text);
+      if (hasCred || hasPersist) {
+        const lineHasHome = hasCred && /expanduser|homedir|\$HOME|~/.test(text);
+        for (const token of text.match(PATH_TOKEN) ?? []) {
+          const hasBackslash = token.includes("\\");
+          const path = hasBackslash ? token.replaceAll("\\", "/") : token;
+          // Registry paths keep their backslashes.
+          const matches = (re: RegExp) => re.test(path) || (hasBackslash && re.test(token));
+          if (hasCred) {
+            const store = CREDENTIAL_STORES.find((s) => matches(s.pattern));
+            // A relative `.ssh/x` inside a project is not the user's key store; require the home prefix
+            // for the home stores, as cat, open() and fs.readFile all spell it.
+            const home = HOME.test(path) || (lineHasHome && /^\.?\/?\.(?:ssh|aws|gnupg|docker|kube|openclaw)\b/.test(path));
+            if (store && !(store.name === "~/.openclaw" && !OPENCLAW_SECRET.test(path)) && (home || store.rooted || path.startsWith("/etc/"))) {
+              add("secret", store.name, source.path, line);
+            }
+          }
+          if (hasPersist) {
+            const place = PERSISTENCE_LOCATIONS.find((s) => matches(s.pattern));
+            if (place && (HOME.test(path) || place.rooted || path.startsWith("/etc/") || path.startsWith("/Library/") || /^(?:crontab|\/var\/spool\/cron)/.test(path))) {
+              add("persistence", place.name, source.path, line);
+            }
+          }
         }
       }
-      if (/(?:^|[\s;&|(`])crontab\s+(?:-[a-z]*\s+)*(?:-|\S+\.(?:txt|cron)|<|$)/.test(text) && !/crontab\s+-l\s*$/.test(text)) add("persistence", "cron", source.path, line);
-      for (const re of ENV_READ) for (const m of text.matchAll(re)) {
-        const name = m[1];
-        if (SECRET_ENV.test(name)) add("env", name, source.path, line, declared.has(name) ? { declared: true } : {});
+      if (text.includes("crontab") && /(?:^|[\s;&|(`])crontab\s+(?:-[a-z]*\s+)*(?:-|\S+\.(?:txt|cron)|<|$)/.test(text) && !/crontab\s+-l\s*$/.test(text)) add("persistence", "cron", source.path, line);
+      if (text.includes("$") || text.includes("env") || text.includes("ENV")) {
+        for (const re of ENV_READ) for (const m of text.matchAll(re)) {
+          const name = m[1];
+          if (SECRET_ENV.test(name)) add("env", name, source.path, line, declared.has(name) ? { declared: true } : {});
+        }
       }
     });
   }

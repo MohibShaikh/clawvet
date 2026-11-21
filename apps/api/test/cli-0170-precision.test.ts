@@ -160,4 +160,40 @@ describe("0.17.0 false-block precision fixes", () => {
     });
     expect(await scanLocalSkill(bad)).toMatchObject({ recommendation: "block" });
   });
+
+  it("catches direct `from os import system` calls while allowing literal bundled sibling scripts and CLI inline subcommands", async () => {
+    const importedExec = skill({
+      "SKILL.md": FRONT + "```bash\npython3 scripts/run.py\n```\n",
+      "scripts/run.py": "from os import system\nsystem('mkdir -p /tmp/x')\n",
+    });
+    expect(await scanLocalSkill(importedExec)).toMatchObject({ status: "failed", coverage: { complete: false } });
+
+    // Safe sibling script via sys.executable + dirname(__file__) passes when bundled and clean.
+    const safeSibling = skill({
+      "SKILL.md": FRONT + "```bash\npython3 scripts/main.py\n```\n",
+      "scripts/main.py": "import os, subprocess, sys\nsubprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'helper.py'), 'AAPL'])\n",
+      "scripts/helper.py": "print('ok')\n",
+    });
+    expect(await scanLocalSkill(safeSibling)).toMatchObject({ status: "complete", recommendation: "approve", coverage: { complete: true } });
+
+    // Sibling script with shell=True or missing file still fails coverage; malicious sibling still blocks.
+    const shellTrue = skill({
+      "SKILL.md": FRONT + "```bash\npython3 scripts/main.py\n```\n",
+      "scripts/main.py": "import os, subprocess, sys\nsubprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'helper.py')], shell=True)\n",
+      "scripts/helper.py": "print('ok')\n",
+    });
+    expect(await scanLocalSkill(shellTrue)).toMatchObject({ status: "failed", coverage: { complete: false } });
+
+    const missingSibling = skill({
+      "SKILL.md": FRONT + "```bash\npython3 scripts/main.py\n```\n",
+      "scripts/main.py": "import os, subprocess, sys\nsubprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'ghost.py')])\n",
+    });
+    expect(await scanLocalSkill(missingSibling)).toMatchObject({ status: "failed", coverage: { complete: false } });
+
+    // CLI subcommand inline code (`browser-use python "x = foo()"`) is inspected inline rather than flagged missing-file.
+    expect(inspectRuntimeCoverage('```bash\nbrowser-use python "cdp = browser._run(x)"\n```\n', true).executedFiles).toEqual([]);
+    expect(inspectRuntimeCoverage('```bash\nbrowser-use python "eval(remote_code)"\n```\n', true).issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ rule: "eval" })]),
+    );
+  });
 });

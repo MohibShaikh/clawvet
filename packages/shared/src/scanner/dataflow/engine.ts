@@ -27,7 +27,13 @@ const LOGIN_KEYS = /(?:^|\/)\.ssh\/authorized_keys2?$/i;
 const READER_COMMAND = /^(?:cat|head|tail|base64|xxd|type)$/;
 // Literal text that ends in a registrable domain: "<label>.<tld>".
 const FIXED_DOMAIN = /\.[a-z0-9-]+\.[a-z]{2,}\.?$/i;
-const traceKey = (t: Trace) => `${t.kind}:${t.parameter ?? ""}:${t.authOnly ?? false}`;
+// Private key / wallet seed env vars are never ordinary HTTP API auth tokens.
+const NON_HTTP_SECRET_ENV = /\b(?:SSH_[A-Z0-9_]*KEY|PRIVATE_SSH_KEY|[A-Z0-9_]*(?:MNEMONIC|SEED_PHRASE))\b/i;
+// Keep distinct environment secret names separate so bundling multiple secrets
+// into one outbound send is not collapsed into a single API-client key.
+const traceKey = (t: Trace) => t.kind === "environment"
+  ? `${t.kind}:${t.detail}:${t.parameter ?? ""}:${t.authOnly ?? false}`
+  : `${t.kind}:${t.parameter ?? ""}:${t.authOnly ?? false}`;
 const has = (v: Value, ...kinds: TaintKind[]) => v.traces.some((t) => kinds.includes(t.kind));
 // Field-wise equality: serializing both values on every worklist step was the
 // single largest cost in the solver.
@@ -380,9 +386,15 @@ function findingsForEvents(events: Event[], sourceFile: SourceFile): Finding[] {
         // Neither is an earlier response: a job id the server sent, echoed back
         // with the same key, is still one key and nothing local.
         const sources = event.data.traces.filter((t) => t.kind !== "parameter" && t.kind !== "network" && t.kind !== "host");
-        const singleEnv = !credential && sources.length > 0 && sources.every((t) => t.kind === "environment");
+        const envDetails = new Set(sources.filter((t) => t.kind === "environment").map((t) => t.detail));
+        const nonHttpEnv = sources.some((t) => t.kind === "environment" && NON_HTTP_SECRET_ENV.test(t.detail));
+        // 1–2 API env vars (e.g. KEY + SECRET) reaching a network call is normal
+        // API auth; bundling 3+ distinct secret env vars or sending an SSH key /
+        // wallet mnemonic over HTTP is credential exfiltration.
+        const singleEnv = !credential && !nonHttpEnv && sources.length > 0 &&
+          sources.every((t) => t.kind === "environment") && envDetails.size <= 2;
         if (singleEnv) {
-          const key = sources.map((t) => t.detail).sort().join("|");
+          const key = [...envDetails].sort().join("|");
           if (keysSent.has(key)) continue;
           keysSent.add(key);
         }

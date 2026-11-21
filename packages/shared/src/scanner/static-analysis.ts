@@ -5,6 +5,23 @@ import { lineIndex } from "./lines.js";
 
 const HEADING = /^\s*#{1,6}\s/;
 
+// Fast literal prefilters (strict supersets) for line-anchored or wide-gap
+// patterns that rarely fire, avoiding per-line lookahead scans on 2 MiB skills.
+const PATTERN_PREFILTER: Record<string, RegExp> = {
+  CURL_PIPE_BASH: /curl\s/i,
+  WGET_EXECUTE: /wget\s/i,
+  DNS_EXFIL: /dig\s|nslookup\s|exfil|burpcollaborator|oastify/i,
+  CRYPTO_MINER_CONFIG: /nicehash|stratum\+|donate-level|xmrig/i,
+  PIPED_UPLOAD: /curl\b/i,
+  SUBSTITUTED_UPLOAD: /curl\b/,
+  DNS_DATA_LABEL: /\b(?:dig|nslookup|host)\b/,
+  SYSTEM_ACCOUNTS_UPLOAD: /\/etc\/(?:passwd|shadow)\b/,
+  CLOUD_METADATA_CREDENTIALS: /169\.254\.169\.254|metadata\.google\.internal/,
+  HTML_COMMENT_INJECTION: /<!--/,
+  PYTHON_EXEC_PAYLOAD: /python3?\s+-c/,
+  NODE_EVAL_PAYLOAD: /node\s+(?:-e|--eval|-p|--print)/,
+};
+
 
 const BASE_CONFIDENCE: Record<Severity, number> = {
   critical: 0.9,
@@ -15,18 +32,31 @@ const BASE_CONFIDENCE: Record<Severity, number> = {
 
 // Bundled scripts count as code, not only fenced blocks: a payload in
 // scripts/run.sh is code whether or not SKILL.md quotes it.
-export function runStaticAnalysis(skill: ParsedSkill, files: BundledFile[] = []): Finding[] {
+export function runStaticAnalysis(
+  skill: ParsedSkill,
+  files: BundledFile[] = [],
+  precomputed?: { code?: Set<number>; lines?: string[] },
+): Finding[] {
   const findings: Finding[] = [];
-  const code = codeLines(skill, files);
+  const code = precomputed?.code ?? codeLines(skill, files);
   const isInCodeBlock = (line: number) => code.has(line);
-  const lines = skill.rawContent.split("\n");
+  const lines = precomputed?.lines ?? skill.rawContent.split("\n");
   const lineOf = lineIndex(skill.rawContent);
 
   for (const threat of THREAT_PATTERNS) {
-    const re = new RegExp(threat.pattern.source, threat.pattern.flags);
+    if (threat.codeOnly && code.size === 0) continue;
+    const prefilter = PATTERN_PREFILTER[threat.name];
+    if (prefilter && !prefilter.test(skill.rawContent)) continue;
+    // Reuse the compiled RegExp rather than recompiling every pattern per scan.
+    const re = threat.pattern;
+    re.lastIndex = 0;
     let match: RegExpExecArray | null;
 
     while ((match = re.exec(skill.rawContent)) !== null) {
+      if (match[0].length === 0) {
+        re.lastIndex++;
+        continue;
+      }
       const lineNumber = lineOf(match.index);
 
       if (threat.codeOnly && !isInCodeBlock(lineNumber)) {

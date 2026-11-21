@@ -50,7 +50,13 @@ export function calculateRiskScore(findings: Finding[]): number {
   for (const group of byKey.values()) {
     group.sort((a, b) => weight(b) - weight(a));
     group.forEach((f, i) => {
-      score += i === 0 ? weight(f) : weight(f) * REPEAT_FACTOR;
+      // Geometric decay bounds identical repeats of one rule+evidence (e.g. a
+      // doc mentioning `.env` 60 times with no sink converges to 1.33x instead
+      // of growing linearly to 100). Obfuscation keeps linear repeats so
+      // cumulative hidden Unicode/RTL steganography still crosses warn.
+      if (i === 0) score += weight(f);
+      else if (f.category === "obfuscation") score += weight(f) * REPEAT_FACTOR;
+      else score += weight(f) * Math.pow(REPEAT_FACTOR, i);
     });
   }
   if (findings.some((f) => f.disqualifying)) {

@@ -42,12 +42,36 @@ export interface AssemblyResult {
   };
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function isPathWordChar(code: number): boolean {
+  return (code >= 48 && code <= 57) || // 0-9
+    (code >= 65 && code <= 90) ||      // A-Z
+    (code >= 97 && code <= 122) ||     // a-z
+    code === 95 || code === 46 || code === 45; // _ . -
 }
 
+// Equivalent to `(^|[^\w.-])<path>($|[^\w.-]|\.(?=\s|$))` without compiling a
+// RegExp per (source × candidate) pair.
 function mentions(text: string, path: string): boolean {
-  return new RegExp(`(^|[^\\w.-])${escapeRegExp(path)}($|[^\\w.-]|\\.(?=\\s|$))`, "m").test(text);
+  if (!path) return false;
+  let pos = text.indexOf(path);
+  while (pos !== -1) {
+    const beforeOk = pos === 0 || !isPathWordChar(text.charCodeAt(pos - 1));
+    if (beforeOk) {
+      const end = pos + path.length;
+      if (end === text.length) return true;
+      const next = text.charCodeAt(end);
+      if (!isPathWordChar(next)) return true;
+      if (next === 46) { // '.' followed by whitespace or EOL
+        if (end + 1 === text.length) return true;
+        const afterDot = text.charCodeAt(end + 1);
+        if (afterDot === 32 || afterDot === 9 || afterDot === 10 || afterDot === 13 || afterDot === 12 || afterDot === 11) {
+          return true;
+        }
+      }
+    }
+    pos = text.indexOf(path, pos + 1);
+  }
+  return false;
 }
 
 // This is static reference discovery, not a shell/JS interpreter. Existing
@@ -136,11 +160,19 @@ const DIRNAME_SELF = /\$\(\s*dirname\s+["']?\$\{?(?:0|BASH_SOURCE(?:\[0\])?)\}?[
 // a reassigned SCRIPT_DIR could borrow a bundled decoy's name. Paths derived
 // from either idiom are recorded in `selfAnchored` because bash resolves them
 // from the script's own directory, never the caller's cwd.
+const EMPTY_ANCHORED = new Set<string>();
+const SCRIPT_DIR_IDIOMATIC = new RegExp(`\\bSCRIPT_DIR=["']?(?:\\$\\(\\s*cd\\s+["']?)?${DIRNAME_SELF.source}`, "g");
+const DIRNAME_SELF_PATH = new RegExp(`${DIRNAME_SELF.source}\\/([^\\s\`"'<>|;&)\\]]+)`, "g");
+const SCRIPT_DIR_PATH = /\$\{?SCRIPT_DIR\}?\/([^\s`"'<>|;&)\]]+)/g;
+
 function scriptRelative(text: string): { text: string; selfAnchored: Set<string> } {
+  if (!text.includes("dirname") && !text.includes("SCRIPT_DIR")) {
+    return { text, selfAnchored: EMPTY_ANCHORED };
+  }
   // Every assignment anywhere, including a second one later on the same line;
   // read, for and printf -v can set it without an equals sign at all.
   const assignments = text.match(/\bSCRIPT_DIR\+?=/g)?.length ?? 0;
-  const idiomatic = text.match(new RegExp(`\\bSCRIPT_DIR=["']?(?:\\$\\(\\s*cd\\s+["']?)?${DIRNAME_SELF.source}`, "g"))?.length ?? 0;
+  const idiomatic = text.match(SCRIPT_DIR_IDIOMATIC)?.length ?? 0;
   const other = /\b(?:read|for|printf\s+-v|mapfile|readarray|declare\s+-n|local\s+-n)\b[^\n;]*\bSCRIPT_DIR\b/.test(text);
   const own = assignments > 0 && assignments === idiomatic && !other;
   const selfAnchored = new Set<string>();
@@ -150,8 +182,8 @@ function scriptRelative(text: string): { text: string; selfAnchored: Set<string>
       if (!text.includes(candidate)) selfAnchored.add(candidate);
     }
   };
-  collect(new RegExp(`${DIRNAME_SELF.source}\\/([^\\s\`"'<>|;&)\\]]+)`, "g"));
-  if (own) collect(/\$\{?SCRIPT_DIR\}?\/([^\s`"'<>|;&)\]]+)/g);
+  collect(DIRNAME_SELF_PATH);
+  if (own) collect(SCRIPT_DIR_PATH);
   const resolved = text.replace(DIRNAME_SELF, ".");
   return { text: own ? resolved.replace(/\$\{?SCRIPT_DIR\}?/g, ".") : resolved, selfAnchored };
 }
@@ -317,6 +349,7 @@ export function assembleSkill(
   const visited = new Set([entryFile]);
   const queue = [{ path: entryFile, text: manifest }];
   const candidates = [...files].sort();
+  const candidateEntries = candidates.map((candidate) => [candidate, basename(candidate)] as const);
   const downloads: Array<{ path: string; target: string; line: number }> = [];
   const executedFiles: Array<{ path: string; target: string }> = [];
   const quietFiles = new Set<string>();
@@ -390,8 +423,9 @@ export function assembleSkill(
     executedFiles.push(...runtime.executedFiles.map((target) => ({ path: source.path, target: ownCopy(target, true) })));
     instructionFiles.push(...runtime.instructionFiles.map(target => ({ path: source.path, target: ownCopy(target, true) })));
     const selected = new Set<string>();
-    for (const candidate of candidates) {
-      if (mentions(text, candidate) || mentions(text, basename(candidate))) {
+    for (const [candidate, base] of candidateEntries) {
+      if (visited.has(candidate)) continue;
+      if (mentions(text, candidate) || (base !== candidate && mentions(text, base))) {
         selected.add(candidate);
       }
     }
