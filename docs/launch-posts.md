@@ -17,7 +17,7 @@ What it does:
 - `clawvet init`: one-command setup for OpenClaw's `security.installPolicy` gate (resolves npm symlinks, checks `chmod go-w`, backs up config) and an advisory Claude Code `PostToolUse` guard hook.
 - Offline rug-pull diff: records extracted capabilities on install and prompts on updates that add credential reads, OS persistence, high-risk behaviours, or risky external hosts.
 - GitHub Action with `comment-pr: true`: posts a sticky PR Permissions Diff comment showing newly added hosts/secrets/persistence.
-- Zero-install browser playground (`web-demo/`): runs `@clawvet/shared` + WebAssembly Tree-sitter 100% client-side.
+- Zero-install browser playground (https://clawvet.vercel.app/): runs `@clawvet/shared` + WebAssembly Tree-sitter 100% client-side (paste a `SKILL.md` or GitHub URL, nothing uploaded).
 
 Empirical numbers (all untrusted corpora run in a `--network none` Docker sandbox):
 - Across 209 unique real ClawHub skills: 63.6% contact external hosts, 48.8% read secret-named env vars (40.2% undeclared in `requires.env`), 4.8% access host credential stores (`~/.ssh`, `~/.openclaw`, etc.), and 3.3% write OS persistence (`cron`, `systemd`/`launchd`, shell rc, `authorized_keys`).
@@ -26,7 +26,8 @@ Empirical numbers (all untrusted corpora run in a `--network none` Docker sandbo
 
 Honest caveat: pure natural-language prompt-injection rug-pulls with no code payload only hit 36.4% statically on the held-out test split; that class still requires `--semantic`.
 
-Install: `npm i -g clawvet && clawvet audit --summary`
+Live browser playground (100% client-side WASM): https://clawvet.vercel.app/
+Install CLI: `npm i -g clawvet && clawvet audit --summary`
 Repo & full report: https://github.com/MohibShaikh/clawvet
 
 ---
@@ -60,6 +61,7 @@ Benchmarks (sandboxed):
 - Beats Cisco Skill Scanner and NVIDIA SkillSpector on the held-out SkillTrustBench v1.1 subset (`0.833` accuracy / `0.770` macro F1 with `--semantic` Haiku, `0.934` malicious F1).
 - Catches **95.2%** of code-injection rug-pull updates completely offline at a **5.1%** benign prompt rate.
 
+Live browser demo (100% client-side WASM, nothing uploaded): https://clawvet.vercel.app/
 GitHub: https://github.com/MohibShaikh/clawvet
 
 ---
@@ -83,6 +85,7 @@ Quick try:
 npm i -g clawvet && clawvet audit --summary
 ```
 
+Try in browser (100% client-side WASM): https://clawvet.vercel.app/
 Full benchmarks and methodology: https://github.com/MohibShaikh/clawvet/blob/master/docs/launch-report-2026.md
 
 ---
@@ -142,6 +145,7 @@ Zero JSON editing to protect your machine:
 
 And for skill repos, add `comment-pr: true` to the GitHub Action for automatic sticky PR Permissions Diff comments on every pull request.
 
+Try in browser (client-side WASM): https://clawvet.vercel.app/
 MIT open source: https://github.com/MohibShaikh/clawvet
 
 ---
@@ -152,7 +156,7 @@ Shipped a major ClawVet update for multi-agent auditing and one-command setup:
 - `clawvet audit --summary`: audits OpenClaw, Claude Code (skills, commands, hooks), Cursor rules, Codex, Windsurf, and MCP server configs with a Machine Permissions Summary
 - `clawvet init` (`--dry-run` supported): auto-detects OpenClaw `openclaw.json` + Claude Code `settings.json`, creates backups, checks/fixes `chmod go-w`, and runs an immediate audit
 - GitHub Action `comment-pr: true`: posts a sticky PR Permissions Diff comment + README trust badge on skill PRs
-- Static browser playground (`web-demo/`): 100% client-side WebAssembly Tree-sitter scanning
+- Live browser playground (https://clawvet.vercel.app/): 100% client-side WebAssembly Tree-sitter scanning (paste a `SKILL.md` or GitHub URL)
 
 Install / upgrade: `npm i -g clawvet && clawvet audit --summary`
 Benchmarks & write-up: https://github.com/MohibShaikh/clawvet/blob/master/docs/launch-report-2026.md

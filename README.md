@@ -3,8 +3,11 @@
 [![CI](https://github.com/MohibShaikh/clawvet/actions/workflows/ci.yml/badge.svg)](https://github.com/MohibShaikh/clawvet/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/clawvet)](https://www.npmjs.com/package/clawvet)
 [![npm downloads](https://img.shields.io/npm/dw/clawvet)](https://www.npmjs.com/package/clawvet)
+[![Live Playground](https://img.shields.io/badge/playground-clawvet.vercel.app-09090b)](https://clawvet.vercel.app/)
 
 Static and install-time security scanner for AI agent skills, rules, hooks, and MCP configs (**OpenClaw, Claude Code, Cursor, Codex, Windsurf**). ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. It runs fully offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes when you turn them on.
+
+**Try it with zero install:** [clawvet.vercel.app](https://clawvet.vercel.app/) (100% client-side WebAssembly Tree-sitter AST dataflow, nothing uploaded).
 
 ![ClawVet demo](clawvet-demo.gif)
 

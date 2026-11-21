@@ -1,5 +1,7 @@
 # ClawVet Static Web Playground
 
+Live at **[clawvet.vercel.app](https://clawvet.vercel.app/)**.
+
 Zero-backend, 100% client-side ClawVet playground powered by `@clawvet/shared` and WebAssembly Tree-sitter AST dataflow. No database, no API server, and no data leaves the visitor's browser.
 
 ## Build locally

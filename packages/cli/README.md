@@ -2,6 +2,8 @@
 
 Static and install-time security scanner for AI agent skills, rules, hooks, and MCP configs (**OpenClaw, Claude Code, Cursor, Codex, Windsurf**). ClawVet vets `SKILL.md` and every bundled script it references for prompt injection, credential theft, remote code execution, typosquatting, and rug-pull updates. Offline by default, with optional LLM (`--semantic`) and OSV.dev (`--osv`) passes.
 
+**Try in your browser (zero install, 100% client-side WASM):** [clawvet.vercel.app](https://clawvet.vercel.app/)
+
 ![ClawVet CLI demo](https://raw.githubusercontent.com/MohibShaikh/clawvet/master/clawvet-demo.gif)
 
 ## Install

@@ -81,7 +81,7 @@ Static + AST analysis is strong on code payloads and capability escalation, not 
 
 ## 4. Check your own machine in 10 seconds
 
-ClawVet audits skills, instruction rules, hooks, and MCP configs across **OpenClaw, Claude Code, Cursor, Codex, and Windsurf**, and prints an aggregate **Machine Permissions Summary**:
+Try a single `SKILL.md` or GitHub skill URL directly in your browser with zero install at **[clawvet.vercel.app](https://clawvet.vercel.app/)** (100% client-side WebAssembly Tree-sitter, nothing uploaded), or audit your entire machine with the CLI across **OpenClaw, Claude Code, Cursor, Codex, and Windsurf**:
 
 ```bash
 npm install -g clawvet
