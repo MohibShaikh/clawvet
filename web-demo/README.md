@@ -20,8 +20,8 @@ npx serve web-demo/dist
 
 ## Deploy for $0
 
+- **Vercel (recommended):** import the repository root in Vercel. The root [`vercel.json`](../vercel.json) automatically sets `npm ci`, `node web-demo/build.mjs`, `web-demo/dist`, and `application/wasm` headers (leave Root Directory as `.`).
 - **Cloudflare Pages:** `npx wrangler pages deploy web-demo/dist --project-name clawvet`
-- **Vercel:** point project root to `web-demo`, build command `npm run build`, output directory `dist`
 - **GitHub Pages:** publish `web-demo/dist/` via `actions/upload-pages-artifact`
 
 ## Shareable skill links
