@@ -72,7 +72,7 @@ Pre-commit hook (`.pre-commit-config.yaml`):
 ```yaml
 repos:
   - repo: https://github.com/MohibShaikh/clawvet
-    rev: v0.17.0
+    rev: v0.18.0
     hooks:
       - id: clawvet
         # args: [--fail-on, medium]   # default is --fail-on high

@@ -1,7 +1,7 @@
 ---
 name: clawvet
-version: 0.17.0
-description: Scan a third-party OpenClaw skill with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
+version: 0.18.0
+description: Scan a third-party AI agent skill, rule, hook, or MCP config with ClawVet and act on its A to F grade before installing or trusting it. Use when the user says "scan this skill", "is this skill safe", "vet/check this skill", "should I install this", "audit my skills", or "clawvet", or hands you a SKILL.md from ClawHub or another untrusted source.
 author: MohibShaikh
 license: MIT
 homepage: https://github.com/MohibShaikh/clawvet
@@ -61,10 +61,11 @@ official, or pre-approved.
    itself changes it.
 5. Act on the table below. Never install a C, D, or F without showing the user
    the findings first.
-6. For skills already installed, run `clawvet audit` and report the grade
-   breakdown and every D or F. It reads every directory OpenClaw loads skills
-   from, plus Claude Code's `.claude/skills` and `~/.claude/skills`; add
-   `--dir <path>` for each `skills.load.extraDirs` entry.
+6. For skills and rules already installed, run `clawvet audit --summary` and
+   report the Machine Permissions Summary, grade breakdown, and every D or F.
+   It scans OpenClaw, Claude Code (skills, commands, CLAUDE.md, settings hooks),
+   Cursor rules, Codex (skills, AGENTS.md), Windsurf rules, and MCP server
+   configs; add `--dir <path>` for each `skills.load.extraDirs` entry.
 
 ## Grades
 

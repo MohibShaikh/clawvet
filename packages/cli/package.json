@@ -1,6 +1,6 @@
 {
   "name": "clawvet",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Security scanner & install gate for AI agent skills, rules, hooks, and MCP configs (OpenClaw, Claude Code, Cursor, Codex, Windsurf). Detects credential theft, RCE, prompt injection, and rug-pull updates offline.",
   "type": "module",
   "bin": {

@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.18.0
+
+Multi-agent machine auditing, one-command `clawvet init`, sticky PR Permissions Diff GitHub Action comments, empirical launch report, and a zero-install client-side Web Playground.
+
+- **Multi-agent `clawvet audit` and Machine Permissions Summary:** `clawvet audit`
+  now auto-discovers and scans skills, instruction rules, hooks, and MCP configs
+  across **OpenClaw**, **Claude Code** (skills, slash commands, `CLAUDE.md`, and
+  `settings.json` hooks), **Cursor** (`.cursorrules`, `.cursor/rules/*.{mdc,md}`),
+  **Codex** (skills, `AGENTS.md`), **Windsurf** (`.windsurfrules`,
+  `.windsurf/rules`), and **MCP server configs** (`.mcp.json`,
+  `.cursor/mcp.json`, `.vscode/mcp.json`, `~/.claude.json`, Claude Desktop
+  config). Prints an aggregate **Machine Permissions Summary** showing how many
+  installed items access host credential stores (`~/.ssh`, `~/.aws`,
+  `~/.openclaw`), write OS persistence, contact external/risky hosts, read
+  secret env vars, or score D/F. Adds `--summary` compact mode, `--ecosystem`
+  filtering, and `summary.permissions` / `summary.ecosystems` in `--format json`.
+- **One-command `clawvet init`:** auto-detects OpenClaw (`openclaw.json` /
+  `config.json`) and Claude Code (`settings.json`), creates timestamped backups
+  before atomically merging configuration, checks and optionally fixes
+  group/world-writable paths (`chmod go-w` via `--fix-permissions`), registers a
+  lightweight Claude Code `PostToolUse` guard hook (`claude-hook`) that scans
+  only edited skills, rules, and MCP configs, and runs an immediate
+  `clawvet audit --summary`. Supports `--dry-run`, `--yes`, `--strict`,
+  `--semantic`, `--block-at`, and `--no-audit`.
+- **PR Permissions Diff GitHub Action (`comment-pr: true`):** `action.yml` and
+  `scripts/action-pr-comment.mjs` now support `comment-pr: true`, `github-token`,
+  and `base-ref` to archive the base ref safely without executing skill code,
+  diff capabilities against the PR head, escape untrusted Markdown/HTML, and
+  upsert a sticky PR comment with Grade delta, added/removed permissions, top
+  findings, and a copyable README trust badge.
+- **Zero-install static Web Playground (`web-demo/`):** made `@clawvet/shared`
+  browser-safe (pure-JS SHA-256 cache + configurable WebAssembly grammar paths)
+  and added a static client-side playground running all 6 static passes plus
+  WebAssembly Tree-sitter AST dataflow directly in the browser, with GitHub/Gist
+  URL fetching, `?url=` shareable links, sample skills, README badge export, and
+  zero-config `vercel.json` deployment.
+- **Launch report & package metadata:** added empirical sandbox findings and
+  distribution posts (`docs/launch-report-2026.md`, `docs/launch-posts.md`) and
+  expanded npm `description` and `keywords` across all supported agent
+  ecosystems.
+
 ## 0.17.0
 
 Permissions visibility, install-time rug-pull update checks, faster scanning, stronger code-injection detection, and major false-block reductions across real-world skills.
